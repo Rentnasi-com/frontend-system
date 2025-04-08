@@ -1,3 +1,5 @@
+import toast from "react-hot-toast";
+
 const FloorDetails = ({ floor, updateUnits, removeFloor }) => {
   const handleUnitsCountChange = (e) => {
     const value = parseInt(e.target.value, 10);

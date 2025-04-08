@@ -18,7 +18,12 @@ const AuthHandler = () => {
     localStorage.setItem("sessionId", sessionId)
     localStorage.setItem("userId", userId)
 
-    if (token) {
+    if (sessionId===null && userId===null){
+      window.location.href = "http://localhost:5173"
+      // window.location.href="https://auth.rentnasi.com"
+    }
+
+    if (token && sessionId && userId) {
       navigate("/dashboard")
     }
     else if (sessionId && userId) {
@@ -26,7 +31,6 @@ const AuthHandler = () => {
 
       axios.post('https://auth.api.rentnasi.com/v2/apps/authenticate', { sessionId, userId, appUrl })
         .then(response => {
-          console.log(response)
           const token = response.data.data.authorization.token;
           localStorage.setItem("token", token)
           dispatch(setAuthToken(token));
@@ -34,11 +38,11 @@ const AuthHandler = () => {
         })
         .catch(error => {
           console.error('Error during authentication:', error);
-          // window.location.href = "http://localhost:5173"
+          window.location.href = "http://localhost:5173"
           // window.location.href="https://auth.rentnasi.com"
         });
     } else {
-      // window.href.location = "http://localhost:5173"
+      window.href.location = "http://localhost:5173"
       // window.location.href="https://auth.rentnasi.com"
     }
   }, [dispatch, location, navigate]);

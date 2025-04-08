@@ -13,7 +13,7 @@ const Header = () => {
   return (
     <>
       <header className="shadow sticky top-0 z-30 bg-white">
-        <nav className="mx-auto container py-2 flex justify-between">
+        <nav className="mx-4 md:mx-12 py-2 flex justify-between">
           <Link to="/">
             <img
               className="w-[72px] h-[34px]"
@@ -22,25 +22,7 @@ const Header = () => {
             />
           </Link>
 
-          {/* Tabs */}
-          <ul className="flex space-x-5 rounded-xl bg-gray-100 px-4 py-1 text-xs">
-            <li className="bg-white py-1 px-3 border border-gray-800 rounded">
-              Home
-            </li>
-            <li className="p-1 rounded-lg">
-              <Link to="/dashboard">
-                Property Management
-              </Link>
-            </li>
-            <li className="p-1">
-              <a href={`${tenantUrl}?sessionId=${sessionId}&userId=${userId}`}>
-                Tenant Management
-              </a>
-            </li>
-            <li className="p-1">
-              <a href={`${landlordUrl}?sessionId=${sessionId}&userId=${userId}`}>Landlord Management</a>
-            </li>
-          </ul>
+          
 
           <div className="flex space-x-3">
             <div className="bg-gray-100 px-2 py-1 flex justify-center items-center rounded-xl">

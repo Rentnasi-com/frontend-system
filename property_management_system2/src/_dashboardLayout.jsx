@@ -6,7 +6,7 @@ const DashboardLayout = () => {
         <section>
             <Header />
             <div className="flex overflow-hidden bg-white">
-                <div className="h-full w-full bg-gray-50 relative overflow-y-auto ml-64">
+                <div className="h-full w-full bg-gray-50 relative overflow-y-auto md:ml-64">
                     <Aside />
                     <Outlet />
                     <Footer />

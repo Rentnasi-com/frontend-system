@@ -1,9 +1,12 @@
+import DashboardHeader from "./dashboard_header"
 import PropertyCard from "./property_card"
-import TransactionItem from "./transaction_item"
-import DoughnutChart from "./doughnut"
-
+import TableRow from "./table_row"
+import StatCard from "./stats_card"
+import QuickLinksCard from "./quick_links"
 export {
+    DashboardHeader,
     PropertyCard,
-    TransactionItem,
-    DoughnutChart
+    TableRow,
+    StatCard,
+    QuickLinksCard
 }

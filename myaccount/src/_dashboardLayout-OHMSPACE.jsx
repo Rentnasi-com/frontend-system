@@ -1,0 +1,21 @@
+import { Aside, Footer, Header } from "./shared"
+import { Outlet } from "react-router-dom";
+
+const MainLayout = () => {
+  
+
+  return (
+    <>
+      <Header />
+      <div className="flex overflow-hidden bg-white">
+        <div className="h-full w-full bg-gray-50 relative overflow-y-auto md:ml-64">
+          <Aside />
+          <Outlet />
+          <Footer />
+        </div>
+      </div>
+    </>
+  )
+}
+
+export default MainLayout

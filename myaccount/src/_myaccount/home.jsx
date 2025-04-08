@@ -34,7 +34,7 @@ const Home = () => {
           console.log(response)
         })
         .catch(error => {
-          console.error('Error sending data:', error);
+          console.error('Error sending data: https://auth.api.rentnasi.com/v2/get-user', error);
         });
     }
 
@@ -52,7 +52,7 @@ const Home = () => {
           );
           setAppsTypes(response.data.apps);
         } catch (error) {
-          console.error('Error fetching apps:', error);
+          console.error('Error fetching apps: https://auth.api.rentnasi.com/v2/get-all-apps', error);
         }
       } else {
         console.error('userResponseData or token is null or undefined.');

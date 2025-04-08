@@ -1,31 +1,23 @@
-import './App.css'
-import AuthHandler from './AuthHandler'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import ProtectedRoute from './ProtectedRoute'
-import {
-  Amenities,
-  General_information,
-  Manage_images,
-  Property_floors,
-  Property_summary,
-  Property_types,
-  Single_Unit,
-} from './_property_management/_add_property/pages';
-import { Toaster } from 'react-hot-toast'
-import PropertyDashboard from './_property_management/_dashboard/home';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AddMultiSingleUnit, Amenities, General_information, ManageImages, Property_floors, Property_summary, Property_types, Single_Unit, } from './_property_management/_add_property/pages';
+import { Account, HelpCenter, Home2, Inquiries, Maintenance, PropertyDashboard, Recycle, Reports, Settings } from './_property_management/_dashboard';
+import ChatRoom from './_property_management/_dashboard/pages/chat_room';
+import { MaintenanceChatRoom, PaymentHistory, Property, PropertyListing, RevenueBreakdown, TenantHistory, Unit, UnitListing } from './_property_management/_dashboard/pages';
 import DashboardLayout from './_dashboardLayout';
-import {
-  Property_listing,
-  UnitListing,
-  View_Property,
-} from './_property_management/_property';
-import TenantDashboard from './_tenants_management/_dashboard/home';
-
+import AuthHandler from './AuthHandler';
+import ProtectedRoute from './ProtectedRoute';
+import { MonthlyRevenueBreakdown } from './_property_management/_dashboard/reportsPages';
+import Chat from './chat';
+import { EditAmenities, EditGeneralInformation, EditManageImages, EditMultiUnit, EditMultiUnitSingleUnit, EditPropertyTypes, EditSingleUnit } from './_property_management/_edit_property';
+import { AddLandlordPaymentsDetails, AddLandlordPersonalInfo } from './_property_management/landlords/add_landlord';
+import { LandlordSingleView, ViewLandlord } from './_property_management/landlords/dashboard';
+import { EditLandlordPaymentsDetails, EditLandlordPersonalInfo } from './_property_management/landlords/edit_landlord';
 
 const App = () => {
   return (
     <Router>
-      <main>
+      <main className="font-sans">
         <Toaster />
         <Routes>
           <Route path="/" element={<AuthHandler />} />
@@ -34,59 +26,175 @@ const App = () => {
             {/* Property management */}
             <Route
               path="/dashboard"
-              element={<ProtectedRoute><PropertyDashboard /></ProtectedRoute>}
+              element={<ProtectedRoute element={<Home2 />} />}
             />
+            <Route
+              path="/properties"
+              element={<ProtectedRoute element={<PropertyDashboard />} />}
+            />
+            
             <Route
               path="/add-property/general-information"
               element={<ProtectedRoute element={<General_information />} />}
+            />
+            <Route
+              path="/edit-property/general-information"
+              element={<ProtectedRoute element={<EditGeneralInformation />} />}
             />
             <Route
               path="/add-property/amenities"
               element={<ProtectedRoute element={<Amenities />} />}
             />
             <Route
+              path="/edit-property/amenities"
+              element={<ProtectedRoute element={<EditAmenities />} />}
+            />
+            <Route
               path="/add-property/property-type"
-              element={<ProtectedRoute><Property_types /></ProtectedRoute>}
+              element={<ProtectedRoute element={<Property_types />} />}
+            />
+            <Route
+              path="/edit-property/property-type"
+              element={<ProtectedRoute element={<EditPropertyTypes />} />}
             />
             <Route
               path="/add-property/multi-unit"
               element={<ProtectedRoute element={<Property_floors />} />}
             />
             <Route
+              path="/add-property/multi-single-unit"
+              element={<ProtectedRoute element={<AddMultiSingleUnit />} />}
+            />
+            <Route
+              path="/edit-property/multi-unit"
+              element={<ProtectedRoute element={<EditMultiUnit />} />}
+            />
+            <Route
               path="/add-property/single-unit"
               element={<ProtectedRoute element={<Single_Unit />} />}
             />
             <Route
-              path="/add-property/manage-images"
-              element={<ProtectedRoute element={<Manage_images />} />}
+              path="/edit-property/single-unit"
+              element={<ProtectedRoute element={<EditSingleUnit />} />}
             />
+            <Route
+              path="/add-property/manage-images"
+              element={<ProtectedRoute element={<ManageImages />} />}
+            />
+            <Route
+              path="/edit-property/manage-images"
+              element={<ProtectedRoute element={<EditManageImages />} />}
+            />
+            <Route
+              path="/edit-property/single-unit/:property_id/:unit_id"
+              element={<ProtectedRoute element={<EditMultiUnitSingleUnit />} />}
+            />
+            
             <Route
               path="/add-property/property-summary"
               element={<ProtectedRoute element={<Property_summary />} />}
             />
             <Route
               path="/property/property-listing"
-              element={<ProtectedRoute> <Property_listing /> </ProtectedRoute>}
+              element={<ProtectedRoute element={<PropertyListing />} />}
             />
             <Route
-              path="/property/view-property"
-              element={<ProtectedRoute element={<View_Property />} />}
-            />
-            <Route
-              path="property/unit-listing"
+              path="/property/all-property-units"
               element={<ProtectedRoute element={<UnitListing />} />}
             />
-
-            {/* Tenant Management */}
             <Route
-              path="/tenants"
-              element={<ProtectedRoute><TenantDashboard /></ProtectedRoute>}
+              path="/dashboard/inquiries"
+              element={<ProtectedRoute element={<Inquiries />} />}
+            />
+            <Route
+              path="/dashboard/inquiries/chatroom"
+              element={<ProtectedRoute element={<ChatRoom />} />}
+            />
+            <Route
+              path="/property/revenue-breakdown"
+              element={<ProtectedRoute element={<RevenueBreakdown />} />}
+            />
+            <Route
+              path="/property/view-property/:property_id"
+              element={<ProtectedRoute element={<Property />} />}
+            />
+            <Route
+              path="/property/single-unit/:unit_id"
+              element={<ProtectedRoute element={<Unit />} />}
+            />
+            <Route
+              path="/property/payment-history"
+              element={<ProtectedRoute element={<PaymentHistory />} />}
+            />
+            <Route
+              path="/property/unit/tenant-history/:unit_id"
+              element={<ProtectedRoute element={<TenantHistory />} />}
+            />
+            <Route
+              path="/account"
+              element={<ProtectedRoute element={<Account />} />}
+            />
+            <Route
+              path="/help-center"
+              element={<ProtectedRoute element={<HelpCenter />} />}
+            />
+            <Route
+              path="/maintenance"
+              element={<ProtectedRoute element={<Maintenance />} />}
+            />
+            <Route
+              path="/dashboard/maintenance/chatroom"
+              element={<ProtectedRoute element={<MaintenanceChatRoom />} />}
+            />
+            <Route
+              path="/dashboard/reports"
+              element={<ProtectedRoute element={<Reports />} />}
+            />
+            <Route
+              path="/dashboard/reports/revenue-breakdown"
+              element={<ProtectedRoute element={<MonthlyRevenueBreakdown />} />}
+            />
+            <Route
+              path="/settings"
+              element={<ProtectedRoute element={<Settings />} />}
+            />
+            <Route
+              path="/chat"
+              element={<ProtectedRoute element={<Chat />} />}
+            />
+            <Route
+              path="/recycle"
+              element={<ProtectedRoute element={<Recycle />} />}
+            />
+            <Route
+              path="/landlords"
+              element={<ProtectedRoute element={<ViewLandlord />} />}
+            />
+            <Route
+              path="/landlords/view-landlord/:landlord_id"
+              element={<ProtectedRoute element={<LandlordSingleView />} />}
+            />
+            <Route
+              path="/add-landlord/personal-information"
+              element={<ProtectedRoute element={<AddLandlordPersonalInfo />} />}
+            />
+            <Route
+              path="/add-landlord/payment-details"
+              element={<ProtectedRoute element={<AddLandlordPaymentsDetails />} />}
+            />
+            <Route
+              path="/edit-landlord/personal-information/"
+              element={<ProtectedRoute element={<EditLandlordPersonalInfo />} />}
+            />
+            <Route
+              path="/edit-landlord/payment-details/"
+              element={<ProtectedRoute element={<EditLandlordPaymentsDetails />} />}
             />
           </Route>
         </Routes>
       </main>
     </Router>
-  )
-}
+  );
+};
 
-export default App
+export default App;
