@@ -3,7 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AddMultiSingleUnit, Amenities, General_information, ManageImages, Property_floors, Property_summary, Property_types, Single_Unit, } from './_property_management/_add_property/pages';
 import { Account, HelpCenter, Home2, Inquiries, Maintenance, PropertyDashboard, Recycle, Reports, Settings } from './_property_management/_dashboard';
 import ChatRoom from './_property_management/_dashboard/pages/chat_room';
-import { MaintenanceChatRoom, PaymentHistory, Property, PropertyListing, ReceivePayment, RevenueBreakdown, TenantHistory, Unit, UnitListing } from './_property_management/_dashboard/pages';
+import { MaintenanceChatRoom, MarketUnit, PaymentHistory, Property, PropertyListing, ReceivePayment, RevenueBreakdown, TenantHistory, Unit, UnitListing } from './_property_management/_dashboard/pages';
 import DashboardLayout from './_dashboardLayout';
 import AuthHandler from './AuthHandler';
 import ProtectedRoute from './ProtectedRoute';
@@ -216,6 +216,10 @@ const App = () => {
             <Route
               path="/property/receive-payment"
               element={<ProtectedRoute element={<ReceivePayment />} />}
+            />
+            <Route
+              path="/property/market-unit"
+              element={<ProtectedRoute element={<MarketUnit />} />}
             />
           </Route>
         </Routes>

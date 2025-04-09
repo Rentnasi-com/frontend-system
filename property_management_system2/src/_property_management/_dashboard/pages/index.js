@@ -8,6 +8,7 @@ import PaymentHistory from "./payment_history"
 import TenantHistory from "./tenant_history"
 import MaintenanceChatRoom from "./maintenance_chatroom"
 import ReceivePayment from "./receive_payment"
+import MarketUnit from "./market_unit"
 
 export {
     ChatRoom,
@@ -19,5 +20,6 @@ export {
     PaymentHistory,
     TenantHistory,
     MaintenanceChatRoom,
-    ReceivePayment
+    ReceivePayment,
+    MarketUnit
 }
