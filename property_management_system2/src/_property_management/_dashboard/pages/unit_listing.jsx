@@ -157,7 +157,7 @@ const UnitListing = () => {
                                         isShowing={true}
                                         isShowingButtons={property.availability_status === "available"}
                                         addTenantLink={`/tenants/add-personal-details/`}
-                                        addMarketUnitLink={`/property/market-unit?property_id:${property.property_id}/unit_id:${property.unit_id}`}
+                                        addMarketUnitLink={`/property/market-unit?property_id=${property.property_id}&unit_id=${property.unit_id}`}
                                     />
                                 ))}
                             </tbody>

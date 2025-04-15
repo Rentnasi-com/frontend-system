@@ -1,4 +1,4 @@
-const FormField = ({ name, label, register, errors, defaultValue, type, value, onChange }) => (
+const FormField = ({ name, label, register, errors, defaultValue, type, value, onChange, readOnly }) => (
     <td className="p-1">
         <input
             type={type}
@@ -9,6 +9,7 @@ const FormField = ({ name, label, register, errors, defaultValue, type, value, o
             defaultValue={defaultValue}
             value= {value}
             onChange = {onChange}
+            readOnly = {readOnly}
         />
         {errors[name] && (
             <p className="text-red-500 text-xs mt-1">

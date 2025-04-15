@@ -69,24 +69,24 @@ const AddMultiSingleUnit = () => {
         const propertyId = event.target.value
         setSelectedProperty(propertyId)
         try {
-          const unitsResponse = await axios.get(
-            `${baseUrl}/manage-property/edit-property/floors?property_id=${propertyId}&without_units=true`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          )
-          setPropertyFloors(unitsResponse.data.floors)
+            const unitsResponse = await axios.get(
+                `${baseUrl}/manage-property/edit-property/floors?property_id=${propertyId}&without_units=true`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            )
+            setPropertyFloors(unitsResponse.data.floors)
         } catch (error) {
-          toast.error("You have floors in the property selected")
+            toast.error("You have floors in the property selected")
         }
-      }
+    }
 
     const onSubmit = async (values) => {
         try {
             let dataToSend = { ...values }
-            
+
             const response = await toast.promise(
                 axios.post(
                     `${baseUrl}/manage-property/edit-property/unit`,
@@ -103,7 +103,7 @@ const AddMultiSingleUnit = () => {
                     error: "Failed to create unit. Please try again later.",
                 }
             )
-            
+
             if (response.data.success) {
                 navigate("/property/all-property-units")
             }
@@ -113,7 +113,8 @@ const AddMultiSingleUnit = () => {
         }
     }
 
-    useEffect(() => {AddMultiSingleUnit
+    useEffect(() => {
+        AddMultiSingleUnit
         fetchUnitTypes()
         fetchProperties()
     }, [baseUrl, token,])
@@ -153,7 +154,7 @@ const AddMultiSingleUnit = () => {
                         </thead>
                         <tbody>
                             <tr>
-                            <td className="p-1">
+                                <td className="p-1">
                                     <select
                                         className="bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-red-500 focus:border-red-500 block w-full p-1.5"
                                         {...register("property_id")}
@@ -175,7 +176,7 @@ const AddMultiSingleUnit = () => {
                                 </td>
                                 <td className="p-1">
                                     <select
-                                        
+
                                         className="bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-red-500 focus:border-red-500 block w-full p-1.5"
                                         {...register("floor_id")}
 
