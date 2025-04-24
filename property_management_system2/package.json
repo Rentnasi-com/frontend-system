@@ -13,6 +13,7 @@
     "@hookform/resolvers": "^3.9.0",
     "@react-google-maps/api": "^2.19.3",
     "@reduxjs/toolkit": "^2.2.6",
+    "@tinymce/tinymce-react": "^6.1.0",
     "axios": "^1.7.2",
     "browser-image-compression": "^2.0.2",
     "date-fns": "^3.6.0",
