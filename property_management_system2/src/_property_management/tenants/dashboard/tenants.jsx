@@ -152,6 +152,8 @@ const Tenants = () => {
                                         monthly_rent={tenant.rent_amount}
                                         openIssues={"Pending Issues"}
                                         isShowing={true}
+                                        eyeLink={`/property/single-unit/unit_id:${tenant.unit_id}`}
+                                        eyeEdit={`/tenants/edit-personal-details?tenant_id=${tenant.id}`}
                                     />
                                 ))}
                             </tbody>

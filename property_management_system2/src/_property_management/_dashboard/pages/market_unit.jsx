@@ -30,7 +30,8 @@ const MarketUnit = () => {
     const [regions, setRegions] = useState([]);
     const [selectedRegion, setSelectedRegion] = useState('');
     const [areas, setAreas] = useState([]);
-
+    const [marketedProperty, setMarketedProperty] = useState([]);
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
     const [selectedSubCategory, setSelectedSubCategory] = useState('');
     const [userIdToken, setUserIdToken] = useState('');
     const [userIdFromRentnasi, setUserIdFromRentnasi] = useState('');
@@ -95,7 +96,7 @@ const MarketUnit = () => {
             setNearbyFeatures(response.data.nearby_features)
             setRegions(response.data.regions)
         } catch (error) {
-            console.error(error);
+            toast.error("Failed to load initial data");
         }
     }
 
@@ -157,13 +158,17 @@ const MarketUnit = () => {
                 setValue("sub_category_id", matchedSubCategory.id);
                 setSelectedSubCategory(matchedSubCategory.id);
             } else {
-                console.warn(`No sub-category found matching: "${data.unit_details.unit_type}". Available options:`,
+                toast.error(`No sub-category found matching: "${data.unit_details.unit_type}". Available options:`,
                     subCategoriesResponse.data.map(sc => sc.name));
             }
 
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to load property details");
         }
+    };
+
+    const handleClose = () => {
+        setIsSuccessModalOpen(false);
     };
 
     const handleCategoryChange = async (event) => {
@@ -210,7 +215,7 @@ const MarketUnit = () => {
 
     const onSubmit = async (formData) => {
         await fetchUserToken();
-        
+
         const preparedData = {
             ...formData,
             viewing_charges: "0",
@@ -242,7 +247,23 @@ const MarketUnit = () => {
             );
 
             if (response.status === 201) {
-                toast.success("Property marketed successfully!");
+                setIsSuccessModalOpen(true)
+                setMarketedProperty(response.data)
+                try {
+                    const response = await axios.post(`${pmBaseUrl}/manage-property/single-unit/details`,
+                        {
+                            unit_id: unitId,
+                            in_market: true
+                        },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    )
+                } catch (error) {
+                    toast.error(error.response?.data?.message || "Failed to market property");
+                }
             }
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to market property");
@@ -481,7 +502,35 @@ const MarketUnit = () => {
                         </button>
                     </div>
                 </form>
+
             </div>
+            {isSuccessModalOpen && (
+                <div style={{ zIndex: 1000, backgroundColor: 'rgba(55, 65, 81, 0.5)' }} className="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 flex justify-center items-center w-full md:inset-0">
+                    <div className="relative p-4 w-full max-w-lg max-h-full">
+                        <div className="relative bg-white rounded-lg border border-gray-200">
+
+                            <div className="p-4 md:p-5">
+                                <button type="button" onClick={handleClose} className="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center">
+                                    <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                                    </svg>
+                                    <span className="sr-only">Close modal</span>
+                                </button>
+
+
+                                <h2 className="text-lg font-semibold">Preview Property Unit</h2>
+                                <hr />
+                                <a
+                                    target="_blank"
+                                    href={`https://rentnasi.com/property-details/${marketedProperty.id}-${marketedProperty.slug}`}
+                                    className=" text-gray-600 hover:text-red-700 my-4">
+                                    <p className="text-center my-4">Click here to view preview</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };
@@ -503,7 +552,7 @@ const ImageUploadSection = ({ title, onChange, maxNumber, images = [] }) => {
                         data_url: await imageCompression.getDataUrlFromFile(compressedFile)
                     };
                 } catch (error) {
-                    console.error("Image compression failed:", error);
+                    toast.error("Image compression failed:", error);
                     return image; // Use original if compression fails
                 }
             })

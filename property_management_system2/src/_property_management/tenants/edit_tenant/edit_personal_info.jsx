@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { FaArrowRight } from "react-icons/fa";
 import ImageUploading from 'react-images-uploading';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod"
 
 const EditPersonalInfo = () => {
@@ -17,7 +17,8 @@ const EditPersonalInfo = () => {
 
   const baseUrl = import.meta.env.VITE_BASE_URL;
   const token = localStorage.getItem("token")
-  const tenantId = 1
+  const [searchParams] = useSearchParams();
+  const tenantId = searchParams.get('tenant_id')
   const onChange = (imageList, addUpdateIndex) => {
     // data for submit
     console.log(imageList, addUpdateIndex);
@@ -99,7 +100,7 @@ const EditPersonalInfo = () => {
       const dataToSend = {
         ...values,
         document_url,
-        tenant_id :tenantId
+        tenant_id: tenantId
       }
       const token = localStorage.getItem("token")
       const response = await axios.patch(

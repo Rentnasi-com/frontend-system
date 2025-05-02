@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const Units = ({ floor, updateUnitField, removeUnit, unitTypes }) => {
+const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit }) => {
   const [errors, setErrors] = useState({});
 
   const validateField = (field, value) => {
@@ -39,6 +39,10 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes }) => {
   const handleRemoveUnit = (unitIndex, event) => {
     event.preventDefault();
     removeUnit(floor.floor_no, unitIndex);
+  };
+  const handleDuplicateUnit = (unitIndex, event) => {
+    event.preventDefault();
+    duplicateUnit(floor.floor_no, unitIndex);
   };
 
   useEffect(() => {
@@ -118,7 +122,7 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes }) => {
                     value={unit.unit_type}
                     onChange={(e) => handleFieldChange(index, "unit_type", e.target.value)}
                   >
-                    <option value="">--Select--</option>
+                    <option value="">Select Unit</option>
                     {unitTypes.map((type) => (
                       <option key={type.id} value={type.id}>
                         {type.name}
@@ -135,12 +139,23 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes }) => {
                 {renderInputField(index, "electricity", unit.electricity, "Electricity")}
                 {renderInputField(index, "garbage", unit.garbage, "Garbage")}
                 <td className="w-auto p-1">
-                  <button
-                    onClick={(e) => handleRemoveUnit(index, e)}
-                    className="font-medium text-red-600 hover:underline"
+                  <select
+                    className="bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-red-500 focus:border-red-500 block w-full p-1.5"
+                    onChange={(e) => {
+                      const selectedAction = e.target.value;
+                      if (selectedAction === "duplicate") {
+                        handleDuplicateUnit(index, e);
+                      } else if (selectedAction === "remove") {
+                        handleRemoveUnit(index, e);
+                      }
+                      
+                      e.target.value = "";
+                    }}
                   >
-                    Remove
-                  </button>
+                    <option value="">Select Action</option>
+                    <option value="duplicate">Duplicate</option>
+                    <option value="remove">Remove</option>
+                  </select>
                 </td>
               </tr>
             ))}

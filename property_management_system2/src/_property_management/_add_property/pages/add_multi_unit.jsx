@@ -162,6 +162,44 @@ const PropertyFloors = () => {
     );
   };
 
+  const duplicateUnit = (floorNo, unitIndex) => {
+    setFloors((prevFloors) =>
+      prevFloors.map((floor) => {
+        if (floor.floor_no === floorNo) {
+          const unitToDuplicate = floor.units[unitIndex];
+          
+          // Extract numeric part if exists (for better numbering)
+          const unitNoMatch = unitToDuplicate.unit_no.match(/(\d+)$/);
+          const baseName = unitNoMatch 
+            ? unitToDuplicate.unit_no.replace(unitNoMatch[1], '')
+            : unitToDuplicate.unit_no;
+          
+          const nextNumber = unitNoMatch 
+            ? parseInt(unitNoMatch[1]) + 1 
+            : floor.units.length + 1;
+  
+          const newUnit = {
+            ...unitToDuplicate,
+            unit_no: `${baseName}${nextNumber}`,
+          };
+  
+          const newUnits = [
+            ...floor.units.slice(0, unitIndex + 1),
+            newUnit,
+            ...floor.units.slice(unitIndex + 1)
+          ];
+  
+          return {
+            ...floor,
+            units_count: newUnits.length,
+            units: newUnits,
+          };
+        }
+        return floor;
+      })
+    );
+  };
+
   const handleFinalSubmit = async () => {
     try {
       const isEdit = Boolean(propertyUrlId); // Determine if editing
@@ -262,6 +300,7 @@ const PropertyFloors = () => {
                   updateUnitField={updateUnitField}
                   removeUnit={removeUnit}
                   unitTypes={unitTypes}
+                  duplicateUnit={duplicateUnit}
                 />
               ))}
             </div>

@@ -2,7 +2,7 @@ import { FaEdit, FaEye, FaTrash } from "react-icons/fa"
 import { Link } from "react-router-dom"
 
 
-const TableRow = ({ index, title, unit, type, floor, tenant, phone_no, arrears, date_vacated, date, item, amount, monthly_rent, additional_charges, due_date, fines, balance, total, overdue_date, status, payment_date, actions, responsible, category, priority, photo, name, vacant_units, occupied, openIssues, expectedRevenue, outstandingRevenue, pendingBalances, eyeLink, isShowing, eyeEdit, isShowingButtons, addMarketUnitLink, addTenantLink }) => {
+const TableRow = ({ index, title, unit, type, floor, tenant, phone_no, arrears, date_vacated, date, item, amount, monthly_rent, additional_charges, due_date, fines, balance, total, overdue_date, status, payment_date, actions, responsible, category, priority, photo, name, vacant_units, occupied, openIssues, expectedRevenue, outstandingRevenue, pendingBalances, eyeLink, isShowing, eyeEdit, isShowingButtons, addMarketUnitLink, addTenantLink, isInMarket }) => {
     return (
         <>
             <tr key={index} className="border-b text-sm">
@@ -18,7 +18,7 @@ const TableRow = ({ index, title, unit, type, floor, tenant, phone_no, arrears, 
                 {title && (
                     <td className="px-4 py-2">{title}</td>
                 )}
-                
+
                 {unit && (
                     <td className="px-4 py-2">{unit}</td>
                 )}
@@ -28,7 +28,7 @@ const TableRow = ({ index, title, unit, type, floor, tenant, phone_no, arrears, 
                 {floor && (
                     <td className="px-4 py-2">{floor}</td>
                 )}
-                
+
                 {phone_no && (
                     <td className="px-4 py-2">{phone_no}</td>
                 )}
@@ -131,8 +131,12 @@ const TableRow = ({ index, title, unit, type, floor, tenant, phone_no, arrears, 
 
                         {isShowingButtons && (
                             <>
-                                <Link to={addTenantLink} className="px-3 py-1 text-xs font-medium text-white bg-red-800 rounded hover:bg-red-900" to="/tenants/add-personal-details">Add Tenant</Link>
-                                <Link to={addMarketUnitLink} className="px-3 py-1 text-xs font-medium text-white bg-green-800 rounded hover:bg-green-900">Market Unit</Link>
+                                <Link to={addTenantLink} className="px-3 py-1 text-xs font-medium text-white bg-red-800 rounded hover:bg-red-900">Add Tenant</Link>
+                                {isInMarket ? (
+                                    <Link className="px-3 py-1 text-xs font-medium text-white bg-cyan-800 rounded hover:bg-cyan-900">Marketed Unit</Link>
+                                ) :
+                                    <Link to={addMarketUnitLink} className="px-3 py-1 text-xs font-medium text-white bg-green-800 rounded hover:bg-green-900">Market Unit</Link>
+                                }
                             </>
                         )}
                     </td>

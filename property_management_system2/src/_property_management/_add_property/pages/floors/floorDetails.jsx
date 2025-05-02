@@ -34,6 +34,7 @@ const FloorDetails = ({ floor, updateUnits, removeFloor }) => {
         >
           Remove Floor
         </button>
+        
       </td>
     </tr>
   );

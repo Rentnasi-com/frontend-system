@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import ReactImageUploading from "react-images-uploading"
 import { DashboardHeader, PropertyCard } from "./page_components"
+import { CheckboxField, Input, SelectField } from "../../../shared"
+import TextArea from "../../../shared/textArea"
 
 
 const ReceivePayment = () => {
@@ -20,9 +22,18 @@ const ReceivePayment = () => {
     const [unitDetails, setUnitDetails] = useState([])
     const [unitTenantDetails, setTenantDetails] = useState([])
     const [propertyDetails, setPropertyDetails] = useState([])
+    const [payment_details, setPaymentDetails] = useState([])
 
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const token = localStorage.getItem('token')
+    const [showModal, setShowModal] = useState(false)
+    const handleClose = () => {
+        setShowModal(false)
+    }
+
+    const handleOpen = () => {
+        setShowModal(true)
+    }
 
     const schema = z.object({
         unit_type: z.coerce.number().min(1, "Unit type is required"),
@@ -120,7 +131,7 @@ const ReceivePayment = () => {
         setSelectedUnit(unitId)
 
         try {
-            const unitDetailsResponse = await axios.get(`${baseUrl}/manage-property/single-unit/details?unit_id=${unitId}`,
+            const unitDetailsResponse = await axios.get(`${baseUrl}/payment/data/unit?unit_id=${unitId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -129,7 +140,7 @@ const ReceivePayment = () => {
             setUnitDetails(unitDetailsResponse.data.unit_details)
             setTenantDetails(unitDetailsResponse.data.tenant_details)
             setPropertyDetails(unitDetailsResponse.data.property_details)
-            console.log(unitDetailsResponse)
+            setPaymentDetails(unitDetailsResponse.data.payment_details)
         } catch (error) {
             toast.error("No unit details found")
         }
@@ -143,6 +154,22 @@ const ReceivePayment = () => {
         resolver: zodResolver(schema),
     });
 
+    const onSubmit = async (data) => {
+        console.log("Form Data:", data);
+        try {
+            const response = await toast.promise(
+                axios.post(`${baseUrl}/contact/contact-us/`, data),
+                {
+                    loading: "Sending your message ...",
+                    success: "Message sent",
+                    error: "Failed to send message. Please try again later.",
+                }
+            )
+            console.log(response)
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     return (
         <>
@@ -304,45 +331,102 @@ const ReceivePayment = () => {
                     </div>
                     <h3 className="font-bold text-gray-600 mt-2">Select Payments Descriptions</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold">
-                            <div>
-                                <h6>Monthly Rental Pay: </h6>
-                                <p className="text-sm text-gray-600 capitalize">23,000</p>
+                        {Object.values(payment_details).flatMap(payment => {
+
+                            if (Array.isArray(payment)) {
+                                return payment;
+                            }
+                            return payment;
+                        }).map((payment, index) => (
+                            <div onClick={handleOpen} key={index} className="cursor-pointer grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold">
+
+                                <div >
+                                    <h6 className="capitalize">{payment.description}</h6>
+                                    <p className="text-sm text-gray-600 capitalize">
+                                        {payment.amount || payment.monthly_rent_amount}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold">
-                            <div>
-                                <h6>Previous Arrears: </h6>
-                                <p className="text-sm text-gray-600 capitalize">10,000</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold">
-                            <div>
-                                <h6>Total Fines: </h6>
-                                <p className="text-sm text-gray-600 capitalize">0.00</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold">
-                            <div>
-                                <h6>Water Bill: </h6>
-                                <p className="text-sm text-gray-600 capitalize">0.00</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold">
-                            <div>
-                                <h6>Garbage: </h6>
-                                <p className="text-sm text-gray-600 capitalize">0.00</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold">
-                            <div>
-                                <h6>Total Payable: </h6>
-                                <p className="text-sm text-gray-600 capitalize">33,000</p>
+
+                        ))}
+                    </div>
+                </div>
+            </div>
+            {showModal && (
+                <div style={{ zIndex: 1000, backgroundColor: 'rgba(55, 65, 81, 0.5)' }} className="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 flex justify-center items-center w-full md:inset-0">
+                    <div className="relative p-4 w-full max-w-lg max-h-full">
+                        <div className="relative bg-white rounded-lg border border-gray-200">
+
+                            <div className="p-4 md:p-5">
+                                <button type="button" onClick={handleClose} className="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center">
+                                    <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                                    </svg>
+                                    <span className="sr-only">Close modal</span>
+                                </button>
+
+
+                                <h2 className="text-lg font-semibold">Receive Payment</h2>
+                                <hr />
+                                <p className="text-gray-600 my-4">
+                                    You can update payment manually
+                                </p>
+                                <form onSubmit={handleSubmit(onSubmit)}>
+                                    <div className="grid grid-cols-2 gap-x-3">
+                                        <SelectField
+                                            label="Select item paid for"
+                                            name="itemPaidFor"
+                                            options={["Item 1", "Item 2", "Item 3"]}
+                                            register={register}
+                                        />
+                                        <Input
+                                            label="Enter amount"
+                                            name="amount"
+                                            placeholder="Enter amount"
+                                            type="number"
+                                            register={register}
+                                        />
+                                        <SelectField
+                                            label="Select payment date"
+                                            name="itemPaidFor"
+                                            options={["Item 1", "Item 2", "Item 3"]}
+                                            register={register}
+                                        />
+                                        <CheckboxField
+                                            label="Is item fully paid"
+                                            name="isFullyPaid"
+                                            register={register}
+                                        />
+
+                                        <Input
+                                            label="Enter reference code"
+                                            name="amount"
+                                            placeholder="Enter reference code"
+                                            type="number"
+                                            register={register}
+                                        />
+                                        <TextArea
+                                            otherStyles="col-span-2"
+                                            label="Enter note (optional)"
+                                            name="note"
+                                            placeholder="Enter your note"
+                                            register={register}
+                                        />
+                                    </div>
+
+                                    <hr />
+                                    <div className="flex items-center mt-6 space-x-4 rtl:space-x-reverse">
+                                        <button type="submit" disabled={isSubmitting} className="w-full rounded border border-green-700 bg-green-700 p-2.5 text-white transition hover:bg-opacity-90">
+                                            Send Message
+                                        </button>
+                                        <button onClick={handleClose} type="button" className="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100">Cancel</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
         </>
     )
 }
