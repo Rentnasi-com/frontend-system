@@ -6,6 +6,7 @@ import SelectField from "./selectField"
 import Input from "./input"
 import Textarea from "./textArea"
 import Button from "./button"
+import SettingsBreadcrumbs from "./settingsBreadcrumbs"
 
 export {
     Header,
@@ -15,5 +16,6 @@ export {
     SelectField,
     Input,
     Textarea,
-    Button
+    Button,
+    SettingsBreadcrumbs
 }

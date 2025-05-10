@@ -331,24 +331,27 @@ const ReceivePayment = () => {
                     </div>
                     <h3 className="font-bold text-gray-600 mt-2">Select Payments Descriptions</h3>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-3">
-                        {Object.values(payment_details).flatMap(payment => {
-
-                            if (Array.isArray(payment)) {
-                                return payment;
-                            }
-                            return payment;
-                        }).map((payment, index) => (
-                            <div onClick={handleOpen} key={index} className="cursor-pointer grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold">
-
-                                <div >
-                                    <h6 className="capitalize">{payment.description}</h6>
-                                    <p className="text-sm text-gray-600 capitalize">
-                                        {payment.amount || payment.monthly_rent_amount}
-                                    </p>
+                        {Object.values(payment_details)
+                            .flatMap(payment => Array.isArray(payment) ? payment : [payment])
+                            .filter((payment, index, self) =>
+                                payment.applicable &&
+                                (payment.amount || payment.monthly_rent_amount) &&
+                                self.findIndex(p => p.description === payment.description) === index
+                            )
+                            .map((payment, index) => (
+                                <div
+                                    onClick={handleOpen}
+                                    key={index}
+                                    className="cursor-pointer grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold"
+                                >
+                                    <div>
+                                        <h6 className="capitalize">{payment.description}</h6>
+                                        <p className="text-sm text-gray-600 capitalize">
+                                            {payment.amount || payment.monthly_rent_amount}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-
-                        ))}
+                            ))}
                     </div>
                 </div>
             </div>

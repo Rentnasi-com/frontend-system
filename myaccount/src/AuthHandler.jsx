@@ -14,22 +14,23 @@ const AuthHandler = () => {
     const sessionId = queryParams.get('sessionId');
     const userId = queryParams.get('userId');
     const token = localStorage.getItem('token')
+    const BASE_URL = import.meta.env.VITE_BASE_URL
 
     localStorage.setItem("sessionId", sessionId)
     localStorage.setItem("userId", userId)
 
     if (sessionId===null && userId===null){
-      window.location.href = "http://localhost:5173"
-      // window.location.href="https://auth.rentnasi.com"
+      window.location.href = "https://auth.rentalpay.africa"
+      // window.location.href="https://auth.rentalpay.africa"
     }
 
     if (token && sessionId && userId) {
       navigate("/dashboard")
     }
     else if (sessionId && userId) {
-      const appUrl = "https://myaccount.rentnasi.com"
+      const appUrl = "https://myaccount.rentalpay.africa"
 
-      axios.post('https://auth.api.rentnasi.com/v2/apps/authenticate', { sessionId, userId, appUrl })
+      axios.post(`${BASE_URL}/v2/apps/authenticate`, { sessionId, userId, appUrl })
         .then(response => {
           const token = response.data.data.authorization.token;
           localStorage.setItem("token", token)
@@ -38,12 +39,12 @@ const AuthHandler = () => {
         })
         .catch(error => {
           console.error('Error during authentication:', error);
-          window.location.href = "http://localhost:5173"
-          // window.location.href="https://auth.rentnasi.com"
+          // window.location.href = "http://localhost:5173"
+          // window.location.href="https://auth.rentalpay.africa"
         });
     } else {
-      window.href.location = "http://localhost:5173"
-      // window.location.href="https://auth.rentnasi.com"
+      // window.location.href = "http://localhost:5173"
+      // window.location.href="https://auth.rentalpay.africa"
     }
   }, [dispatch, location, navigate]);
 

@@ -162,44 +162,6 @@ const PropertyFloors = () => {
     );
   };
 
-  const duplicateUnit = (floorNo, unitIndex) => {
-    setFloors((prevFloors) =>
-      prevFloors.map((floor) => {
-        if (floor.floor_no === floorNo) {
-          const unitToDuplicate = floor.units[unitIndex];
-          
-          // Extract numeric part if exists (for better numbering)
-          const unitNoMatch = unitToDuplicate.unit_no.match(/(\d+)$/);
-          const baseName = unitNoMatch 
-            ? unitToDuplicate.unit_no.replace(unitNoMatch[1], '')
-            : unitToDuplicate.unit_no;
-          
-          const nextNumber = unitNoMatch 
-            ? parseInt(unitNoMatch[1]) + 1 
-            : floor.units.length + 1;
-  
-          const newUnit = {
-            ...unitToDuplicate,
-            unit_no: `${baseName}${nextNumber}`,
-          };
-  
-          const newUnits = [
-            ...floor.units.slice(0, unitIndex + 1),
-            newUnit,
-            ...floor.units.slice(unitIndex + 1)
-          ];
-  
-          return {
-            ...floor,
-            units_count: newUnits.length,
-            units: newUnits,
-          };
-        }
-        return floor;
-      })
-    );
-  };
-
   const handleFinalSubmit = async () => {
     try {
       const isEdit = Boolean(propertyUrlId); // Determine if editing
@@ -243,6 +205,40 @@ const PropertyFloors = () => {
     }
   };
 
+  const duplicateUnit = (floorNo, unitIndex, count = 1) => {
+    setFloors(prevFloors =>
+      prevFloors.map(floor => {
+        if (floor.floor_no === floorNo) {
+          const originalUnit = floor.units[unitIndex];
+          const baseName = originalUnit.unit_no.replace(/\d+$/, '');
+
+          // Find highest existing number
+          const existingNumbers = floor.units
+            .map(u => {
+              const match = u.unit_no.match(new RegExp(`^${baseName}(\\d+)$`));
+              return match ? parseInt(match[1]) : 0;
+            })
+            .filter(n => !isNaN(n));
+
+          const startNumber = existingNumbers.length ? Math.max(...existingNumbers) + 1 :
+            parseInt(originalUnit.unit_no.match(/\d+$/)?.[0] || 0) + 1;
+
+          // Create all copies at once
+          const newUnits = Array.from({ length: count }, (_, i) => ({
+            ...originalUnit,
+            unit_no: `${baseName}${startNumber + i}`
+          }));
+
+          return {
+            ...floor,
+            units: [...floor.units, ...newUnits],
+            units_count: floor.units.length + count,
+          };
+        }
+        return floor;
+      })
+    );
+  };
 
   const goToPrevious = () => {
     navigate(`/add-property/property-type?property_id=${propertyId}`);

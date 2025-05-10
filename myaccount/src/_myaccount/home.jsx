@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 const Home = () => {
   const currentHour = new Date().getHours();
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
   let greeting;
 
   if (currentHour >= 5 && currentHour < 12) {
@@ -28,7 +29,7 @@ const Home = () => {
         userId: savedUserId
       };
 
-      axios.post('https://auth.api.rentnasi.com/v2/get-user', userData)
+      axios.post(`${BASE_URL}/v2/get-user`, userData)
         .then(response => {
           setUserResponseData(response.data);
           console.log(response)
@@ -42,7 +43,7 @@ const Home = () => {
       if (userResponseData && userResponseData.data.authorization.token) {
         try {
           const response = await axios.get(
-            'https://auth.api.rentnasi.com/v2/get-all-apps',
+            `${BASE_URL}/v2/get-all-apps`,
             {
               headers: {
                 Authorization: `Bearer ${userResponseData.data.authorization.token}`,
@@ -63,7 +64,7 @@ const Home = () => {
       fetchAppsType();
     }
 
-  }, [userResponseData]);
+  }, [userResponseData, BASE_URL]);
   return (
     <>
       <section className="">
@@ -86,11 +87,11 @@ const Home = () => {
           <h4 className="tracking-widest text-gray-800">App quick access panel</h4>
           <img className="h-10 w-10" src="/assets/icons/png/corner-right.png" alt="" />
         </div>
-        <div className="grid grid-cols-3 gap-4 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-6">
           {
             appsTypes.map((type) => (
               <a href={type.app_url} target="blank" key={type.app_id}>
-                <div className="flex space-x-4 justify-center items-center rounded-md shadow border py-10 px-3">
+                <div className="flex space-x-4 justify-center items-center rounded-md shadow border py-3 px-2">
 
                   <img className="h-14 w-14 rounded" src={type.app_logo} alt="" />
                   <h3 className="text-gray-700 text-md">{type.app_name}</h3>

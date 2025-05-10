@@ -14,7 +14,7 @@ const Button = ({
       type={type}
       onClick={onClick}
       disabled={disabled || isLoading}
-      className={`flex items-center justify-center px-5 py-2.5 rounded text-sm font-medium text-white bg-red-700 hover:bg-red-800 focus:outline-none focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900 transition duration-200 ${
+      className={`flex items-center justify-center px-5 py-1 rounded text-sm font-medium text-white bg-red-700 hover:bg-red-800 focus:outline-none focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900 transition duration-200 ${
         isLoading || disabled ? "opacity-50 cursor-not-allowed" : ""
       } ${className}`}
     >

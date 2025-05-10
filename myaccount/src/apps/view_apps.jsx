@@ -4,11 +4,12 @@ import { useEffect, useState } from "react"
 const View_Apps = () => {
     const [appTypes, setAppsTypes] = useState([])
     const token = localStorage.getItem('token')
+    const BASE_URL = import.meta.env.VITE_BASE_URL
     useEffect(() => {
         const fetchApps = async () => {
             try {
                 const response = await axios.get(
-                    'https://auth.api.rentnasi.com/v2/get-all-apps',
+                    `${BASE_URL}/v2/get-all-apps`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -22,7 +23,7 @@ const View_Apps = () => {
             }
         }
         fetchApps()
-    }, [token])
+    }, [token, BASE_URL])
 
     return (
         (appTypes ? (

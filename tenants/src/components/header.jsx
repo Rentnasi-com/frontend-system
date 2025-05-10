@@ -6,7 +6,7 @@ const Header = () => {
   return (
     <>
       <header className="shadow sticky top-0 z-30 bg-white">
-        <nav className="mx-auto container py-2 flex justify-between">
+        <nav className="mx-4 md:mx-12 py-2 flex justify-between">
           <Link to="/">
             <img
               className="w-[72px] h-[34px]"

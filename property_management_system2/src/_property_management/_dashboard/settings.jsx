@@ -1,8 +1,8 @@
-
+import { SettingsBreadcrumbs } from "../../shared"
 
 const Settings = () => {
   return (
-    <div>Settings</div>
+    <SettingsBreadcrumbs />
   )
 }
 

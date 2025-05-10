@@ -1,9 +1,7 @@
 import { Toaster } from 'react-hot-toast'
-import './App.css'
 import { Route, Routes } from 'react-router-dom'
 import DashboardLayout from './tenants/_tenant_dashboard'
-import Home from './tenants/home'
-import { EditProfile } from './tenants/edit-profile'
+import { Maintenance, PaymentsTab, TenantDashboard } from './tenants/pages'
 
 
 function App() {
@@ -12,8 +10,9 @@ function App() {
       <Toaster />
       <Routes>
         <Route element={<DashboardLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/dashboard/edit-profile" element={<EditProfile />} />
+          <Route path="/" element={<TenantDashboard />} />
+          <Route path="/dashboard/payments" element={<PaymentsTab />} />
+          <Route path="/dashboard/maintenance" element={<Maintenance />} />
         </Route>
       </Routes>
     </main>

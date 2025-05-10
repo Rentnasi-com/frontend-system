@@ -2,6 +2,18 @@ import { useState, useEffect } from "react";
 
 const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit }) => {
   const [errors, setErrors] = useState({});
+  const [inputValue, setInputValue] = useState("1");
+  const [duplicateCount, setDuplicateCount] = useState(1);
+  const [showBulkDuplicate, setShowBulkDuplicate] = useState(false);
+  const [selectedUnitIndex, setSelectedUnitIndex] = useState(null);
+
+  const handleBulkDuplicate = () => {
+    if (selectedUnitIndex !== null) {
+      duplicateUnit(floor.floor_no, selectedUnitIndex, duplicateCount);
+    }
+    setShowBulkDuplicate(false);
+  };
+
 
   const validateField = (field, value) => {
     if (!value && field === "unit_no") {
@@ -142,18 +154,21 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit })
                   <select
                     className="bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-red-500 focus:border-red-500 block w-full p-1.5"
                     onChange={(e) => {
-                      const selectedAction = e.target.value;
-                      if (selectedAction === "duplicate") {
-                        handleDuplicateUnit(index, e);
-                      } else if (selectedAction === "remove") {
+                      const action = e.target.value;
+                      if (action === "duplicate-single") {
+                        duplicateUnit(floor.floor_no, index, 1);
+                      } else if (action === "duplicate-multiple") {
+                        setSelectedUnitIndex(index);
+                        setShowBulkDuplicate(true);
+                      } else if (action === "remove") {
                         handleRemoveUnit(index, e);
                       }
-                      
                       e.target.value = "";
                     }}
                   >
                     <option value="">Select Action</option>
-                    <option value="duplicate">Duplicate</option>
+                    <option value="duplicate-single">Duplicate Single</option>
+                    <option value="duplicate-multiple">Duplicate Multiple</option>
                     <option value="remove">Remove</option>
                   </select>
                 </td>
@@ -162,6 +177,52 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit })
           </tbody>
         </table>
       </div>
+      {showBulkDuplicate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg w-80">
+            <h3 className="font-bold text-lg mb-4">Duplicate Multiple Units</h3>
+            <div className="mb-4">
+              <label className="block text-sm mb-2">
+                Number of copies:
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onBlur={() => {
+                    const num = parseInt(inputValue);
+                    if (isNaN(num) || num < 1) {
+                      setDuplicateCount(1);
+                      setInputValue("1");
+                    } else if (num > 20) {
+                      setDuplicateCount(20);
+                      setInputValue("20");
+                    } else {
+                      setDuplicateCount(num);
+                    }
+                  }}
+                  className="ml-2 p-1 border rounded w-16"
+                />
+              </label>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowBulkDuplicate(false)}
+                className="bg-red-700 text-white px-3 py-1 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDuplicate}
+                className="bg-green-700 text-white px-3 py-1 rounded"
+              >
+                Create Copies
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

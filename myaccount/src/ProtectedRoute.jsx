@@ -8,7 +8,7 @@ const ProtectedRoute = ({ children }) => {
   useEffect(() => {
     if (!token) {
       // window.location.href = "http://localhost:5173";
-      window.location.href = "https://auth.rentnasi.com";
+      window.location.href = "https://auth.rentalpay.africa";
     }
   }, [token]);
 

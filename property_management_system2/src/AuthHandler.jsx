@@ -59,7 +59,7 @@ const AuthHandler = () => {
 
       if (packageExpiry <= now) {
         toast.error("Your package has expired. Redirecting to billing...");
-        window.location.href = `https://billing.rentnasi.com?sessionId=${sessionId}&userId=${userId}`;
+        window.location.href = `https://billing.rentalpay.africa?sessionId=${sessionId}&userId=${userId}`;
         return false; // Package has expired
       }
       return true; // Package is still valid
