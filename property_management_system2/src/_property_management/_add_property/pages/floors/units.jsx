@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit }) => {
+const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit, propertyAmenities }) => {
   const [errors, setErrors] = useState({});
   const [inputValue, setInputValue] = useState("1");
   const [duplicateCount, setDuplicateCount] = useState(1);
@@ -19,6 +19,14 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit })
     if (!value && field === "unit_no") {
       return "Unit number is required";
     }
+    if (field === "unit_no" && typeof value !== "string") {
+      return "Unit number must be text";
+    }
+
+    if (!value && field === "unit_type") {
+      return "Unit type is required";
+    }
+
     if (["rent_amount", "deposit", "water", "electricity", "garbage"].includes(field)) {
       if (value !== "" && (isNaN(value) || value < 0)) {
         return `${field.replace("_", " ")} must be a non-negative number`;
@@ -28,22 +36,35 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit })
   };
 
   const handleFieldChange = (unitIndex, field, value) => {
+    const fieldState = getFieldState(floor.units[unitIndex], field);
+    if (fieldState.disabled) return;
+
+    if (field === "unit_no" || field === "unit_type") {
+      const error = validateField(field, value);
+      if (!error) {
+        updateUnitField(floor.floor_no, unitIndex, field, value);
+        setErrors((prevErrors) => ({ ...prevErrors, [`${unitIndex}_${field}`]: "" }));
+      } else {
+        setErrors((prevErrors) => ({ ...prevErrors, [`${unitIndex}_${field}`]: error }));
+      }
+      return;
+    }
+
     const sanitizedValue = value === "" ? "" : Number(value);
+
 
     // Validate and update field if no errors
     const error = validateField(field, sanitizedValue);
     if (!error) {
       updateUnitField(floor.floor_no, unitIndex, field, sanitizedValue);
 
-      // Update deposit to match rent_amount dynamically
-      if (field === "rent_amount") {
+      // Update deposit to match rent_amount dynamically (only if deposit is not disabled)
+      if (field === "rent_amount" && !getFieldState(floor.units[unitIndex], 'deposit').disabled) {
         updateUnitField(floor.floor_no, unitIndex, "deposit", sanitizedValue);
       }
 
-      // Clear error for valid field
       setErrors((prevErrors) => ({ ...prevErrors, [`${unitIndex}_${field}`]: "" }));
     } else {
-      // Set error for invalid field
       setErrors((prevErrors) => ({ ...prevErrors, [`${unitIndex}_${field}`]: error }));
     }
   };
@@ -66,22 +87,59 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit })
     });
   }, [floor.units, floor.floor_no, updateUnitField]);
 
-  const renderInputField = (unitIndex, field, value, placeholder) => (
-    <td className="p-1">
-      <input
-        type="number"
-        className="bg-white border border-gray-300 rounded text-gray-900 text-xs focus:ring-red-500 focus:border-red-500 block w-full p-1.5"
-        value={value}
-        onChange={(e) => handleFieldChange(unitIndex, field, e.target.value)}
-        placeholder={placeholder}
-        min="0"
-      />
-      {errors[`${unitIndex}_${field}`] && (
-        <p className="text-red-500 text-xs mt-1">{errors[`${unitIndex}_${field}`]}</p>
-      )}
-    </td>
-  );
+  const getFieldState = (unit, field) => {
+    if (!propertyAmenities) return { disabled: false };
 
+    switch (field) {
+      case 'water':
+        return {
+          disabled: propertyAmenities.is_water_inclusive_of_rent === 1,
+          value: propertyAmenities.is_water_inclusive_of_rent === 1 ? 0 : unit.water
+        };
+      case 'garbage':
+        return {
+          disabled: propertyAmenities.garbage_deposit === 1,
+          value: propertyAmenities.garbage_deposit === 1 ? 0 : unit.garbage
+        };
+      case 'deposit':
+        return {
+          disabled: propertyAmenities.rent_deposit !== 1,
+          value: propertyAmenities.rent_deposit === 1 ? unit.deposit : 0
+        };
+      default:
+        return { disabled: false, value: unit[field] };
+    }
+  };
+
+  const renderInputField = (unitIndex, field, value, placeholder) => {
+    const fieldState = getFieldState(floor.units[unitIndex], field);
+
+    return (
+      <td className="p-1">
+        <input
+          type="number"
+          className={`bg-white border border-gray-300 rounded text-gray-900 text-xs focus:ring-red-500 focus:border-red-500 block w-full p-1.5 ${fieldState.disabled ? 'bg-gray-100 cursor-not-allowed' : ''
+            }`}
+          value={fieldState.value}
+          onChange={(e) => !fieldState.disabled &&
+            handleFieldChange(unitIndex, field, e.target.value)}
+          placeholder={placeholder}
+          min="0"
+          disabled={fieldState.disabled}
+        />
+        {errors[`${unitIndex}_${field}`] && !fieldState.disabled && (
+          <p className="text-red-500 text-xs mt-1">{errors[`${unitIndex}_${field}`]}</p>
+        )}
+        {fieldState.disabled && (
+          <p className="text-xs text-gray-500">
+            {field === 'water' && 'Included in rent'}
+            {field === 'garbage' && 'Included in rent'}
+            {field === 'deposit' && 'Not required'}
+          </p>
+        )}
+      </td>
+    );
+  };
   return (
     <div className={`my-3 floor${floor.floor_no}`}>
       <div className="border rounded p-2">
@@ -120,7 +178,7 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit })
                   <input
                     type="text"
                     className="bg-white border border-gray-300 rounded text-gray-900 text-xs focus:ring-red-500 focus:border-red-500 block w-full p-1.5"
-                    value={unit.unit_no}
+                    defaultValue={unit.unit_no}
                     onChange={(e) => handleFieldChange(index, "unit_no", e.target.value)}
                     placeholder="Unit number"
                   />
@@ -128,13 +186,16 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit })
                     <p className="text-red-500 text-xs mt-1">{errors[`${index}_unit_no`]}</p>
                   )}
                 </td>
+
                 <td className="p-1">
                   <select
-                    className="bg-white border border-gray-300 text-gray-900 text-xs rounded focus:ring-red-500 focus:border-red-500 block w-full p-1.5"
+                    className={`bg-white border ${errors[`${index}_unit_type`] ? 'border-red-500' : 'border-gray-300'
+                      } text-gray-900 text-xs rounded focus:ring-red-500 focus:border-red-500 block w-full p-1.5`}
                     value={unit.unit_type}
                     onChange={(e) => handleFieldChange(index, "unit_type", e.target.value)}
+                    required
                   >
-                    <option value="">Select Unit</option>
+                    <option value="">Select Unit Type</option>
                     {unitTypes.map((type) => (
                       <option key={type.id} value={type.id}>
                         {type.name}

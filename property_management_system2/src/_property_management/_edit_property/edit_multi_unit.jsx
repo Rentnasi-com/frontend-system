@@ -17,6 +17,7 @@ const EditMultiUnit = () => {
   const navigate = useNavigate();
   const [floors, setFloors] = useState([]);
   const [unitTypes, setUnitTypes] = useState([]);
+  const [propertyAmenities, setPropertyAmenities] = useState([]);
   const baseUrl = import.meta.env.VITE_BASE_URL;
   const token = localStorage.getItem("token");
   const propertyId = localStorage.getItem("propertyId");
@@ -37,13 +38,34 @@ const EditMultiUnit = () => {
       fetchFloorsData();
     }
     fetchUnitTypes();
-  }, [propertyUrlId]);
+    fetchPropertyAmenities()
+  }, [propertyUrlId, token, baseUrl, propertyId]);
+
+  const fetchPropertyAmenities = async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/manage-property/edit-property/amenities?property_id=${propertyId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          }
+        }
+      )
+      setPropertyAmenities(response.data || {});
+      return response.data;
+    } catch (error) {
+      toast.error("Error fetching property amenities");
+    }
+  }
 
   const fetchUnitTypes = async () => {
     try {
-      const response = await axios.get(`${baseUrl}/get-unit-type`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      });
+      const response = await axios.get(`${baseUrl}/get-unit-type`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, Accept: "application/json"
+          },
+        });
       if (response.data?.success) {
         setUnitTypes(response.data.result || []);
       } else {
@@ -51,12 +73,12 @@ const EditMultiUnit = () => {
       }
     } catch (error) {
       toast.error("Error fetching unit types");
-      console.error(error);
     }
   };
 
   const fetchFloorsData = async () => {
     try {
+      const amenities = await fetchPropertyAmenities();
       const response = await axios.get(
         `${baseUrl}/manage-property/edit-property/floors?property_id=${propertyUrlId}`,
         { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } }
@@ -75,10 +97,14 @@ const EditMultiUnit = () => {
               unit_no: unit.unit_no,
               unit_type: String(unit.unit_type),
               rent_amount: parseFloat(unit.rent_amount),
-              deposit: parseFloat(unit.rent_deposit),
-              water: parseFloat(unit.water),
+              deposit: amenities.rent_deposit === 1 ? parseFloat(unit.rent_deposit) : 0,
+              water: amenities.is_water_inclusive_of_rent === 1 ? 0 : parseFloat(unit.water),
               electricity: parseFloat(unit.electricity),
-              garbage: parseFloat(unit.garbage),
+              garbage: amenities.garbage_deposit === 1 ? 0 : parseFloat(unit.garbage),
+              // Add flags for disabled fields
+              isDepositDisabled: amenities.rent_deposit !== 1,
+              isWaterDisabled: amenities.is_water_inclusive_of_rent === 1,
+              isGarbageDisabled: amenities.garbage_deposit === 1,
             })),
           }))
         );
@@ -87,7 +113,6 @@ const EditMultiUnit = () => {
       }
     } catch (error) {
       toast.error("Error fetching floors data");
-      console.error(error);
     }
   };
 
@@ -122,10 +147,13 @@ const EditMultiUnit = () => {
               unit_no: `F${floorNo}U${i + 1}`,
               unit_type: "",
               rent_amount: 0,
-              deposit: 0,
-              water: 0,
+              deposit: propertyAmenities.rent_deposit === 1 ? 0 : 0,
+              water: propertyAmenities.is_water_inclusive_of_rent === 1 ? 0 : 0,
               electricity: 0,
-              garbage: 0,
+              garbage: propertyAmenities.garbage_deposit === 1 ? 0 : 0,
+              isDepositDisabled: propertyAmenities.rent_deposit !== 1,
+              isWaterDisabled: propertyAmenities.is_water_inclusive_of_rent === 1,
+              isGarbageDisabled: propertyAmenities.garbage_deposit === 1,
             })),
           }
           : floor
@@ -166,6 +194,44 @@ const EditMultiUnit = () => {
 
   const handleFinalSubmit = async () => {
     try {
+      // Validate all units before submission
+      const validationErrors = {};
+      let hasErrors = false;
+
+      floors.forEach((floor, floorIndex) => {
+        floor.units.forEach((unit, unitIndex) => {
+          // Validate unit number
+          if (!unit.unit_no?.trim()) {
+            validationErrors[`${floor.floor_no}_${unitIndex}_unit_no`] =
+              "Unit number is required";
+            hasErrors = true;
+          }
+
+          // Validate unit type
+          if (!unit.unit_type) {
+            validationErrors[`${floor.floor_no}_${unitIndex}_unit_type`] =
+              "Unit type is required";
+            hasErrors = true;
+          }
+
+          // Validate numeric fields (optional)
+          const numericFields = ['rent_amount', 'deposit', 'water', 'electricity', 'garbage'];
+          numericFields.forEach(field => {
+            if (unit[field] !== undefined && (isNaN(unit[field]) || unit[field] < 0)) {
+              validationErrors[`${floor.floor_no}_${unitIndex}_${field}`] =
+                `${field.replace('_', ' ')} must be a non-negative number`;
+              hasErrors = true;
+            }
+          });
+        });
+      });
+
+      if (hasErrors) {
+        // Set the errors state if you have one, or handle them appropriately
+        // setErrors(validationErrors);
+        toast.error("Please fix all validation errors before submitting");
+        return;
+      }
       const isEdit = Boolean(propertyUrlId); // Determine if editing
       const url = isEdit
         ? `${baseUrl}/manage-property/edit-property/floors`
@@ -174,17 +240,17 @@ const EditMultiUnit = () => {
       const dataToSend = {
         property_id: parseInt(propertyId, 10),
         floors: floors.map((floor) => ({
-          ...(isEdit ? { floor_id: floor.floor_id } : {}), // Include floor_id if editing
+          ...(isEdit ? { floor_id: floor.floor_id } : {}),
           floor_number: floor.floor_no,
           units: floor.units.map((unit) => ({
-            ...(isEdit && unit.unit_id ? { unit_id: unit.unit_id } : {}), // Include unit_id only when editing
+            ...(isEdit && unit.unit_id ? { unit_id: unit.unit_id } : {}),
             unit_no: unit.unit_no,
-            unit_type: parseInt(unit.unit_type, 10), // Ensure unit_type is sent as integer
-            rent_deposit: parseFloat(unit.deposit), // Ensure numerical values are sent as numbers
+            unit_type: parseInt(unit.unit_type, 10),
+            rent_deposit: unit.isDepositDisabled ? 0 : parseFloat(unit.deposit),
             rent_amount: parseFloat(unit.rent_amount),
-            water: parseFloat(unit.water),
+            water: unit.isWaterDisabled ? 0 : parseFloat(unit.water),
             electricity: parseFloat(unit.electricity),
-            garbage: parseFloat(unit.garbage),
+            garbage: unit.isGarbageDisabled ? 0 : parseFloat(unit.garbage),
           })),
         })),
       };
@@ -204,10 +270,43 @@ const EditMultiUnit = () => {
       }
     } catch (error) {
       toast.error("Error submitting form");
-      console.error(error);
     }
   };
 
+  const duplicateUnit = (floorNo, unitIndex, count = 1) => {
+    setFloors(prevFloors =>
+      prevFloors.map(floor => {
+        if (floor.floor_no === floorNo) {
+          const originalUnit = floor.units[unitIndex];
+          const baseName = originalUnit.unit_no.replace(/\d+$/, '');
+
+          // Find highest existing number
+          const existingNumbers = floor.units
+            .map(u => {
+              const match = u.unit_no.match(new RegExp(`^${baseName}(\\d+)$`));
+              return match ? parseInt(match[1]) : 0;
+            })
+            .filter(n => !isNaN(n));
+
+          const startNumber = existingNumbers.length ? Math.max(...existingNumbers) + 1 :
+            parseInt(originalUnit.unit_no.match(/\d+$/)?.[0] || 0) + 1;
+
+          // Create all copies at once
+          const newUnits = Array.from({ length: count }, (_, i) => ({
+            ...originalUnit,
+            unit_no: `${baseName}${startNumber + i}`
+          }));
+
+          return {
+            ...floor,
+            units: [...floor.units, ...newUnits],
+            units_count: floor.units.length + count,
+          };
+        }
+        return floor;
+      })
+    );
+  };
 
   const goToPrevious = () => {
     navigate(`/edit-property/property-type?property_id=${propertyUrlId}`);
@@ -265,6 +364,8 @@ const EditMultiUnit = () => {
                   updateUnitField={updateUnitField}
                   removeUnit={removeUnit}
                   unitTypes={unitTypes}
+                  duplicateUnit={duplicateUnit}
+                  propertyAmenities={propertyAmenities}
                 />
               ))}
             </div>

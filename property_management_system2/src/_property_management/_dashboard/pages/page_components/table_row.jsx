@@ -15,6 +15,8 @@ const TableRow = ({ index, title, unit, type, floor, tenant, phone_no, arrears, 
                     <td className="px-4 py-2">{tenant}</td>
                 )}
 
+
+
                 {title && (
                     <td className="px-4 py-2">{title}</td>
                 )}
@@ -125,7 +127,9 @@ const TableRow = ({ index, title, unit, type, floor, tenant, phone_no, arrears, 
                 )}
                 {isShowing && (
                     <td className="px-4 py-2 flex space-x-4">
-                        <Link to={eyeLink}><FaEye className="text-gray-500 hover:text-gray-700 cursor-pointer" /></Link>
+                        <Link to={eyeLink}>
+                            <FaEye className="text-gray-500 hover:text-gray-700 cursor-pointer" />
+                        </Link>
                         <Link to={eyeEdit}><FaEdit className="text-purple-500 hover:text-purple-700 cursor-pointer" /></Link>
                         <FaTrash className="text-red-500 hover:text-red-700 cursor-pointer" />
 

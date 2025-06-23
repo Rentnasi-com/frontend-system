@@ -18,112 +18,50 @@ const Amenities = () => {
 
   const schema = z
     .object({
-      payment_method: z.enum(["mpesa", "bank"]).optional(),
-
-      mpesa_method: z.enum(["pay_bill", "phone_number", "buy_goods"]).optional(),
-      mpesa_phone_number: z.string().min(5, "Invalid mpesa phone number").optional(),
-      mpesa_hakikisha_name: z.string().min(2, "Invalid mpesa hakikisha name").optional(),
-      mpesa_pay_bill_number: z.string().min(3, "Invalid mpesa pay bill number").optional(),
-      mpesa_account_number: z.string().min(2, "Invalid mpesa account number").optional(),
-      mpesa_till_number: z.string().min(3, "Invalid mpesa till number").optional(),
-
-      bank_account_number: z.string().min(5, "Invalid bank account number").optional(),
-      bank_account_name: z.string().min(5, "Invalid bank account name").optional(),
-      bank_name: z.string().min(5, "Invalid bank name").optional(),
-      bank_branch: z.string().min(5, "Invalid bank branch").optional(),
-      bank_code: z.string().min(5, "Invalid bank code").optional(),
-
-      is_property_created: z.string().optional(),
-      properties: z.array(z.string().min(1)).optional(),
+      rent_deposit: z.string().nonempty("Deposit selection is required"),
+      is_water_inclusive_of_rent: z.string().nonempty("Water inclusion selection is required"),
+      water_billing_type: z.string().optional(),
+      water_cumulative_billing_amount: z.string().optional(),
+      water_per_unit_billing_amount: z.string().optional(),
+      electricity_deposit: z.string().nonempty("Electricity deposit selection is required"),
+      electricity_deposit_amount: z.string().optional(),
+      garbage_deposit: z.string().nonempty("Garbage deposit selection is required"),
+      garbage_charge_amount: z.string().optional(),
     })
     .superRefine((values, ctx) => {
-      // Validate Mpesa fields if payment_method is mpesa
-      if (values.payment_method === "mpesa") {
-        if (!values.mpesa_method) {
+      if (values.is_water_inclusive_of_rent === "0") {
+        if (!values.water_billing_type) {
           ctx.addIssue({
-            path: ["mpesa_method"],
-            message: "Mpesa method is required",
+            path: ["water_billing_type"],
+            message: "Water billing type is required when water is not inclusive",
           });
         }
-
-        // Validate fields based on the selected mpesa_method
-        if (values.mpesa_method === "pay_bill") {
-          if (!values.mpesa_pay_bill_number) {
-            ctx.addIssue({
-              path: ["mpesa_pay_bill_number"],
-              message: "Pay bill number is required for Mpesa pay bill",
-            });
-          }
-        } else if (values.mpesa_method === "phone_number") {
-          if (!values.mpesa_phone_number) {
-            ctx.addIssue({
-              path: ["mpesa_phone_number"],
-              message: "Phone number is required for Mpesa phone number",
-            });
-          }
-        } else if (values.mpesa_method === "buy_goods") {
-          if (!values.mpesa_till_number) {
-            ctx.addIssue({
-              path: ["mpesa_till_number"],
-              message: "Till number is required for Mpesa buy goods",
-            });
-          }
-        }
-
-        // Ignore validation for irrelevant fields
-        if (values.mpesa_method !== "pay_bill") {
-          values.mpesa_pay_bill_number = undefined;
-        }
-        if (values.mpesa_method !== "phone_number") {
-          values.mpesa_phone_number = undefined;
-        }
-        if (values.mpesa_method !== "buy_goods") {
-          values.mpesa_till_number = undefined;
-        }
-      }
-
-      // Validate Bank fields if payment_method is bank
-      if (values.payment_method === "bank") {
-        if (!values.bank_account_number) {
+        if (values.water_billing_type === "cumulative" && !values.water_cumulative_billing_amount) {
           ctx.addIssue({
-            path: ["bank_account_number"],
-            message: "Bank account number is required",
+            path: ["water_cumulative_billing_amount"],
+            message: "Cumulative amount is required when billing type is cumulative",
           });
         }
-        if (!values.bank_account_name) {
+        if (values.water_billing_type === "meter_reading" && !values.water_per_unit_billing_amount) {
           ctx.addIssue({
-            path: ["bank_account_name"],
-            message: "Bank account name is required",
-          });
-        }
-        if (!values.bank_name) {
-          ctx.addIssue({
-            path: ["bank_name"],
-            message: "Bank name is required",
-          });
-        }
-        if (!values.bank_branch) {
-          ctx.addIssue({
-            path: ["bank_branch"],
-            message: "Bank branch is required",
-          });
-        }
-        if (!values.bank_code) {
-          ctx.addIssue({
-            path: ["bank_code"],
-            message: "Bank code is required",
+            path: ["water_per_unit_billing_amount"],
+            message: "Amount per unit is required when billing type is meter reading",
           });
         }
       }
 
-      // Validate properties if is_property_created is "1"
-      if (values.is_property_created === "1") {
-        if (!values.properties || values.properties.length === 0) {
-          ctx.addIssue({
-            path: ["properties"],
-            message: "At least one property is required",
-          });
-        }
+      if (values.electricity_deposit === "1" && !values.electricity_deposit_amount) {
+        ctx.addIssue({
+          path: ["electricity_deposit_amount"],
+          message: "Electricity deposit amount is required when deposit is selected",
+        });
+      }
+
+      if (values.garbage_deposit === "0" && !values.garbage_charge_amount) {
+        ctx.addIssue({
+          path: ["garbage_charge_amount"],
+          message: "Garbage charge amount is required when deposit is not included",
+        });
       }
     });
 
@@ -258,7 +196,7 @@ const Amenities = () => {
           <form onSubmit={handleSubmit(onSubmit)}>
             <h6 className="block my-2 text-sm font-medium text-gray-900">1. DEPOSIT</h6>
             <RadioGroup
-              label="Do you charge a deposit?"
+              label="Do you charge a deposit for rent?"
               name="rent_deposit"
               options={[
                 { value: "1", label: "Yes" },

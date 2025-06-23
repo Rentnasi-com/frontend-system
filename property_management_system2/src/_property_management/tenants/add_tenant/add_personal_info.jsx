@@ -24,13 +24,13 @@ const Add_Personal_Info = () => {
 
   const schema = z.object({
     name: z.coerce.string().min(3, "Username must be at least 3 characters long"),
-    email: z.string().email("Invalid email"),
+    email: z.string().email("Invalid email").optional().or(z.literal("")),
     phone: z.string().min(5, "Invalid phone number"),
-    id_or_passport_number: z.string().min(4, "Invalid Id or passport number"),
-    next_of_kin_name: z.coerce.string().min(3, "Kin name must be at least 3 characters long"),
-    next_of_kin_relationship: z.coerce.string().min(2, "Kin relationship must be at least 3 characters long"),
-    next_of_kin_phone: z.coerce.string().min(5, "Invalid phone number")
-  })
+    id_or_passport_number: z.string().min(4, "Invalid ID or passport number").optional().or(z.literal("")),
+    next_of_kin_name: z.coerce.string().min(3, "Kin name must be at least 3 characters long").optional().or(z.literal("")),
+    next_of_kin_relationship: z.coerce.string().min(2, "Kin relationship must be at least 2 characters long").optional().or(z.literal("")),
+    next_of_kin_phone: z.coerce.string().min(5, "Invalid phone number").optional().or(z.literal("")),
+  });
 
   const {
     register,
@@ -48,7 +48,7 @@ const Add_Personal_Info = () => {
       if (images.length > 0 && images[0].data_url) {
         const base64Image = images[0].data_url;
         const conversionResponse = await axios.post(
-          "https://files.rentnasi.com/upload/create",
+          "https://files.rentalpay.africa/upload/create",
           { image: base64Image },
           {
             headers: {
@@ -58,7 +58,7 @@ const Add_Personal_Info = () => {
         );
 
         if (!conversionResponse.data.success) {
-          toast.error(conversionResponse.data.message || "Error while uploading your ID or passport!" );
+          toast.error(conversionResponse.data.message || "Error while uploading your ID or passport!");
           return; // Exit if image upload fails
         }
         document_url = conversionResponse.data.urls;
@@ -66,9 +66,9 @@ const Add_Personal_Info = () => {
       const dataToSend = {
         ...values,
         document_url,
-        
+
       }
-      
+
       const response = await axios.post(
         `${baseUrl}/manage-tenant/create-tenant/basic-info`, dataToSend,
         {

@@ -1,108 +1,8 @@
-import toast from "react-hot-toast"
-import { SettingsBreadcrumbs } from "../../../shared"
-import axios from "axios"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { useNavigate } from "react-router-dom"
-import { Loader } from "lucide-react"
-import { FaArrowRight } from "react-icons/fa"
+import React from 'react'
 
-const PaymentsDetails = () => {
-    const navigate = useNavigate()
-    const token = localStorage.getItem('token')
-    const baseUrl = import.meta.env.VITE_BASE_URL
-    const schema = z.object({
-        payment_method: z.enum(["mpesa", "bank"]).optional(),
-        preferred_method: z.enum(["yes", "no"]).optional(),
-
-        mpesa_method: z.enum(["send_money", "pay_bill", "buy_goods"]).optional(), // Changed to match your UI values
-        mpesa_phone_number: z.string().min(5, "Invalid mpesa phone number").optional(),
-        mpesa_hakikisha_name: z.string().min(2, "Invalid mpesa hakikisha name").optional(),
-        mpesa_pay_bill_number: z.string().min(3, "Invalid mpesa pay bill number").optional(),
-        mpesa_account_number: z.string().min(2, "Invalid mpesa account number").optional(),
-        mpesa_till_number: z.string().min(3, "Invalid mpesa till number").optional(),
-
-        bank_account_number: z.string().min(5, "Invalid bank account number").optional(),
-        bank_account_name: z.string().min(5, "Invalid bank account name").optional(),
-        bank_name: z.string().min(5, "Invalid bank name").optional(),
-        bank_branch: z.string().min(5, "Invalid bank branch").optional(),
-        bank_code: z.string().min(5, "Invalid bank code").optional(),
-    }).refine((data) => {
-        if (data.payment_method === "mpesa") {
-            if (!data.mpesa_method) {
-                throw new Error("Please select an Mpesa payment method");
-            }
-
-            switch (data.mpesa_method) {
-                case "send_money":
-                    if (!data.mpesa_phone_number || !data.mpesa_hakikisha_name) {
-                        throw new Error("Phone number and Hakikisha name are required for send money");
-                    }
-                    break;
-                case "pay_bill":
-                    if (!data.mpesa_pay_bill_number || !data.mpesa_account_number) {
-                        throw new Error("Paybill number and account number are required");
-                    }
-                    break;
-                case "buy_goods":
-                    if (!data.mpesa_till_number) {
-                        throw new Error("Till number is required for buy goods");
-                    }
-                    break;
-            }
-        } else if (data.payment_method === "bank") {
-            if (!data.bank_account_number || !data.bank_account_name ||
-                !data.bank_name || !data.bank_branch || !data.bank_code) {
-                throw new Error("All bank details are required");
-            }
-        }
-
-        return true;
-    }, {
-        message: "Please complete all required fields",
-    });
-
-
-    const {
-        register,
-        handleSubmit,
-        watch,
-        formState: { errors, isSubmitting },
-
-    } = useForm({
-        resolver: zodResolver(schema),
-    })
-
-    const payment_method = watch("payment_method")
-    const mpesa_method = watch("mpesa_method")
-    const preferred_method = watch("preferred_method")
-
-    const onSubmit = async (values) => {
-        try {
-            const dataToSend = {
-                ...values,
-            }
-
-            const response = await axios.post(`${baseUrl}/manage-landlord/create-landlord/other-info`, dataToSend,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        Accept: "application/json"
-                    }
-                }
-            )
-            if (response.data.success) {
-                navigate('/landlords')
-                toast.success(response.data.message)
-            }
-        } catch (error) {
-            toast.success(error.data.message)
-        }
-    }
+const index2 = () => {
     return (
-        <>
-            <SettingsBreadcrumbs />
+        <div>
             <div className="p-4 flex justify-between mx-4">
                 <div>
                     <h1 className="text-xl font-bold text-gray-700">Payments Details</h1>
@@ -113,32 +13,95 @@ const PaymentsDetails = () => {
                 <div className="bg-white rounded-xl shadow col-span-2 p-4 mx-4 h-full">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="flex space-x-6">
-                            <h6 className="text-sm font-medium text-gray-900">Do you prefer Rentalpay as your primary payment method</h6>
+                            <h6 className="text-sm font-medium text-gray-900">1. Do you prefer Rentalpay as your primary payment method</h6>
                             <label>
                                 <input
-                                    {...register("preferred_method")}
+                                    {...register("rent_received_by_rentnasi")}
                                     className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
                                     type="radio"
-                                    value="yes"
+                                    value="true"
                                 />
-                                Yes
+                                True
                             </label>
                             <label>
                                 <input
-                                    {...register("preferred_method")}
+                                    {...register("rent_received_by_rentnasi")}
                                     className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
                                     type="radio"
-                                    value="no"
+                                    value="false"
                                 />
                                 No
                             </label>
                         </div>
-                        {errors.preferred_method && (
+                        {errors.rent_received_by_rentnasi && (
                             <p className="text-xs text-red-500">
-                                {errors.preferred_method.message}
+                                {errors.rent_received_by_rentnasi.message}
                             </p>
                         )}
-                        {preferred_method === "no" && (
+                        {rent_received_by_rentnasi === "true" && (
+                            <>
+                                <h4 className="text-sm font-medium text-gray-900 my-4">2. All your properties list</h4>
+                                <div className="rounded-lg border border-gray-200 bg-white mt-5">
+
+                                    {loading ? (
+                                        <p className="text-center py-4">Loading<span className="animate-pulse">...</span></p>
+                                    ) : (
+                                        <div className="w-full">
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-full table-auto">
+                                                    <thead className="bg-gray-100 text-left text-xs border-y ">
+                                                        <tr className="py-2">
+                                                            <th className="px-4 py-2">Photo</th>
+                                                            <th className="px-4 py-2">Property Details</th>
+                                                            <th className="px-4 py-2">Account Number</th>
+                                                            <th className="px-4 py-2">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {properties.map((property, index) => (
+                                                            <tr key={index} className="border-b text-sm">
+                                                                <td className="px-4 py-2">
+                                                                    <img src={property.cover_image} alt={property.property_name} className="w-12 h-12 rounded-full" />
+                                                                </td>
+
+                                                                <td className="px-4 py-2">
+                                                                    {property.property_name}
+                                                                    <br />
+                                                                    <span className="text-gray-600 text-xs">
+                                                                        {property.location}
+                                                                    </span>
+                                                                    <br />
+                                                                    <span className="text-gray-500 text-xs">
+                                                                        {property.property_type}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-4 py-2">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="bg-white border border-gray-300 rounded text-gray-900 text-xs focus:ring-red-500 focus:border-red-500 block w-full px-1.5 py-3"
+
+                                                                        placeholder="Account number"
+                                                                    />
+                                                                </td>
+                                                                <td className="px-4 py-2 space-x-4">
+                                                                    <button className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5">
+                                                                        Save
+                                                                    </button>
+                                                                    <button className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5">
+                                                                        Delete
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                        {rent_received_by_rentnasi === "false" && (
                             <>
                                 <div className="flex space-x-6">
                                     <h6 className="text-sm font-medium text-gray-900">What is your preferred method of payment</h6>
@@ -407,28 +370,11 @@ const PaymentsDetails = () => {
                                 )}
                             </>
                         )}
-
-                        <div className="flex flex-row-reverse mt-4">
-                            <button
-                                disabled={isSubmitting}
-                                type="submit"
-                                className="flex focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-sm px-5 py-2.5">
-                                {isSubmitting ? (
-                                    <div className="flex justify-center items-center gap-2">
-                                        <Loader className="animate-spin" /> Loading ...
-                                    </div>
-                                ) : (
-                                    <div className="flex justify-center items-center space-x-2">
-                                        <p>Finish</p> <FaArrowRight />
-                                    </div>
-                                )}
-                            </button>
-                        </div>
                     </form>
                 </div>
             </div>
-        </>
+        </div>
     )
 }
 
-export default PaymentsDetails
+export default index2

@@ -1,4 +1,4 @@
-import { CreditCardIcon, DocumentTextIcon, EnvelopeIcon, HomeIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+import { BuildingOffice2Icon, CreditCardIcon, DocumentTextIcon, EnvelopeIcon, HomeIcon, UsersIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 
 const Aside = () => {
@@ -7,7 +7,7 @@ const Aside = () => {
       <div className="h-full py-4 overflow-y-auto">
         <Link
           to="/"
-          className={`flex items-center w-full px-4 py-3 rounded-lg bg-indigo-50 text-indigo-700`}
+          className={`flex items-center w-full px-4 py-3 rounded-lg bg-red-50 text-red-700`}
         >
           <HomeIcon className="h-5 w-5 mr-3" />
           Overview
@@ -40,6 +40,13 @@ const Aside = () => {
         >
           <EnvelopeIcon className="h-5 w-5 mr-3" />
           Messages
+        </Link>
+        <Link
+          to="/dashboard/social-amenities"
+          className={`flex items-center w-full px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-100`}
+        >
+          <BuildingOffice2Icon className="h-5 w-5 mr-3" />
+          Social Amenities
         </Link>
       </div>
       <div className="text-white text-center border rounded mx-5 p-2 mt-20 bg-gradient-to-r from-red-400 via-red-500 to-red-600 hover:bg-gradient-to-br">

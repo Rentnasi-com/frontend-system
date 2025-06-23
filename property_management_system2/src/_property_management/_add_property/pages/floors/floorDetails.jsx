@@ -2,11 +2,18 @@ import toast from "react-hot-toast";
 
 const FloorDetails = ({ floor, updateUnits, removeFloor }) => {
   const handleUnitsCountChange = (e) => {
-    const value = parseInt(e.target.value, 10);
-    if (!isNaN(value) && value >= 0) {
-      updateUnits(floor.floor_no, value);
+    const value = e.target.value;
+
+    // Allow empty string (when user deletes the 0)
+    if (value === "") {
+      updateUnits(floor.floor_no, "");
+      return;
+    }
+
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue >= 0) {
+      updateUnits(floor.floor_no, numValue);
     } else {
-      // Optional: handle invalid input, e.g., show a toast notification
       toast.error("Please enter a valid number of units.");
     }
   };
@@ -34,7 +41,7 @@ const FloorDetails = ({ floor, updateUnits, removeFloor }) => {
         >
           Remove Floor
         </button>
-        
+
       </td>
     </tr>
   );

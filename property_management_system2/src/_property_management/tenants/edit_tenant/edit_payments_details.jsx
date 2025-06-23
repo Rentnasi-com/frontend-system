@@ -308,8 +308,7 @@ const EditTenantProperty = () => {
         } : {})
       }
 
-      console.log("Values:", values)
-      console.log("dataToSend:", dataToSend)
+      
 
       const response = await axios.patch(
         `${baseUrl}/manage-tenant/create-tenant/other-info`,
@@ -773,7 +772,7 @@ const EditTenantProperty = () => {
                   {...register("mode_for_late_payment")}
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
                 >
-                  <option value="">Select model for late payment</option>
+                  <option value="">Select mode for late payment</option>
                   <option value="fixed_amount">Fixed amount</option>
                   <option value="percentage">Percentage</option>
                 </select>

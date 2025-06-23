@@ -13,6 +13,8 @@ const ManageImages = () => {
   const [unitTypes, setUnitTypes] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
   const navigate = useNavigate();
+  const baseUrl = import.meta.env.VITE_BASE_URL;
+  const token = localStorage.getItem("token");
 
   const onChange = async (imageList, unitTypeId) => {
     const maxSize = 10 * 1024 * 1024;
@@ -58,7 +60,7 @@ const ManageImages = () => {
   useEffect(() => {
     const fetchUnitTypes = async () => {
       const propertyId = localStorage.getItem("propertyId");
-      const token = localStorage.getItem("token");
+      
 
       if (!propertyId) {
         toast.error("Property ID not found in localStorage!");
@@ -73,7 +75,7 @@ const ManageImages = () => {
 
       try {
         const response = await axios.get(
-          `https://pm.api.rentnasi.com/api/v1/manage-property/create-property/get-unit-types?property_id=${propertyId}`,
+          `${baseUrl}/manage-property/create-property/get-unit-types?property_id=${propertyId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -139,7 +141,7 @@ const ManageImages = () => {
       };
 
       const updateResponse = await axios.post(
-        "https://pm.api.rentnasi.com/api/v1/manage-property/create-property/cover-image",
+        `${baseUrl}/manage-property/create-property/cover-image`,
         dataToSend,
         {
           headers: {
@@ -210,7 +212,7 @@ const ManageImages = () => {
       };
 
       const updateResponse = await axios.post(
-        "https://pm.api.rentnasi.com/api/v1/manage-property/create-property/other-images",
+        `${baseUrl}/manage-property/create-property/other-images`,
         dataToSend,
         {
           headers: {

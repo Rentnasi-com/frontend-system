@@ -17,6 +17,7 @@ const PropertyFloors = () => {
   const navigate = useNavigate();
   const [floors, setFloors] = useState([]);
   const [unitTypes, setUnitTypes] = useState([]);
+  const [propertyAmenities, setPropertyAmenities] = useState([]);
   const baseUrl = import.meta.env.VITE_BASE_URL;
   const token = localStorage.getItem("token");
   const propertyId = localStorage.getItem("propertyId");
@@ -37,13 +38,34 @@ const PropertyFloors = () => {
       fetchFloorsData();
     }
     fetchUnitTypes();
-  }, [propertyUrlId]);
+    fetchPropertyAmenities()
+  }, [propertyUrlId, token, baseUrl, propertyId]);
+
+  const fetchPropertyAmenities = async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/manage-property/edit-property/amenities?property_id=${propertyId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          }
+        }
+      )
+      setPropertyAmenities(response.data || {});
+      return response.data;
+    } catch (error) {
+      toast.error("Error fetching property amenities");
+    }
+  }
 
   const fetchUnitTypes = async () => {
     try {
-      const response = await axios.get(`${baseUrl}/get-unit-type`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-      });
+      const response = await axios.get(`${baseUrl}/get-unit-type`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, Accept: "application/json"
+          },
+        });
       if (response.data?.success) {
         setUnitTypes(response.data.result || []);
       } else {
@@ -56,6 +78,7 @@ const PropertyFloors = () => {
 
   const fetchFloorsData = async () => {
     try {
+      const amenities = await fetchPropertyAmenities();
       const response = await axios.get(
         `${baseUrl}/manage-property/edit-property/floors?property_id=${propertyUrlId}`,
         { headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } }
@@ -74,10 +97,14 @@ const PropertyFloors = () => {
               unit_no: unit.unit_no,
               unit_type: String(unit.unit_type),
               rent_amount: parseFloat(unit.rent_amount),
-              deposit: parseFloat(unit.rent_deposit),
-              water: parseFloat(unit.water),
+              deposit: amenities.rent_deposit === 1 ? parseFloat(unit.rent_deposit) : 0,
+              water: amenities.is_water_inclusive_of_rent === 1 ? 0 : parseFloat(unit.water),
               electricity: parseFloat(unit.electricity),
-              garbage: parseFloat(unit.garbage),
+              garbage: amenities.garbage_deposit === 1 ? 0 : parseFloat(unit.garbage),
+              // Add flags for disabled fields
+              isDepositDisabled: amenities.rent_deposit !== 1,
+              isWaterDisabled: amenities.is_water_inclusive_of_rent === 1,
+              isGarbageDisabled: amenities.garbage_deposit === 1,
             })),
           }))
         );
@@ -120,10 +147,13 @@ const PropertyFloors = () => {
               unit_no: `F${floorNo}U${i + 1}`,
               unit_type: "",
               rent_amount: 0,
-              deposit: 0,
-              water: 0,
+              deposit: propertyAmenities.rent_deposit === 1 ? 0 : 0,
+              water: propertyAmenities.is_water_inclusive_of_rent === 1 ? 0 : 0,
               electricity: 0,
-              garbage: 0,
+              garbage: propertyAmenities.garbage_deposit === 1 ? 0 : 0,
+              isDepositDisabled: propertyAmenities.rent_deposit !== 1,
+              isWaterDisabled: propertyAmenities.is_water_inclusive_of_rent === 1,
+              isGarbageDisabled: propertyAmenities.garbage_deposit === 1,
             })),
           }
           : floor
@@ -164,28 +194,82 @@ const PropertyFloors = () => {
 
   const handleFinalSubmit = async () => {
     try {
-      const isEdit = Boolean(propertyUrlId); // Determine if editing
+      // Validate all units before submission
+      const validationErrors = {};
+      let hasErrors = false;
+
+      floors.forEach((floor, floorIndex) => {
+        floor.units.forEach((unit, unitIndex) => {
+          // Validate unit number
+          if (!unit.unit_no?.trim()) {
+            validationErrors[`${floor.floor_no}_${unitIndex}_unit_no`] =
+              "Unit number is required";
+            hasErrors = true;
+          }
+
+          // Validate unit type
+          if (!unit.unit_type) {
+            validationErrors[`${floor.floor_no}_${unitIndex}_unit_type`] =
+              "Unit type is required";
+            hasErrors = true;
+          }
+
+          // Validate numeric fields (optional)
+          const numericFields = ['rent_amount', 'deposit', 'water', 'electricity', 'garbage'];
+          numericFields.forEach(field => {
+            if (unit[field] !== undefined && (isNaN(unit[field]) || unit[field] < 0)) {
+              validationErrors[`${floor.floor_no}_${unitIndex}_${field}`] =
+                `${field.replace('_', ' ')} must be a non-negative number`;
+              hasErrors = true;
+            }
+          });
+        });
+      });
+
+      if (hasErrors) {
+        // Set the errors state if you have one, or handle them appropriately
+        // setErrors(validationErrors);
+        toast.error("Please fix all validation errors before submitting");
+        return;
+      }
+
+      const isEdit = Boolean(propertyUrlId);
       const url = isEdit
         ? `${baseUrl}/manage-property/edit-property/floors`
         : `${baseUrl}/manage-property/create-property/floors`;
 
+      // Prepare data with additional validation
       const dataToSend = {
         property_id: parseInt(propertyId, 10),
-        floors: floors.map((floor) => ({
-          ...(isEdit ? { floor_id: floor.floor_id } : {}), // Include floor_id if editing
-          floor_number: floor.floor_no,
-          units: floor.units.map((unit) => ({
-            ...(isEdit && unit.unit_id ? { unit_id: unit.unit_id } : {}), // Include unit_id only when editing
-            unit_no: unit.unit_no,
-            unit_type: parseInt(unit.unit_type, 10), // Ensure unit_type is sent as integer
-            rent_deposit: parseFloat(unit.deposit), // Ensure numerical values are sent as numbers
-            rent_amount: parseFloat(unit.rent_amount),
-            water: parseFloat(unit.water),
-            electricity: parseFloat(unit.electricity),
-            garbage: parseFloat(unit.garbage),
-          })),
-        })),
+        floors: floors.map((floor) => {
+          // Validate floor has at least one unit
+          if (floor.units.length === 0) {
+            toast.error(`Floor ${floor.floor_no} has no units`);
+            throw new Error(`Floor ${floor.floor_no} has no units`);
+          }
+
+          return {
+            ...(isEdit && { floor_id: floor.floor_id }),
+            floor_number: floor.floor_no,
+            units: floor.units.map((unit) => ({
+              ...(isEdit && unit.unit_id && { unit_id: unit.unit_id }),
+              unit_no: unit.unit_no.trim(),
+              unit_type: parseInt(unit.unit_type, 10),
+              rent_deposit: unit.isDepositDisabled ? 0 : parseFloat(unit.deposit || 0),
+              rent_amount: parseFloat(unit.rent_amount || 0),
+              water: unit.isWaterDisabled ? 0 : parseFloat(unit.water || 0),
+              electricity: parseFloat(unit.electricity || 0),
+              garbage: unit.isGarbageDisabled ? 0 : parseFloat(unit.garbage || 0),
+            })).filter(unit => unit.unit_no) // Filter out any empty units
+          };
+        }).filter(floor => floor.units.length > 0) // Filter out empty floors
       };
+
+      // Additional validation before sending
+      if (dataToSend.floors.length === 0) {
+        toast.error("At least one floor with units is required");
+        return;
+      }
 
       const response = await axios.post(url, dataToSend, {
         headers: {
@@ -194,14 +278,15 @@ const PropertyFloors = () => {
         },
       });
 
-      if (response.data.status) {
+      if (response.data?.status) {
         toast.success(response.data.message);
         navigate("/add-property/manage-images");
       } else {
-        toast.error(response.data.message);
+        toast.error(response.data?.message || "Failed to save floor data");
       }
     } catch (error) {
-      toast.error("Error submitting form");
+      console.error("Submission error:", error);
+      toast.error(error.response?.data?.message || "Error submitting form");
     }
   };
 
@@ -297,6 +382,7 @@ const PropertyFloors = () => {
                   removeUnit={removeUnit}
                   unitTypes={unitTypes}
                   duplicateUnit={duplicateUnit}
+                  propertyAmenities={propertyAmenities}
                 />
               ))}
             </div>

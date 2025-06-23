@@ -3,7 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AddMultiSingleUnit, Amenities, General_information, ManageImages, Property_floors, Property_summary, Property_types, Single_Unit, } from './_property_management/_add_property/pages';
 import { Account, HelpCenter, Home2, Inquiries, Maintenance, PropertyDashboard, Recycle, Reports, Settings } from './_property_management/_dashboard';
 import ChatRoom from './_property_management/_dashboard/pages/chat_room';
-import { MaintenanceChatRoom, MarketUnit, PaymentHistory, PaymentsDetails, Property, PropertyListing, ReceivePayment, RevenueBreakdown, TenantHistory, Unit, UnitListing } from './_property_management/_dashboard/pages';
+import { DueRent, MaintenanceChatRoom, MarketUnit, PaymentHistory, Property, PropertyListing, ReceivePayment, RevenueBreakdown, TenantHistory, Unit, UnitListing } from './_property_management/_dashboard/pages';
 import DashboardLayout from './_dashboardLayout';
 import AuthHandler from './AuthHandler';
 import ProtectedRoute from './ProtectedRoute';
@@ -16,6 +16,7 @@ import { EditLandlordPaymentsDetails, EditLandlordPersonalInfo } from './_proper
 import {Add_Personal_Info, AddTenantProperty } from './_property_management/tenants/add_tenant';
 import {EditPersonalInfo, EditTenantProperty } from './_property_management/tenants/edit_tenant';
 import { Tenants } from './_property_management/tenants/dashboard';
+import PaymentsDetails from './_property_management/_dashboard/pages/settings/payments_details';
 
 const App = () => {
   return (
@@ -156,6 +157,10 @@ const App = () => {
             <Route
               path="/dashboard/reports/revenue-breakdown"
               element={<ProtectedRoute element={<MonthlyRevenueBreakdown />} />}
+            />
+            <Route
+              path="/dashboard/due-rent"
+              element={<ProtectedRoute element={<DueRent />} />}
             />
             <Route
               path="/settings"

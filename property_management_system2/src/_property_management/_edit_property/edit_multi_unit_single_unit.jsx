@@ -83,8 +83,6 @@ function EditMultiUnitSingleUnit() {
                 property_id: propertyIdFromUrl,
             }
 
-            console.log(dataToSend)
-
             const response = await toast.promise(
                 axios.patch(
                     `${baseUrl}/manage-property/edit-property/floors`,

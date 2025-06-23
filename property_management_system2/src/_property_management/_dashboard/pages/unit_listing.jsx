@@ -2,7 +2,45 @@ import { useEffect, useState } from "react";
 import { DashboardHeader, PropertyCard, TableRow } from "./page_components";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
+import toast from "react-hot-toast";
 
+const SkeletonLoader = ({ className, rounded = false }) => (
+    <div
+        className={`bg-gray-200 animate-pulse ${rounded ? 'rounded-full' : 'rounded'} ${className}`}
+    ></div>
+);
+
+const TableRowSkeleton = () => (
+    <tr className="border-b">
+        <td className="px-4 py-3"><SkeletonLoader className="w-12 h-12" rounded /></td>
+        <td className="px-4 py-3">
+            <SkeletonLoader className="h-4 w-32 mb-1" />
+            <SkeletonLoader className="h-3 w-24" />
+        </td>
+        {[...Array(4)].map((_, i) => (
+            <td key={i} className="px-4 py-3">
+                <SkeletonLoader className="h-6 w-12 mx-auto" />
+            </td>
+        ))}
+        <td className="px-4 py-3 flex space-x-4">
+            <SkeletonLoader className="h-5 w-5 rounded" />
+            <SkeletonLoader className="h-5 w-5 rounded" />
+            <SkeletonLoader className="h-5 w-5 rounded" />
+        </td>
+    </tr>
+);
+const StatCardSkeleton = () => (
+    <div className="bg-white border border-gray-200 rounded-lg p-2">
+        <div className="flex justify-between items-center">
+            <SkeletonLoader className="h-8 w-8 rounded" />
+            <SkeletonLoader className="h-6 w-6 rounded" />
+        </div>
+        <div className="mt-3">
+            <SkeletonLoader className="h-4 w-24 mb-2" />
+            {/* <SkeletonLoader className="h-6 w-16" /> */}
+        </div>
+    </div>
+);
 const UnitListing = () => {
     const [propertiesBreakdown, setPropertiesBreakdown] = useState([])
     const [propertiesRevenue, setPropertiesRevenue] = useState([])
@@ -13,6 +51,7 @@ const UnitListing = () => {
     const [pagination, setPagination] = useState([])
     const [selectedProperty, setSelectedProperty] = useState('')
     const [properties, setProperties] = useState([])
+    const [loading, setLoading] = useState(true);
 
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
@@ -38,7 +77,9 @@ const UnitListing = () => {
                 setPagination(response.data.result)
             }
         } catch (error) {
-            console.error(error)
+            toast.error("An error occurred while fetching property details!")
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -55,7 +96,7 @@ const UnitListing = () => {
                 setProperties(response.data.result)
             }
         } catch (error) {
-            console.error(error.message)
+            toast.error("Failed to fetch properties")
         }
     }
 
@@ -114,17 +155,23 @@ const UnitListing = () => {
                 properties={properties}
                 onSelectChange={handleSelectChange}
             />
-            <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 py-1 px-4">
-                {stats.map((stat, index) => (
-                    <div key={index} className={` bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 ${index > 2 ? "md:col-span-3" : "md:col-span-4"}`}>
-                        <PropertyCard
-                            redirectUrl={stat.redirectUrl}
-                            iconSrc={stat.iconSrc}
-                            label={stat.label}
-                            value={stat.value}
-                        />
-                    </div>
-                ))}
+            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 py-1 px-4">
+                {loading ? (
+                    Array(3).fill(0).map((_, index) => (
+                        <StatCardSkeleton key={index} />
+                    ))
+                ) : (
+                    stats.map((stat, index) => (
+                        <div key={index} className={` bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2`}>
+                            <PropertyCard
+                                redirectUrl={stat.redirectUrl}
+                                iconSrc={stat.iconSrc}
+                                label={stat.label}
+                                value={stat.value}
+                            />
+                        </div>
+                    ))
+                )}
             </div>
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
                 <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
@@ -143,24 +190,30 @@ const UnitListing = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {propertiesUnits.map((property, index) => (
-                                    <TableRow
-                                        key={index}
-                                        title={property.property_name}
-                                        unit={property.unit_number}
-                                        type={property.unit_type}
-                                        floor={property.floor_number}
-                                        monthly_rent={property.rent_amount}
-                                        status={property.availability_status}
-                                        eyeLink={`/property/single-unit/unit_id:${property.unit_id}`}
-                                        eyeEdit={`/edit-property/single-unit/property_id:${property.property_id}/unit_id:${property.unit_id}`}
-                                        isShowing={true}
-                                        isShowingButtons={property.availability_status === "available"}
-                                        isInMarket={property.in_market == true}
-                                        addTenantLink={`/tenants/add-personal-details/`}
-                                        addMarketUnitLink={`/property/market-unit?property_id=${property.property_id}&unit_id=${property.unit_id}`}
-                                    />
-                                ))}
+                                {loading ? (
+                                    Array(5).fill(0).map((_, index) => (
+                                        <TableRowSkeleton key={index} />
+                                    ))
+                                ) : (
+                                    propertiesUnits.map((property, index) => (
+                                        <TableRow
+                                            key={index}
+                                            title={property.property_name}
+                                            unit={property.unit_number}
+                                            type={property.unit_type}
+                                            floor={property.floor_number}
+                                            monthly_rent={Number(property?.rent_amount || 0).toLocaleString()}
+                                            status={property.availability_status}
+                                            eyeLink={`/property/single-unit/unit_id:${property.unit_id}`}
+                                            eyeEdit={`/edit-property/single-unit/property_id:${property.property_id}/unit_id:${property.unit_id}`}
+                                            isShowing={true}
+                                            isShowingButtons={property.availability_status === "available"}
+                                            isInMarket={property.in_market == true}
+                                            addTenantLink={`/tenants/add-personal-details/`}
+                                            addMarketUnitLink={`/property/market-unit?property_id=${property.property_id}&unit_id=${property.unit_id}`}
+                                        />
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>

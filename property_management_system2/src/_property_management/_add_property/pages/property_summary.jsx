@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { Chart, registerables } from "chart.js";
@@ -14,6 +14,9 @@ const PropertySummary = () => {
   const propertyId = localStorage.getItem("propertyId");
   const token = localStorage.getItem("token");
   const baseUrl = import.meta.env.VITE_BASE_URL;
+  
+  // Add ref to store chart instance
+  const chartRef = useRef(null);
 
   const fetchPropertySummary = useCallback(
     async (page = 1) => {
@@ -59,7 +62,14 @@ const PropertySummary = () => {
 
   useEffect(() => {
     if (propertySummary) {
-      const ctx = document.getElementById("myChart").getContext("2d");
+      const ctx = document.getElementById("myChart")?.getContext("2d");
+      
+      if (!ctx) return;
+
+      // Destroy existing chart if it exists
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
 
       const data = {
         labels: ["Rent", "Deposit", "Electricity", "Water"],
@@ -83,7 +93,8 @@ const PropertySummary = () => {
         ],
       };
 
-      new Chart(ctx, {
+      // Create new chart and store reference
+      chartRef.current = new Chart(ctx, {
         type: "doughnut",
         data: data,
         options: {
@@ -106,6 +117,14 @@ const PropertySummary = () => {
         },
       });
     }
+
+    // Cleanup function to destroy chart when component unmounts
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+    };
   }, [propertySummary]);
 
   const handlePageChange = (newPage) => {
@@ -113,15 +132,6 @@ const PropertySummary = () => {
       fetchPropertySummary(newPage);
     }
   };
-
-  const formatCurrency = (value) =>
-    value
-      ? value.toLocaleString("en-US", {
-          style: "currency",
-          currency: "KES",
-          minimumFractionDigits: 0,
-        }).replace("KES", "KES ")
-      : "KES 0";
 
   if (!propertySummary) {
     return (
@@ -160,7 +170,7 @@ const PropertySummary = () => {
             <p className="text-md">{propertySummary?.summary?.location_type}</p>
             <p className="text-sm my-2 font-semibold">Financial Summary</p>
             <div>
-              {["rent", "deposit", "electricity", "water"].map((key) => {
+              {["rent", "deposit", "electricity", "water", "garbage"].map((key) => {
                 const summaryItem = propertySummary?.summary?.[key];
                 return (
                   <ul key={key} className="max-w-md">
@@ -180,7 +190,7 @@ const PropertySummary = () => {
                           </p>
                         </div>
                         <div className="inline-flex items-center text-base font-semibold text-gray-900">
-                          <p className="text-sm">{formatCurrency(summaryItem?.amount)}</p>
+                          <p className="text-sm">{Number(summaryItem?.amount).toLocaleString()}</p>
                         </div>
                       </div>
                     </li>
@@ -212,12 +222,12 @@ const PropertySummary = () => {
                 <tr key={index}>
                   <td className="px-6 py-4">{unit.unit_no}</td>
                   <td className="px-6 py-4">{unit.unit_type}</td>
-                  <td className="px-6 py-4">{formatCurrency(unit.rent_amount)}</td>
-                  <td className="px-6 py-4">{formatCurrency(unit.rent_deposit)}</td>
-                  <td className="px-6 py-4">{formatCurrency(unit.water)}</td>
-                  <td className="px-6 py-4">{formatCurrency(unit.electricity)}</td>
-                  <td className="px-6 py-4">{formatCurrency(unit.garbage)}</td>
-                  <td className="px-6 py-4">{formatCurrency(unit.total)}</td>
+                  <td className="px-6 py-4">{Number(unit?.rent_amount || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4">{Number(unit.rent_deposit || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4">{Number(unit.water || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4">{Number(unit.electricity|| 0).toLocaleString()}</td>
+                  <td className="px-6 py-4">{Number(unit.garbage || 0).toLocaleString()}</td>
+                  <td className="px-6 py-4">{Number(unit.total || 0).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>

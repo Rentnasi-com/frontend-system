@@ -90,40 +90,40 @@ const ManageImages = () => {
             reader.readAsDataURL(file); // Read the file as a data URL
         });
     };
-    
+
     const handleUpload = async (unitTypeId, isCover = false) => {
         const imagesToUpload = isCover
             ? coverImage.map((img) => img.file)
             : unitImages[unitTypeId]?.map((img) => img.file) || [];
-    
+
         if (imagesToUpload.length === 0) return toast.error("No images selected.");
-    
+
         setLoadingStates((prev) => ({ ...prev, [unitTypeId]: true }));
-    
+
         try {
             // Step 1: Convert images to base64
             const base64Images = await Promise.all(imagesToUpload.map(fileToBase64));
-    
+
             // Step 2: Send base64 images to the upload API
             const uploadEndpoint = isCover
-                ? "https://files.rentnasi.com/upload/create"
-                : "https://files.rentnasi.com/upload/create/multiple";
-    
+                ? "https://files.rentalpay.africa/upload/create"
+                : "https://files.rentalpay.africa/upload/create/multiple";
+
             const uploadPayload = isCover
                 ? { image: base64Images[0] } // Single image for cover
                 : { images: base64Images }; // Multiple images for units
-    
+
             const uploadResponse = await axios.post(uploadEndpoint, uploadPayload, {
                 headers: {
                     "Content-Type": "application/json", // Set content type to JSON
                 },
             });
-    
+
             // Step 3: Get the URLs from the upload API response
             const uploadedUrls = isCover
                 ? [uploadResponse.data.urls] // Single URL for cover image
                 : uploadResponse.data.urls; // Array of URLs for unit images
-    
+
             // Step 4: Send the URLs to the backend API
             const apiEndpoint = isCover
                 ? uploadedCoverImage?.length > 0
@@ -132,22 +132,22 @@ const ManageImages = () => {
                 : uploadedUnitImages[unitTypeId]?.length > 0
                     ? `${baseUrl}/manage-property/edit-property/other-images` // Update existing unit images
                     : `${baseUrl}/manage-property/create-property/other-images`; // Create new unit images
-    
+
             const backendPayload = isCover
                 ? { cover_image_url: uploadedUrls[0], property_id: propertyId } // Payload for cover image
                 : { images: uploadedUrls, unit_type_id: unitTypeId, property_id: propertyId }; // Payload for unit images
-    
+
             console.log("Backend Payload:", backendPayload);
-    
+
             const backendResponse = await axios.post(apiEndpoint, backendPayload, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json", // Set content type to JSON
                 },
             });
-    
+
             console.log("Backend Response:", backendResponse.data);
-    
+
             // Success feedback
             toast.success(
                 isCover
@@ -158,7 +158,7 @@ const ManageImages = () => {
                         ? "Unit images updated!"
                         : "Unit images created!"
             );
-    
+
             // Update local states after successful upload
             if (isCover) {
                 setUploadedCoverImage(uploadedUrls[0]);
@@ -227,11 +227,10 @@ const ManageImages = () => {
                 <Button type="button" onClick={goToPrevious}>
                     Previous
                 </Button>
-                {isCoverImageUploaded && ( // Conditionally render the "Property Summary" button
-                    <Button onClick={() => navigate("/add-property/property-summary")}>
-                        Property Summary
-                    </Button>
-                )}
+
+                <Button onClick={() => navigate("/add-property/property-summary")}>
+                    Property Summary
+                </Button>
             </div>
         </section>
     );

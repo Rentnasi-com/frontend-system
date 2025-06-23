@@ -1,14 +1,13 @@
 import axios from "axios"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
-import FormField from "../../_add_property/pages/single_unit/FormField"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import ReactImageUploading from "react-images-uploading"
-import { DashboardHeader, PropertyCard } from "./page_components"
-import { CheckboxField, Input, SelectField } from "../../../shared"
+import { DashboardHeader } from "./page_components"
+import { Input, SelectField } from "../../../shared"
 import TextArea from "../../../shared/textArea"
+import DatePicker from "react-datepicker"
 
 
 const ReceivePayment = () => {
@@ -18,11 +17,13 @@ const ReceivePayment = () => {
     const [propertyFloors, setPropertyFloors] = useState([])
     const [selectedUnit, setSelectedUnit] = useState('')
     const [propertyUnits, setPropertyUnits] = useState([])
+    const [selectedDate, setSelectedDate] = useState(null);
 
     const [unitDetails, setUnitDetails] = useState([])
     const [unitTenantDetails, setTenantDetails] = useState([])
     const [propertyDetails, setPropertyDetails] = useState([])
     const [payment_details, setPaymentDetails] = useState([])
+    const [selectedPayments, setSelectedPayments] = useState([]);
 
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const token = localStorage.getItem('token')
@@ -34,18 +35,54 @@ const ReceivePayment = () => {
     const handleOpen = () => {
         setShowModal(true)
     }
+    const handleCheckboxChange = (payment) => {
+        setSelectedPayments((prev) =>
+            prev.some((p) => p.description === payment.description)
+                ? prev.filter((p) => p.description !== payment.description)
+                : [...prev, payment]
+        );
+    };
+    const getTotalAmount = () => {
+        return selectedPayments.reduce((total, payment) => {
+            return total + (payment.amount || payment.monthly_rent_amount || 0);
+        }, 0).toLocaleString(); // Formats number with commas
+    };
 
-    const schema = z.object({
-        unit_type: z.coerce.number().min(1, "Unit type is required"),
-        property_id: z.coerce.number().min(1, "Unit type is required"),
-        floor_id: z.coerce.number().min(1, "Unit type is required"),
-        rent_amount: z.coerce.number().min(1, "Rent amount must be greater than 0"),
-        rent_deposit: z.coerce.number().min(1, "Deposit cannot be negative"),
-        water_amount: z.coerce.number().min(0, "Water deposit cannot be negative"),
-        electricity_amount: z.coerce.number().min(0, "Electricity deposit cannot be negative"),
-        garbage_amount: z.coerce.number().min(0, "Garbage deposit cannot be negative"),
-        unit_no: z.string().min(2, "Unit name must be at least 2 characters long"),
-    });
+    const schema = z
+        .object({
+            payment_method: z.enum(["cash", "mpesa", "mpesa_express", "bank"], {
+                errorMap: () => ({ message: "Please select a valid payment method" }),
+            }),
+            amount: z
+                .string()
+                .min(1, "Amount is required")
+                .refine(
+                    (val) => !isNaN(Number(val)) && Number(val) > 0,
+                    "Amount must be a valid number greater than 0"
+                ),
+            phone: z.string().optional(),
+            reference: z.string().optional(),
+            notes: z.string().optional(),
+        })
+        .superRefine((values, ctx) => {
+            if (values.payment_method === "mpesa_express") {
+                if (!values.phone || values.phone.trim() === "") {
+                    ctx.addIssue({
+                        path: ["phone"],
+                        message: "Phone number is required for Mpesa Express",
+                    });
+                } else {
+                    const phoneRegex = /^(\+254|254|0)[17]\d{8}$/;
+                    if (!phoneRegex.test(values.phone.replace(/\s+/g, ''))) {
+                        ctx.addIssue({
+                            path: ["phone"],
+                            message: "Please enter a valid Kenyan phone number",
+                        });
+                    }
+                }
+            }
+        });
+
 
     useEffect(() => {
         fetchProperties()
@@ -149,25 +186,101 @@ const ReceivePayment = () => {
     const {
         register,
         handleSubmit,
-        formState: { errors, isSubmitting },
+        watch,
+        formState: { errors, isSubmitting }
     } = useForm({
         resolver: zodResolver(schema),
+        mode: "onTouched",
+        reValidateMode: "onChange",
+        defaultValues: {
+            payment_method: "cash",
+            notes: "",
+            reference: ""
+        },
     });
 
+    const paymentMethod = watch("payment_method");
+
     const onSubmit = async (data) => {
-        console.log("Form Data:", data);
+        if (!unitTenantDetails.tenant_id) {
+            toast.error("Tenant information is missing");
+            return;
+        }
+        if (!selectedUnit) {
+            toast.error("Please select a unit");
+            return;
+        }
+
+        if (selectedPayments.length === 0) {
+            toast.error("Please select at least one payment item");
+            return;
+        }
+
+        const isMpesaExpress = data.payment_method === "mpesa_express"
+
+        const submissionData = {
+            unit_id: selectedUnit,
+            tenant_id: unitTenantDetails.tenant_id,
+            description: selectedPayments.map(p => p.description.toLowerCase()),
+            amount: Number(data.amount),
+            payment_method: data.payment_method,
+            reference: ["cash", "mpesa_express"].includes(data.payment_method)
+                ? null
+                : data.reference || null,
+            phone: isMpesaExpress ? data.phone?.trim() : null,
+            datetime: selectedDate
+                ? selectedDate.toISOString().replace(/\.\d{3}Z$/, '')
+                : new Date().toISOString().replace(/\.\d{3}Z$/, ''),
+            notes: data.notes || null
+        };
+        
         try {
-            const response = await toast.promise(
-                axios.post(`${baseUrl}/contact/contact-us/`, data),
-                {
-                    loading: "Sending your message ...",
-                    success: "Message sent",
-                    error: "Failed to send message. Please try again later.",
+            if (submissionData.payment_method === "mpesa_express") {
+                const response = await toast.promise(
+                    axios.post(
+                        `${baseUrl}/mpesa/init`, submissionData,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    ),
+                    {
+                        loading: "Sending your message ...",
+                        success: "Payment sent successfully",
+                        error: "Failed to send message. Please try again later.",
+                    }
+                )
+                if (response.status === 200) {
+                    setShowModal(false)
+                    await handleUnitChange({ target: { value: selectedUnit } });
                 }
-            )
-            console.log(response)
+            } else {
+                const response = await toast.promise(
+                    axios.post(
+                        `${baseUrl}/payment`, submissionData,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    ),
+                    {
+                        loading: "Sending your message ...",
+                        success: "Payment sent successfully",
+                        error: "Failed to send message. Please try again later.",
+                    }
+                )
+                if (response.status === 200) {
+                    setShowModal(false)
+                    await handleUnitChange({ target: { value: selectedUnit } });
+                }
+            }
+
         } catch (error) {
-            console.error(error);
+            toast.error("Failed to send payment. Please try again later.");
         }
     };
 
@@ -330,7 +443,7 @@ const ReceivePayment = () => {
                         </div>
                     </div>
                     <h3 className="font-bold text-gray-600 mt-2">Select Payments Descriptions</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-3">
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 py-3">
                         {Object.values(payment_details)
                             .flatMap(payment => Array.isArray(payment) ? payment : [payment])
                             .filter((payment, index, self) =>
@@ -339,24 +452,32 @@ const ReceivePayment = () => {
                                 self.findIndex(p => p.description === payment.description) === index
                             )
                             .map((payment, index) => (
-                                <div
-                                    onClick={handleOpen}
-                                    key={index}
-                                    className="cursor-pointer grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold"
-                                >
+                                <label key={index} className="cursor-pointer grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold">
+                                    <input
+                                        type="checkbox"
+                                        className="w-4 h-4"
+                                        checked={selectedPayments.some(p => p.description === payment.description)}
+                                        onChange={() => handleCheckboxChange(payment)}
+                                    />
                                     <div>
                                         <h6 className="capitalize">{payment.description}</h6>
-                                        <p className="text-sm text-gray-600 capitalize">
-                                            {payment.amount || payment.monthly_rent_amount}
+                                        <p className="text-lg text-gray-600 capitalize">
+                                            {(payment.amount || payment.monthly_rent_amount).toLocaleString()}
                                         </p>
                                     </div>
-                                </div>
+                                </label>
                             ))}
+
+                        <button
+                            onClick={handleOpen}
+                            className="capitalize focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-md p-2.5">
+                            Receive Payment
+                        </button>
                     </div>
                 </div>
             </div>
             {showModal && (
-                <div style={{ zIndex: 1000, backgroundColor: 'rgba(55, 65, 81, 0.5)' }} className="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 flex justify-center items-center w-full md:inset-0">
+                <div style={{ zIndex: 1000 }} className="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 flex justify-center items-center w-full md:inset-0 bg-black/50 backdrop-blur-sm">
                     <div className="relative p-4 w-full max-w-lg max-h-full">
                         <div className="relative bg-white rounded-lg border border-gray-200">
 
@@ -375,54 +496,137 @@ const ReceivePayment = () => {
                                     You can update payment manually
                                 </p>
                                 <form onSubmit={handleSubmit(onSubmit)}>
-                                    <div className="grid grid-cols-2 gap-x-3">
+                                    <p className="block text-sm font-medium text-gray-500 mb-1">Selected items to be paid</p>
+                                    {/* <p>{selectedUnit},{unitTenantDetails.tenant_id}, {selectedPayments.length}</p> */}
+                                    <div className="grid grid-cols-3 gap-x-2 mb-3">
+                                        {selectedPayments.length === 0 ? (
+                                            <p className="text-gray-500 text-sm">No items selected.</p>
+                                        ) : (
+                                            selectedPayments.map((payment, index) => (
+                                                <>
+                                                    <label key={index} className="flex items-center justify-between bg-white border border-gray-200 hover:bg-gray-100 rounded p-2 text-sm font-semibold">
+
+                                                        <span className="capitalize">{payment.description} - {(payment.amount || payment.monthly_rent_amount).toLocaleString()}</span>
+                                                        <button
+                                                            className="inline-flex items-center p-1 ml-2 text-sm text-red-400 bg-transparent rounded-sm hover:bg-red-200 hover:text-red-900"
+                                                            onClick={() => handleCheckboxChange(payment)}
+                                                        >
+                                                            <svg className="w-2 h-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                                                            </svg>
+                                                        </button>
+                                                    </label>
+                                                </>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="">
+                                            <p className="block text-sm font-medium text-gray-500 mb-1">Total selected payments</p>
+                                            <p className="bg-white border border-gray-200 hover:bg-gray-100 p-2 rounded text-sm font-semibold">
+                                                KES {getTotalAmount()}
+                                            </p>
+                                        </div>
+
                                         <SelectField
-                                            label="Select item paid for"
-                                            name="itemPaidFor"
-                                            options={["Item 1", "Item 2", "Item 3"]}
+                                            label="Select mode of payment"
+                                            name="payment_method"
+                                            options={[
+                                                { value: "cash", label: "Cash" },
+                                                { value: "mpesa", label: "Mpesa" },
+                                                { value: "mpesa_express", label: "Mpesa Express" },
+                                                { value: "bank", label: "Bank" },
+                                            ]}
                                             register={register}
+                                            error={errors.payment_method}
                                         />
+
+                                        {paymentMethod === "mpesa_express" && (
+                                            <Input
+                                                label="Enter phone number"
+                                                type="tel"
+                                                name="phone"
+                                                register={register}
+                                                error={errors.phone}
+                                                placeholder="Enter phone number"
+                                            />
+                                        )}
+
                                         <Input
-                                            label="Enter amount"
+                                            label="Enter received amount"
                                             name="amount"
                                             placeholder="Enter amount"
                                             type="number"
                                             register={register}
-                                        />
-                                        <SelectField
-                                            label="Select payment date"
-                                            name="itemPaidFor"
-                                            options={["Item 1", "Item 2", "Item 3"]}
-                                            register={register}
-                                        />
-                                        <CheckboxField
-                                            label="Is item fully paid"
-                                            name="isFullyPaid"
-                                            register={register}
+                                            error={errors.amount}
                                         />
 
-                                        <Input
-                                            label="Enter reference code"
-                                            name="amount"
-                                            placeholder="Enter reference code"
-                                            type="number"
-                                            register={register}
-                                        />
+                                        {["bank", "mpesa"].includes(paymentMethod) && (
+                                            <>
+                                                <Input
+                                                    label="Enter reference code (optional)"
+                                                    name="reference"
+                                                    placeholder="Enter reference code"
+                                                    type="text"
+                                                    register={register}
+                                                    error={errors.reference}
+                                                />
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-500 " htmlFor="date">Select date received</label>
+                                                    <DatePicker
+                                                        selected={selectedDate}
+                                                        onChange={(date) => setSelectedDate(date)}
+                                                        className="mt-2 w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400"
+                                                        placeholderText="Select a date"
+                                                        name="datetime"
+                                                        dateFormat="dd-MM-yyyy"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {paymentMethod === "cash" && (
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-500" htmlFor="date">Select date received</label>
+                                                <DatePicker
+                                                    selected={selectedDate}
+                                                    onChange={(date) => setSelectedDate(date)}
+                                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400"
+                                                    placeholderText="Select a date"
+                                                    name="datetime"
+                                                    dateFormat="dd-MM-yyyy"
+                                                />
+                                            </div>
+                                        )}
+
                                         <TextArea
                                             otherStyles="col-span-2"
                                             label="Enter note (optional)"
-                                            name="note"
+                                            name="notes"
                                             placeholder="Enter your note"
                                             register={register}
+                                            error={errors.notes}
+                                            type="text"
                                         />
                                     </div>
 
                                     <hr />
                                     <div className="flex items-center mt-6 space-x-4 rtl:space-x-reverse">
-                                        <button type="submit" disabled={isSubmitting} className="w-full rounded border border-green-700 bg-green-700 p-2.5 text-white transition hover:bg-opacity-90">
-                                            Send Message
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="w-full rounded border border-green-700 bg-green-700 p-2.5 text-white transition hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {isSubmitting ? "Processing..." : "Send Message"}
                                         </button>
-                                        <button onClick={handleClose} type="button" className="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100">Cancel</button>
+                                        <button
+                                            onClick={handleClose}
+                                            type="button"
+                                            className="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100">
+                                            Cancel
+                                        </button>
                                     </div>
                                 </form>
                             </div>

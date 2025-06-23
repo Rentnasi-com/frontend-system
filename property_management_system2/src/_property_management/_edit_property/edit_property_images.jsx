@@ -125,8 +125,8 @@ const ManageImages = () => {
         try {
             // URL for converting images
             const conversionUrl = isCover
-                ? "https://files.rentnasi.com/upload/create" // URL for single cover image
-                : "https://files.rentnasi.com/upload/create/multiple"; // URL for multiple unit images
+                ? "https://files.rentalpay.africa/upload/create" // URL for single cover image
+                : "https://files.rentalpay.africa/upload/create/multiple"; // URL for multiple unit images
 
             // Prepare payload for image conversion
             const data = isCover

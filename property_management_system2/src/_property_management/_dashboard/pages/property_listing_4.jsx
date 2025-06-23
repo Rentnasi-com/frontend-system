@@ -6,6 +6,44 @@ import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
 import { Button } from "../../../shared";
 import toast from "react-hot-toast";
 
+const SkeletonLoader = ({ className, rounded = false }) => (
+    <div
+        className={`bg-gray-200 animate-pulse ${rounded ? 'rounded-full' : 'rounded'} ${className}`}
+    ></div>
+);
+
+const TableRowSkeleton = () => (
+    <tr className="border-b">
+        <td className="px-4 py-3"><SkeletonLoader className="w-12 h-12" rounded /></td>
+        <td className="px-4 py-3">
+            <SkeletonLoader className="h-4 w-32 mb-1" />
+            <SkeletonLoader className="h-3 w-24" />
+        </td>
+        {[...Array(7)].map((_, i) => (
+            <td key={i} className="px-4 py-3">
+                <SkeletonLoader className="h-6 w-12 mx-auto" />
+            </td>
+        ))}
+        <td className="px-4 py-3 flex space-x-4">
+            <SkeletonLoader className="h-5 w-5 rounded" />
+            <SkeletonLoader className="h-5 w-5 rounded" />
+            <SkeletonLoader className="h-5 w-5 rounded" />
+        </td>
+    </tr>
+);
+
+const StatCardSkeleton = () => (
+    <div className="bg-white border border-gray-200 rounded-lg p-2">
+        <div className="flex justify-between items-center">
+            <SkeletonLoader className="h-8 w-8 rounded" />
+            <SkeletonLoader className="h-6 w-6 rounded" />
+        </div>
+        <div className="mt-3">
+            <SkeletonLoader className="h-4 w-24 mb-2" />
+        </div>
+    </div>
+);
+
 const PropertyListing = () => {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -15,15 +53,17 @@ const PropertyListing = () => {
     const [nextPageUrl, setNextPageUrl] = useState(null);
     const [prevPageUrl, setPrevPageUrl] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [itemToDelete, setItemToDelete] = useState([]);
+    const [itemToDelete, setItemToDelete] = useState(null); // Changed from array to null
     const [lastPage, setLastPage] = useState(1);
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const token = localStorage.getItem("token");
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
     const fetchProperties = async (page = 1) => {
         try {
             setLoading(true);
+            console.log(`Fetching page ${page}`); // Debug log
+            
             const response = await axios.get(
                 `${baseUrl}/manage-property/view-properties/saved?pagination=${page}`,
                 {
@@ -35,33 +75,49 @@ const PropertyListing = () => {
             );
 
             const result = response.data;
+            console.log('API Response:', result); // Debug log
 
+            // Check the structure of your API response and adjust accordingly
+            setProperties(result.result?.data || result.data || []);
+            setDetails(result.details?.breakdown || {});
+            setRevenue(result.details?.revenue?.amounts || {});
+            
+            // Fix pagination data extraction based on API response structure
+            setCurrentPage(result.result?.current_page || result.current_page || page);
+            setNextPageUrl(result.result?.next_page_url || result.next_page_url);
+            setPrevPageUrl(result.result?.prev_page_url || result.prev_page_url);
+            setLastPage(result.result?.last_page || result.last_page || 1);
 
-            setProperties(result.result.data);
-            setDetails(response.data.details.breakdown);
-            setRevenue(response.data.details.revenue.amounts);
-            setCurrentPage(result.current_page);
-            setNextPageUrl(result.next_page_url);
-            setPrevPageUrl(result.prev_page_url);
-            setLastPage(result.last_page);
-            setLoading(false);
         } catch (err) {
+            console.error('Fetch error:', err); // Debug log
+            toast.error("Failed to load properties");
+        } finally {
             setLoading(false);
         }
     };
 
+    // Remove currentPage from dependency array to prevent infinite loops
     useEffect(() => {
         fetchProperties(currentPage);
-    }, [currentPage, token]);
+    }, [token]); // Only depend on token
+
+    // Separate effect for page changes
+    useEffect(() => {
+        if (currentPage > 1) {
+            fetchProperties(currentPage);
+        }
+    }, [currentPage]);
 
     const handleNextPage = () => {
-        if (nextPageUrl) {
+        console.log('Next page clicked, nextPageUrl:', nextPageUrl); // Debug log
+        if (nextPageUrl && currentPage < lastPage) {
             setCurrentPage((prev) => prev + 1);
         }
     };
 
     const handlePreviousPage = () => {
-        if (prevPageUrl) {
+        console.log('Previous page clicked, prevPageUrl:', prevPageUrl); // Debug log
+        if (prevPageUrl && currentPage > 1) {
             setCurrentPage((prev) => prev - 1);
         }
     };
@@ -100,32 +156,31 @@ const PropertyListing = () => {
             iconSrc: "../../../assets/icons/png/expected_income.png",
             progress: 20,
             label: "Expected Income",
-            value: revenue.expected_amount?.count,
+            value: `KES ${(revenue.expected_amount?.count || 0).toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: "../../../assets/icons/png/expected_income.png",
             progress: 80,
             label: "Amount Payed",
-            value: revenue.amount_paid?.count,
+            value: `KES ${(revenue.amount_paid?.count || 0).toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: "../../../assets/icons/png/outstanding_balance.png",
             progress: 3.4,
             label: "Outstanding Balance",
-            value: revenue.outstanding_balance?.count,
+            value: `KES ${(revenue.outstanding_balance?.count || 0).toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: "../../../assets/icons/png/total_fines.png",
             progress: 5,
             label: "Total fines",
-            value: revenue.fines?.count,
+            value: `KES ${(revenue.total_fines?.count || 0).toLocaleString()}`,
         },
     ];
 
-    // Function to open the modal and set the item to delete
     const openDeleteModal = (property) => {
         setItemToDelete(property);
         setIsModalOpen(true);
@@ -140,7 +195,6 @@ const PropertyListing = () => {
                         headers: {
                             Authorization: `Bearer ${token}`,
                             Accept: "application/json",
-                            // "Content-Type": "application/json",
                         },
                     }
                 );
@@ -156,11 +210,12 @@ const PropertyListing = () => {
             } catch (error) {
                 console.error("Error deleting item:", error);
             } finally {
-                setIsModalOpen(false); // Close the modal
+                setIsModalOpen(false);
                 setItemToDelete(null);
             }
         }
     };
+
     return (
         <>
             <DashboardHeader
@@ -172,46 +227,53 @@ const PropertyListing = () => {
                 hideLink={true}
             />
             <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 py-1 px-4">
-                {stats.map((stat, index) => (
-                    <div key={index} className="bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2">
-                        <PropertyCard
-                            redirectUrl={stat.redirectUrl}
-                            iconSrc={stat.iconSrc}
-                            label={stat.label}
-                            value={stat.value}
-                        />
-                    </div>
-                ))}
+                {loading ? (
+                    Array(8).fill(0).map((_, index) => (
+                        <StatCardSkeleton key={index} />
+                    ))
+                ) : (
+                    stats.map((stat, index) => (
+                        <div key={index} className="bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2">
+                            <PropertyCard
+                                redirectUrl={stat.redirectUrl}
+                                iconSrc={stat.iconSrc}
+                                label={stat.label}
+                                value={stat.value}
+                            />
+                        </div>
+                    ))
+                )}
             </div>
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
                 <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
-                {loading ? (
-                    <p className="text-center py-4">Loading...</p>
-                ) : (
-                    <div className="w-full">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full table-auto">
-                                <thead className="bg-gray-100 text-left text-xs border-y ">
-                                    <tr className="py-2">
-                                        <th className="px-4 py-2">Photo</th>
-                                        <th className="px-4 py-2">Property Name</th>
-                                        <th className="px-4 py-2">Total</th>
-                                        <th className="px-4 py-2">Vacant</th>
-                                        <th className="px-4 py-2">Occupied</th>
-                                        <th className="px-4 py-2">Open Issues</th>
-                                        <th className="px-4 py-2">Expected Revenue</th>
-                                        <th className="px-4 py-2">Outstanding Revenue</th>
-                                        <th className="px-4 py-2">Pending Balances</th>
-                                        <th className="px-4 py-2">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {properties.map((property, index) => (
+                <div className="w-full">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full table-auto">
+                            <thead className="bg-gray-100 text-left text-xs border-y ">
+                                <tr className="py-2">
+                                    <th className="px-4 py-2">Photo</th>
+                                    <th className="px-4 py-2">Property Name</th>
+                                    <th className="px-4 py-2">Total</th>
+                                    <th className="px-4 py-2">Vacant</th>
+                                    <th className="px-4 py-2">Occupied</th>
+                                    <th className="px-4 py-2">Open Issues</th>
+                                    <th className="px-4 py-2">Expected Revenue</th>
+                                    <th className="px-4 py-2">Outstanding Revenue</th>
+                                    <th className="px-4 py-2">Pending Balances</th>
+                                    <th className="px-4 py-2">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    Array(5).fill(0).map((_, index) => (
+                                        <TableRowSkeleton key={index} />
+                                    ))
+                                ) : (
+                                    properties.map((property, index) => (
                                         <tr key={index} className="border-b text-sm">
                                             <td className="px-4 py-2">
                                                 <img src={property.cover_image} alt={property.property_name} className="w-12 h-12 rounded-full" />
                                             </td>
-
                                             <td className="px-4 py-2">
                                                 {property.property_name}
                                                 <br />
@@ -226,27 +288,26 @@ const PropertyListing = () => {
                                                 <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded">{property.open_issues}</span>
                                             </td>
                                             <td className="px-4 py-2">
-                                                <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">{property.expected_revenue}</span>
+                                                <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">{property.expected_revenue.toLocaleString()}</span>
                                             </td>
                                             <td className="px-4 py-2">
-                                                <span className="bg-blue-100 border border-blue-400 text-blue-600 px-2 py-1 rounded">{property.outstanding_revenue}</span>
+                                                <span className="bg-blue-100 border border-blue-400 text-blue-600 px-2 py-1 rounded">{property.outstanding_revenue.toLocaleString()}</span>
                                             </td>
                                             <td className="px-4 py-2">
-                                                <span className="bg-blue-100 border border-blue-400 text-blue-600 px-2 py-1 rounded">{property.pending_balance}</span>
+                                                <span className="bg-blue-100 border border-blue-400 text-blue-600 px-2 py-1 rounded">{property.pending_balance.toLocaleString()}</span>
                                             </td>
-
                                             <td className="flex py-5 px-2 space-x-4">
                                                 <FaEye onClick={() => navigate(`/property/view-property/${property.id}`)} className="text-gray-500 hover:text-gray-700 cursor-pointer" />
                                                 <FaEdit onClick={() => navigate(`/edit-property/general-information?property_id=${property.id}`)} className="text-purple-500 hover:text-purple-700 cursor-pointer" />
                                                 <FaTrash onClick={() => openDeleteModal(property)} className="text-red-500 hover:text-red-700 cursor-pointer" />
                                             </td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                )}
+                </div>
             </div>
 
             {isModalOpen && (
@@ -261,14 +322,10 @@ const PropertyListing = () => {
                             cannot be undone.
                         </p>
                         <div className="mt-4 flex justify-center gap-2">
-                            <Button
-                                onClick={() => setIsModalOpen(false)}
-                            >
+                            <Button onClick={() => setIsModalOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button
-                                onClick={handleDelete}
-                            >
+                            <Button onClick={handleDelete}>
                                 Confirm
                             </Button>
                         </div>
@@ -276,42 +333,42 @@ const PropertyListing = () => {
                 </div>
             )}
 
-            {(nextPageUrl || currentPage > 1) && (
-                <div className="flex justify-between items-center mt-4 px-4">
-                    
-                    {prevPageUrl && (
-                        <button
-                            onClick={handlePreviousPage}
-                            className="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-red-800 rounded-s hover:bg-red-900"
-                        >
-                            <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4" />
-                            </svg>
-                            Previous
-                        </button>
-                    )}
+            {/* Improved pagination section */}
+            <div className="flex justify-between items-center mt-4 px-4">
+                <button
+                    onClick={handlePreviousPage}
+                    disabled={!prevPageUrl || currentPage <= 1}
+                    className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-s ${
+                        !prevPageUrl || currentPage <= 1
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'text-white bg-red-800 hover:bg-red-900'
+                    }`}
+                >
+                    <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4" />
+                    </svg>
+                    Previous
+                </button>
 
-                    {/* Pagination Info */}
-                    <span className="text-sm text-gray-600">
-                        Showing page <span className="font-semibold text-gray-900">{currentPage}</span> of <span className="font-semibold text-gray-900">{lastPage}</span>
-                    </span>
+                <span className="text-sm text-gray-600">
+                    Showing page <span className="font-semibold text-gray-900">{currentPage}</span> of <span className="font-semibold text-gray-900">{lastPage}</span>
+                </span>
 
-                    {/* Next Button */}
-                    {nextPageUrl && (
-                        <button
-                            className="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-red-800 border-0 border-s border-red-700 rounded-e hover:bg-red-900"
-                            onClick={handleNextPage}
-
-                        >
-                            Next
-                            <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
-                            </svg>
-                        </button>
-                    )}
-                </div>
-            )}
-
+                <button
+                    onClick={handleNextPage}
+                    disabled={!nextPageUrl || currentPage >= lastPage}
+                    className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-e ${
+                        !nextPageUrl || currentPage >= lastPage
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'text-white bg-red-800 hover:bg-red-900'
+                    }`}
+                >
+                    Next
+                    <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
+                    </svg>
+                </button>
+            </div>
         </>
     );
 };

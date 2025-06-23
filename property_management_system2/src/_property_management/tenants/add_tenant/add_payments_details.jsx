@@ -31,6 +31,7 @@ const AddTenantProperty = () => {
     }),
     tax_percentage: z.string().optional(),
     initial_meter_reading: z.string().optional(),
+    first_time_billing: z.string().optional(),
     rent_amount: z.string().min(1, "Rent amount is required"),
     rent_deposit: z.string().min(1, "Deposit must be a positive number"),
     water: z.string().min(1, "Water deposit must be a positive number"),
@@ -220,7 +221,7 @@ const AddTenantProperty = () => {
       )
       if (response.data.success) {
         toast.success(response.data.message)
-        navigate('/tenants/view-all-tenants')
+        navigate('/tenants')
         console.log(response)
       }
     } catch (error) {
@@ -501,7 +502,7 @@ const AddTenantProperty = () => {
             </div> */}
 
             <h3 className="font-bold text-gray-600 mt-2">(d) Other settings</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="">
                 <div className="flex space-x-6">
                   <h6 className="text-sm font-medium text-gray-900">Is the unit taxable</h6>
@@ -594,6 +595,32 @@ const AddTenantProperty = () => {
                   </div>
                 )}
               </div>
+              <div className="flex space-x-6">
+                <h6 className="text-sm font-medium text-gray-900">Make initial billings (Deposits)</h6>
+                <label>
+                  <input
+                    className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                    type="radio"
+                    value="1"
+                    {...register("first_time_billing")}
+                  />
+                  Yes
+                </label>
+                <label>
+                  <input
+                    className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                    type="radio"
+                    value="0"
+                    {...register("first_time_billing")}
+                  />
+                  No
+                </label>
+                {errors.first_time_billing && (
+                  <p className="text-xs text-red-500">
+                    {errors.first_time_billing.message}
+                  </p>
+                )}
+              </div>
             </div>
             <div className="flex justify-between space-x-4">
               <div className="w-full">
@@ -675,7 +702,7 @@ const AddTenantProperty = () => {
                   Select mode for late payment fine
                 </label>
                 <select {...register("mode_for_late_payment")} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
-                  <option selected>Select model for late payment</option>
+                  <option selected>Select mode for late payment</option>
                   <option value="fixed_amount">Fixed amount</option>
                   <option value="percentage">Percentage</option>
                 </select>

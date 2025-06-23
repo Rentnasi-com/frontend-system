@@ -14,6 +14,10 @@ const Property = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const status = queryParams.get('status') || '';
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1)
+    const [isNextClicked, setIsNextClicked] = useState(false)
+    const [pagination, setPagination] = useState([])
 
     useEffect(() => {
         if (property_id) {
@@ -32,9 +36,9 @@ const Property = () => {
             };
             fetchPropertyDetails();
 
-            const fetchPropertyUnits = async () => {
+            const fetchPropertyUnits = async (page = 1) => {
                 const response = await axios.get(
-                    `${baseUrl}/manage-property/single-property/unit-listing?property_id=${property_id}&status=${status}`,
+                    `${baseUrl}/manage-property/single-property/unit-listing?property_id=${property_id}&pagination=${page}&status=${status}`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -43,7 +47,11 @@ const Property = () => {
                     }
                 );
                 setPropertyUnits(response.data.result);
+                setCurrentPage(response.data.pagination.current_page);
+                setTotalPages(response.data.pagination.last_page)
+                setPagination(response.data.pagination)
                 setLoading(false);
+                console.log(response.data)
             };
             fetchPropertyUnits();
         }
@@ -72,25 +80,25 @@ const Property = () => {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: property?.revenue?.amounts?.expected_income?.images || "",
             label: "Expected Income",
-            value: `KES ${property?.revenue?.amounts?.expected_income?.count || "0"}`,
+            value: `KES ${(property?.revenue?.amounts?.expected_income?.count || "0").toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: property?.revenue?.amounts?.amount_paid?.images || "",
             label: "Amount Paid",
-            value: `KES ${property?.revenue?.amounts?.amount_paid?.count || "0"}`,
+            value: `KES ${(property?.revenue?.amounts?.amount_paid?.count || "0").toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: property?.revenue?.amounts?.outstanding_balance?.images || "",
             label: "Outstanding Balance",
-            value: `KES ${property?.revenue?.amounts?.outstanding_balance?.count || "0"}`,
+            value: `KES ${(property?.revenue?.amounts?.outstanding_balance?.count || "0").toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: property?.revenue?.amounts?.total_fines?.images || "",
             label: "Total Fines",
-            value: `KES ${property?.revenue?.amounts?.total_fines?.count || "0"}`,
+            value: `KES ${(property?.revenue?.amounts?.total_fines?.count || "0").toLocaleString()}`,
         },
     ];
     const quicks = [
@@ -116,6 +124,19 @@ const Property = () => {
             bgColor: "bg-[#E1D3FE]"
         }
     ]
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setIsNextClicked(true)
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
     return (
         <>
             <DashboardHeader
@@ -212,7 +233,7 @@ const Property = () => {
                                             <td className="px-4 py-2">{unit.unit_type}</td>
                                             <td className="px-4 py-2">{unit.floor_number}</td>
                                             <td className="px-4 py-2">{unit.tenant}</td>
-                                            <td className="px-4 py-2">{unit.rent_amount}</td>
+                                            <td className="px-4 py-2">{Number(unit?.rent_amount || 0).toLocaleString()}</td>
                                             <td className="px-4 py-2">{unit.pending_balances}</td>
                                             <td className="px-4 py-2">
                                                 <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded">{unit.availability_status}</span>
@@ -231,6 +252,37 @@ const Property = () => {
                     </div>
                 </div>
             </div>
+            {totalPages >= 2 && (
+                <div className="flex justify-between items-center mt-3 px-4">
+                    {isNextClicked && (
+                        <button
+                            className="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-red-800 rounded-s hover:bg-red-900"
+                            onClick={handlePrevPage}
+                            disabled={currentPage === 1}
+                        >
+                            <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4" />
+                            </svg>
+                            Previous
+                        </button>
+                    )}
+
+
+                    <span className="text-sm text-gray-700">
+                        Showing page <span className="font-semibold text-gray-900">{pagination.from}</span> of <span className="font-semibold text-gray-900">{pagination.last_page}</span>
+                    </span>
+                    <button
+                        className="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-red-800 border-0 border-s border-red-700 rounded-e hover:bg-red-900"
+                        onClick={handleNextPage}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                        <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
+                        </svg>
+                    </button>
+                </div>
+            )}
         </>
     );
 };

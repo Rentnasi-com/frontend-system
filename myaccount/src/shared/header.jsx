@@ -33,7 +33,15 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await axios.post(`${BASE_URL}/v2/logout-api`, dataToSend)
+      const response = await axios.post(`${BASE_URL}/v2/logout-api`,
+        {
+          headers: {
+            Authoraization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        },
+        dataToSend
+      )
       if (response.data.success) {
         toast.success(response.data.message)
         localStorage.clear()

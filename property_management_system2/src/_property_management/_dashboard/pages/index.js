@@ -9,7 +9,7 @@ import TenantHistory from "./tenant_history"
 import MaintenanceChatRoom from "./maintenance_chatroom"
 import ReceivePayment from "./receive_payment"
 import MarketUnit from "./market_unit"
-import PaymentsDetails from './payments_details'
+import DueRent from "./due_rent"
 
 export {
     ChatRoom,
@@ -23,5 +23,5 @@ export {
     MaintenanceChatRoom,
     ReceivePayment,
     MarketUnit,
-    PaymentsDetails
+    DueRent
 }

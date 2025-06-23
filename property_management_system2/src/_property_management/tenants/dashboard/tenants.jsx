@@ -1,7 +1,33 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { DashboardHeader, TableRow } from "../../_dashboard/pages/page_components";
+import { set } from "date-fns";
 
+const SkeletonLoader = ({ className, rounded = false }) => (
+    <div
+        className={`bg-gray-200 animate-pulse ${rounded ? 'rounded-full' : 'rounded'} ${className}`}
+    ></div>
+);
+
+const TableRowSkeleton = () => (
+    <tr className="border-b">
+        <td className="px-4 py-3"><SkeletonLoader className="w-12 h-12" rounded /></td>
+        <td className="px-4 py-3">
+            <SkeletonLoader className="h-4 w-32 mb-1" />
+            <SkeletonLoader className="h-3 w-24" />
+        </td>
+        {[...Array(4)].map((_, i) => (
+            <td key={i} className="px-4 py-3">
+                <SkeletonLoader className="h-6 w-12 mx-auto" />
+            </td>
+        ))}
+        <td className="px-4 py-3 flex space-x-4">
+            <SkeletonLoader className="h-5 w-5 rounded" />
+            <SkeletonLoader className="h-5 w-5 rounded" />
+            <SkeletonLoader className="h-5 w-5 rounded" />
+        </td>
+    </tr>
+);
 
 const Tenants = () => {
     const [properties, setProperties] = useState([])
@@ -16,6 +42,9 @@ const Tenants = () => {
     const [selectedProperty, setSelectedProperty] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [confirmedSearch, setConfirmedSearch] = useState("");
+
+
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchProperties()
@@ -58,6 +87,8 @@ const Tenants = () => {
             }
         } catch (error) {
             console.error(error.message)
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -76,7 +107,7 @@ const Tenants = () => {
     const handleSelectChange = (event) => {
         setSelectedProperty(event.target.value);
     };
-    
+
 
     const handleSearch = (event) => {
         setSearchQuery(event.target.value); // Update the search input state
@@ -140,22 +171,28 @@ const Tenants = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {tenants.map((tenant, index) => (
-                                    <TableRow
-                                        key={index}
-                                        tenant={tenant.name}
-                                        title={tenant.property_name}
-                                        unit={tenant.unit_no}
-                                        type={tenant.unit_floor}
-                                        status={tenant.roomStatus}
-                                        phone_no={tenant.phone}
-                                        monthly_rent={tenant.rent_amount}
-                                        openIssues={"Pending Issues"}
-                                        isShowing={true}
-                                        eyeLink={`/property/single-unit/unit_id:${tenant.unit_id}`}
-                                        eyeEdit={`/tenants/edit-personal-details?tenant_id=${tenant.id}`}
-                                    />
-                                ))}
+                                {loading ? (
+                                    Array(5).fill(0).map((_, index) => (
+                                        <TableRowSkeleton key={index} />
+                                    ))
+                                ) : (
+                                    tenants.map((tenant, index) => (
+                                        <TableRow
+                                            key={index}
+                                            tenant={tenant.name}
+                                            title={tenant.property_name}
+                                            unit={tenant.unit_no}
+                                            type={tenant.unit_floor}
+                                            status={tenant.roomStatus}
+                                            phone_no={tenant.phone}
+                                            monthly_rent={tenant.rent_amount}
+                                            openIssues={"Pending Issues"}
+                                            isShowing={true}
+                                            eyeLink={`/property/single-unit/unit_id:${tenant.unit_id}`}
+                                            eyeEdit={`/tenants/edit-personal-details?tenant_id=${tenant.id}`}
+                                        />
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
