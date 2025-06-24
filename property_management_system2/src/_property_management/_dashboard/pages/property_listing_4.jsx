@@ -49,12 +49,13 @@ const PropertyListing = () => {
     const [loading, setLoading] = useState(true);
     const [details, setDetails] = useState([]);
     const [revenue, setRevenue] = useState([]);
+
     const [currentPage, setCurrentPage] = useState(1);
-    const [nextPageUrl, setNextPageUrl] = useState(null);
-    const [prevPageUrl, setPrevPageUrl] = useState(null);
+    const [pagination, setPagination] = useState([])
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null); // Changed from array to null
-    const [lastPage, setLastPage] = useState(1);
+    
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const token = localStorage.getItem("token");
     const navigate = useNavigate();
@@ -63,7 +64,7 @@ const PropertyListing = () => {
         try {
             setLoading(true);
             console.log(`Fetching page ${page}`); // Debug log
-            
+
             const response = await axios.get(
                 `${baseUrl}/manage-property/view-properties/saved?pagination=${page}`,
                 {
@@ -81,12 +82,9 @@ const PropertyListing = () => {
             setProperties(result.result?.data || result.data || []);
             setDetails(result.details?.breakdown || {});
             setRevenue(result.details?.revenue?.amounts || {});
-            
-            // Fix pagination data extraction based on API response structure
-            setCurrentPage(result.result?.current_page || result.current_page || page);
-            setNextPageUrl(result.result?.next_page_url || result.next_page_url);
-            setPrevPageUrl(result.result?.prev_page_url || result.prev_page_url);
-            setLastPage(result.result?.last_page || result.last_page || 1);
+
+            setCurrentPage(response.data.result.current_page);
+            setPagination(response.data.result)
 
         } catch (err) {
             console.error('Fetch error:', err); // Debug log
@@ -109,17 +107,42 @@ const PropertyListing = () => {
     }, [currentPage]);
 
     const handleNextPage = () => {
-        console.log('Next page clicked, nextPageUrl:', nextPageUrl); // Debug log
-        if (nextPageUrl && currentPage < lastPage) {
-            setCurrentPage((prev) => prev + 1);
+        if (pagination && currentPage < pagination.last_page) {
+            fetchProperties(currentPage + 1);
         }
     };
 
-    const handlePreviousPage = () => {
-        console.log('Previous page clicked, prevPageUrl:', prevPageUrl); // Debug log
-        if (prevPageUrl && currentPage > 1) {
-            setCurrentPage((prev) => prev - 1);
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            fetchProperties(currentPage - 1);
         }
+    };
+
+    const handlePageClick = (pageNumber) => {
+        if (pageNumber !== currentPage) {
+            fetchProperties(pageNumber);
+        }
+    };
+
+    const generatePageNumbers = () => {
+        if (!pagination) return [];
+
+        const { current_page, last_page } = pagination;
+        const pages = [];
+        const maxVisiblePages = 5;
+
+        let startPage = Math.max(1, current_page - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(last_page, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+        }
+
+        return pages;
     };
 
     const stats = [
@@ -333,42 +356,62 @@ const PropertyListing = () => {
                 </div>
             )}
 
-            {/* Improved pagination section */}
-            <div className="flex justify-between items-center mt-4 px-4">
-                <button
-                    onClick={handlePreviousPage}
-                    disabled={!prevPageUrl || currentPage <= 1}
-                    className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-s ${
-                        !prevPageUrl || currentPage <= 1
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'text-white bg-red-800 hover:bg-red-900'
-                    }`}
-                >
-                    <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4" />
-                    </svg>
-                    Previous
-                </button>
+            {pagination && pagination.last_page > 1 && (
+                <div className="flex flex-col sm:flex-row justify-between items-center mt-4 px-4 gap-4">
+                    {/* Pagination Info */}
+                    <div className="text-sm text-gray-700">
+                        Showing page {pagination.from} to {pagination.last_page} of {pagination.total} results
+                    </div>
 
-                <span className="text-sm text-gray-600">
-                    Showing page <span className="font-semibold text-gray-900">{currentPage}</span> of <span className="font-semibold text-gray-900">{lastPage}</span>
-                </span>
+                    {/* Pagination Controls */}
+                    <div className="flex items-center space-x-2">
+                        {/* Previous Button */}
+                        <button
+                            className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-l ${currentPage === 1
+                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                : 'text-white bg-red-800 hover:bg-red-900'
+                                }`}
+                            onClick={handlePrevPage}
+                            disabled={currentPage === 1 || loading}
+                        >
+                            <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4" />
+                            </svg>
+                            Previous
+                        </button>
 
-                <button
-                    onClick={handleNextPage}
-                    disabled={!nextPageUrl || currentPage >= lastPage}
-                    className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-e ${
-                        !nextPageUrl || currentPage >= lastPage
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'text-white bg-red-800 hover:bg-red-900'
-                    }`}
-                >
-                    Next
-                    <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
-                    </svg>
-                </button>
-            </div>
+                        {/* Page Numbers */}
+                        {generatePageNumbers().map((pageNum) => (
+                            <button
+                                key={pageNum}
+                                className={`flex items-center justify-center px-3 h-8 text-sm font-medium ${pageNum === currentPage
+                                    ? 'text-white bg-red-800'
+                                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-100'
+                                    }`}
+                                onClick={() => handlePageClick(pageNum)}
+                                disabled={loading}
+                            >
+                                {pageNum}
+                            </button>
+                        ))}
+
+                        {/* Next Button */}
+                        <button
+                            className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-r ${currentPage === pagination.last_page
+                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                : 'text-white bg-red-800 hover:bg-red-900'
+                                }`}
+                            onClick={handleNextPage}
+                            disabled={currentPage === pagination.last_page || loading}
+                        >
+                            Next
+                            <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

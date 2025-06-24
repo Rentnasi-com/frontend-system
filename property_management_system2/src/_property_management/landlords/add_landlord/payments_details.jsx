@@ -35,39 +35,107 @@ const AddLandlordPaymentsDetails = () => {
 
         is_property_created: z.enum(["0", "1"]).optional(), // Changed to enum for strict validation
         properties: z.array(z.string().min(1)).optional(),
-    }).refine((data) => {
+    }).superRefine((data, ctx) => {
+        // Mpesa validation
         if (data.payment_method === "mpesa") {
             if (!data.mpesa_method) {
-                throw new Error("Please select an Mpesa payment method");
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Please select an Mpesa payment method",
+                    path: ["mpesa_method"]
+                });
+                return;
             }
 
             switch (data.mpesa_method) {
                 case "send_money":
-                    if (!data.mpesa_phone_number || !data.mpesa_hakikisha_name) {
-                        throw new Error("Phone number and Hakikisha name are required for send money");
+                    if (!data.mpesa_phone_number || data.mpesa_phone_number.trim() === "") {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Phone number is required",
+                            path: ["mpesa_phone_number"]
+                        });
+                    }
+                    if (!data.mpesa_hakikisha_name || data.mpesa_hakikisha_name.trim() === "") {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Hakikisha name is required",
+                            path: ["mpesa_hakikisha_name"]
+                        });
                     }
                     break;
+
                 case "pay_bill":
-                    if (!data.mpesa_pay_bill_number || !data.mpesa_account_number) {
-                        throw new Error("Paybill number and account number are required");
+                    if (!data.mpesa_pay_bill_number || data.mpesa_pay_bill_number.trim() === "") {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Paybill number is required",
+                            path: ["mpesa_pay_bill_number"]
+                        });
+                    }
+                    if (!data.mpesa_account_number || data.mpesa_account_number.trim() === "") {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Account number is required",
+                            path: ["mpesa_account_number"]
+                        });
                     }
                     break;
+
                 case "buy_goods":
-                    if (!data.mpesa_till_number) {
-                        throw new Error("Till number is required for buy goods");
+                    if (!data.mpesa_till_number || data.mpesa_till_number.trim() === "") {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Till number is required",
+                            path: ["mpesa_till_number"]
+                        });
                     }
                     break;
-            }
-        } else if (data.payment_method === "bank") {
-            if (!data.bank_account_number || !data.bank_account_name ||
-                !data.bank_name || !data.bank_branch || !data.bank_code) {
-                throw new Error("All bank details are required");
             }
         }
+        // Bank validation
+        else if (data.payment_method === "bank") {
+            // Check each bank field individually
+            if (!data.bank_account_number || data.bank_account_number.trim() === "") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Bank account number is required",
+                    path: ["bank_account_number"]
+                });
+            }
 
-        return true;
-    }, {
-        message: "Please complete all required fields",
+            if (!data.bank_account_name || data.bank_account_name.trim() === "") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Bank account name is required",
+                    path: ["bank_account_name"]
+                });
+            }
+
+            if (!data.bank_name || data.bank_name.trim() === "") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Bank name is required",
+                    path: ["bank_name"]
+                });
+            }
+
+            if (!data.bank_branch || data.bank_branch.trim() === "") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Bank branch is required",
+                    path: ["bank_branch"]
+                });
+            }
+
+            if (!data.bank_code || data.bank_code.trim() === "") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Bank code is required",
+                    path: ["bank_code"]
+                });
+            }
+        }
     });
 
 

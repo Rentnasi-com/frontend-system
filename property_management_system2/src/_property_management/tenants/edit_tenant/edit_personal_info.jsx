@@ -19,6 +19,8 @@ const EditPersonalInfo = () => {
   const token = localStorage.getItem("token")
   const [searchParams] = useSearchParams();
   const tenantId = searchParams.get('tenant_id')
+  const unitId = searchParams.get('unit_id')
+
   const onChange = (imageList, addUpdateIndex) => {
     // data for submit
     console.log(imageList, addUpdateIndex);
@@ -116,7 +118,8 @@ const EditPersonalInfo = () => {
         const tenant_id = response.data.tenant_id
         localStorage.setItem('tenant_id', tenant_id)
         toast.success(response.data.message)
-        navigate("/tenants/edit-tenant-unit")
+        navigate(`/tenants/edit-tenant-unit?tenant_id=${tenant_id}&unit_id=${unitId}`)
+        console.log(response.data)
       } else {
         toast.error(response.data.error.email || response.data.error.passport || response.data.error.phone)
         // console.log("Step 1 error", response.data)

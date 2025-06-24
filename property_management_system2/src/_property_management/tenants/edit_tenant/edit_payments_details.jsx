@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader } from "lucide-react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const EditTenantProperty = () => {
   const [properties, setProperties] = useState([])
@@ -17,8 +17,10 @@ const EditTenantProperty = () => {
   const navigate = useNavigate()
   const baseUrl = import.meta.env.VITE_BASE_URL;
   const token = localStorage.getItem('token')
-  const unitId = localStorage.getItem('unit_id')
-  const tenantId = localStorage.getItem('tenant_id');
+  const [searchParams] = useSearchParams();
+  const tenantId = searchParams.get('tenant_id')
+  const unitId = searchParams.get('unit_id')
+  console.log("Tenant", tenantId, "Unit", unitId)
 
   const schema = z.object({
     is_rent_agreed: z.enum(["1", "0"], {
@@ -37,15 +39,15 @@ const EditTenantProperty = () => {
     water: z.string().min(1, "Water deposit must be a positive number"),
     garbage: z.string().min(1, "Garbage deposit must be a positive number"),
     electricity: z.string().min(1, "Electricity deposit must be a positive number"),
-    
+
     rent_due_date: z.string().min(1, "Select a valid date"),
     due_rent_reminder_date: z.string().min(1, "Select a valid date"),
     due_rent_fine_start_date: z.string().min(1, "Select a valid date"),
-    
+
     mode_for_late_payment: z.enum(["percentage", "fixed_amount", ""], {
       errorMap: () => ({ message: "Please select a valid mode" })
     }),
-    
+
     amount_criteria: z.enum([
       "current_full_month_rent",
       "current_full_month_rent_balance",
@@ -299,16 +301,16 @@ const EditTenantProperty = () => {
 
         ...(values.mode_for_late_payment === "percentage" ? {
           criteria_percentage: values.criteria_percentage,
-          late_payment_fixed_amount: null 
+          late_payment_fixed_amount: null
         } : {}),
         ...(values.mode_for_late_payment === "fixed_amount" ? {
           late_payment_fixed_amount: values.late_payment_fixed_amount,
-          amount_criteria: null,          
-          criteria_percentage: null       
+          amount_criteria: null,
+          criteria_percentage: null
         } : {})
       }
 
-      
+
 
       const response = await axios.patch(
         `${baseUrl}/manage-tenant/create-tenant/other-info`,

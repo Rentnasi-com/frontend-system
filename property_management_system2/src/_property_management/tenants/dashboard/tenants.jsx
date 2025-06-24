@@ -189,7 +189,7 @@ const Tenants = () => {
                                             openIssues={"Pending Issues"}
                                             isShowing={true}
                                             eyeLink={`/property/single-unit/unit_id:${tenant.unit_id}`}
-                                            eyeEdit={`/tenants/edit-personal-details?tenant_id=${tenant.id}`}
+                                            eyeEdit={`/tenants/edit-personal-details?tenant_id=${tenant.id}&unit_id=${tenant.unit_id}`}
                                         />
                                     ))
                                 )}
