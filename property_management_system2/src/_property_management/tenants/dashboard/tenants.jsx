@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { DashboardHeader, TableRow } from "../../_dashboard/pages/page_components";
-import { set } from "date-fns";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -34,10 +33,9 @@ const Tenants = () => {
     const [tenants, setTenants] = useState([])
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const token = localStorage.getItem('token')
+
     const [currentPage, setCurrentPage] = useState(1);
-    const [nextPageUrl, setNextPageUrl] = useState(null);
-    const [prevPageUrl, setPrevPageUrl] = useState(null);
-    const [lastPage, setLastPage] = useState(1);
+    const [pagination, setPagination] = useState([])
 
     const [selectedProperty, setSelectedProperty] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
@@ -81,9 +79,7 @@ const Tenants = () => {
             if (response.data.success) {
                 setTenants(response.data.result.data)
                 setCurrentPage(response.data.result.current_page);
-                setNextPageUrl(response.data.result.next_page_url);
-                setPrevPageUrl(response.data.result.prev_page_url);
-                setLastPage(response.data.result.last_page);
+                setPagination(response.data.result)
             }
         } catch (error) {
             console.error(error.message)
@@ -93,15 +89,42 @@ const Tenants = () => {
     }
 
     const handleNextPage = () => {
-        if (nextPageUrl) {
-            setCurrentPage((prev) => prev + 1);
+        if (pagination && currentPage < pagination.last_page) {
+            fetchTenants(currentPage + 1);
         }
     };
 
-    const handlePreviousPage = () => {
-        if (prevPageUrl) {
-            setCurrentPage((prev) => prev - 1);
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            fetchTenants(currentPage - 1);
         }
+    };
+
+    const handlePageClick = (pageNumber) => {
+        if (pageNumber !== currentPage) {
+            fetchTenants(pageNumber);
+        }
+    };
+
+    const generatePageNumbers = () => {
+        if (!pagination) return [];
+
+        const { current_page, last_page } = pagination;
+        const pages = [];
+        const maxVisiblePages = 5;
+
+        let startPage = Math.max(1, current_page - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(last_page, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+        }
+
+        return pages;
     };
 
     const handleSelectChange = (event) => {
@@ -200,39 +223,60 @@ const Tenants = () => {
 
             </div>
 
-            {(nextPageUrl || currentPage > 1) && (
-                <div className="flex justify-between items-center mt-4 px-4">
+            {pagination && pagination.last_page > 1 && (
+                <div className="flex flex-col sm:flex-row justify-between items-center mt-4 px-4 gap-4">
+                    {/* Pagination Info */}
+                    <div className="text-sm text-gray-700">
+                        Showing page {pagination.from} to {pagination.last_page} of {pagination.total} results
+                    </div>
 
-                    {prevPageUrl && (
+                    {/* Pagination Controls */}
+                    <div className="flex items-center space-x-2">
+                        {/* Previous Button */}
                         <button
-                            onClick={handlePreviousPage}
-                            className="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-red-800 rounded-s hover:bg-red-900"
+                            className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-l ${currentPage === 1
+                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                : 'text-white bg-red-800 hover:bg-red-900'
+                                }`}
+                            onClick={handlePrevPage}
+                            disabled={currentPage === 1 || loading}
                         >
                             <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
                                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4" />
                             </svg>
                             Previous
                         </button>
-                    )}
 
-                    {/* Pagination Info */}
-                    <span className="text-sm text-gray-600">
-                        Showing page <span className="font-semibold text-gray-900">{currentPage}</span> of <span className="font-semibold text-gray-900">{lastPage}</span>
-                    </span>
+                        {/* Page Numbers */}
+                        {generatePageNumbers().map((pageNum) => (
+                            <button
+                                key={pageNum}
+                                className={`flex items-center justify-center px-3 h-8 text-sm font-medium ${pageNum === currentPage
+                                    ? 'text-white bg-red-800'
+                                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-100'
+                                    }`}
+                                onClick={() => handlePageClick(pageNum)}
+                                disabled={loading}
+                            >
+                                {pageNum}
+                            </button>
+                        ))}
 
-                    {/* Next Button */}
-                    {nextPageUrl && (
+                        {/* Next Button */}
                         <button
-                            className="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-red-800 border-0 border-s border-red-700 rounded-e hover:bg-red-900"
+                            className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-r ${currentPage === pagination.last_page
+                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                : 'text-white bg-red-800 hover:bg-red-900'
+                                }`}
                             onClick={handleNextPage}
-
+                            disabled={currentPage === pagination.last_page || loading}
                         >
                             Next
                             <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
                                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
                             </svg>
                         </button>
-                    )}
+                    </div>
                 </div>
             )}
         </>

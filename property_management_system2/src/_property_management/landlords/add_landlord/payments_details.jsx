@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { Loader } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
+import DatePicker from "react-datepicker"
 import { useForm } from "react-hook-form"
 import toast from "react-hot-toast"
 import { FaArrowRight } from "react-icons/fa"
@@ -14,6 +15,9 @@ const AddLandlordPaymentsDetails = () => {
     const [selectedProperties, setSelectedProperties] = useState([])
     const [isLoadingProperties, setIsLoadingProperties] = useState(true)
     const token = localStorage.getItem('token')
+    
+    const [selectedDate, setSelectedDate] = useState(null);
+
     const landlord_id = localStorage.getItem("landlord_id")
     const [fetchError, setFetchError] = useState(null)
     const baseUrl = import.meta.env.VITE_BASE_URL
@@ -239,8 +243,19 @@ const AddLandlordPaymentsDetails = () => {
                     <h3 className="font-bold text-gray-600 mt-2">(c) Payment information</h3>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-900" htmlFor="date">1. Select date to receive payment</label>
+                            <DatePicker
+                                selected={selectedDate}
+                                onChange={(date) => setSelectedDate(date)}
+                                className="mt-2 border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400"
+                                placeholderText="Select a date"
+                                name="date_of_payment"
+                                dateFormat="dd-MM-yyyy"
+                            />
+                        </div>
                         <div className="flex space-x-6">
-                            <h6 className="text-sm font-medium text-gray-900">What is your preferred method of payment</h6>
+                            <h6 className="text-sm font-medium text-gray-900">2. What is your preferred method of payment</h6>
                             <label>
                                 <input
                                     {...register("payment_method")}
@@ -270,7 +285,7 @@ const AddLandlordPaymentsDetails = () => {
                                 <div className="w-full">
                                     <label
                                         htmlFor="property-name"
-                                        className="block my-2 text-sm font-medium text-gray-900"
+                                        className="block my-2 text-sm font-medium text-gray-600"
                                     >
                                         Select mode for late payment fine
                                     </label>
@@ -506,7 +521,7 @@ const AddLandlordPaymentsDetails = () => {
                         )}
 
                         <div className="flex space-x-6">
-                            <h6 className="text-sm font-medium text-gray-900">Is the property already created</h6>
+                            <h6 className="text-sm font-medium text-gray-900">3. Is the property already created</h6>
                             <label>
                                 <input
                                     {...register("is_property_created")}

@@ -14,45 +14,43 @@ const Property = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const status = queryParams.get('status') || '';
+
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1)
-    const [isNextClicked, setIsNextClicked] = useState(false)
     const [pagination, setPagination] = useState([])
+
+    const fetchPropertyUnits = async (page = 1) => {
+        const response = await axios.get(
+            `${baseUrl}/manage-property/single-property/unit-listing?property_id=${property_id}&pagination=${page}&status=${status}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                },
+            }
+        );
+        setPropertyUnits(response.data.result);
+        setLoading(false);
+        setCurrentPage(response.data.pagination.current_page);
+        setPagination(response.data.pagination)
+    };
+
+    const fetchPropertyDetails = async () => {
+        const response = await axios.get(
+            `${baseUrl}/manage-property/single-property/details?property_id=${property_id}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                },
+            }
+        );
+        setProperty(response.data.result);
+        setLoading(false);
+    };
 
     useEffect(() => {
         if (property_id) {
-            const fetchPropertyDetails = async () => {
-                const response = await axios.get(
-                    `${baseUrl}/manage-property/single-property/details?property_id=${property_id}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            Accept: "application/json",
-                        },
-                    }
-                );
-                setProperty(response.data.result);
-                setLoading(false);
-            };
             fetchPropertyDetails();
-
-            const fetchPropertyUnits = async (page = 1) => {
-                const response = await axios.get(
-                    `${baseUrl}/manage-property/single-property/unit-listing?property_id=${property_id}&pagination=${page}&status=${status}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            Accept: "application/json",
-                        },
-                    }
-                );
-                setPropertyUnits(response.data.result);
-                setCurrentPage(response.data.pagination.current_page);
-                setTotalPages(response.data.pagination.last_page)
-                setPagination(response.data.pagination)
-                setLoading(false);
-                console.log(response.data)
-            };
             fetchPropertyUnits();
         }
     }, [property_id, baseUrl, token, status]);
@@ -125,16 +123,42 @@ const Property = () => {
         }
     ]
     const handleNextPage = () => {
-        if (currentPage < totalPages) {
-            setIsNextClicked(true)
-            setCurrentPage(currentPage + 1);
+        if (pagination && currentPage < pagination.last_page) {
+            fetchPropertyUnits(currentPage + 1);
         }
     };
 
     const handlePrevPage = () => {
         if (currentPage > 1) {
-            setCurrentPage(currentPage - 1);
+            fetchPropertyUnits(currentPage - 1);
         }
+    };
+
+    const handlePageClick = (pageNumber) => {
+        if (pageNumber !== currentPage) {
+            fetchPropertyUnits(pageNumber);
+        }
+    };
+
+    const generatePageNumbers = () => {
+        if (!pagination) return [];
+
+        const { current_page, last_page } = pagination;
+        const pages = [];
+        const maxVisiblePages = 5;
+
+        let startPage = Math.max(1, current_page - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(last_page, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+        }
+
+        return pages;
     };
 
     return (
@@ -252,35 +276,62 @@ const Property = () => {
                     </div>
                 </div>
             </div>
-            {totalPages >= 2 && (
-                <div className="flex justify-between items-center mt-3 px-4">
-                    {isNextClicked && (
+            
+
+             {pagination && pagination.last_page > 1 && (
+                <div className="flex flex-col sm:flex-row justify-between items-center mt-4 px-4 gap-4">
+                    {/* Pagination Info */}
+                    <div className="text-sm text-gray-700">
+                        Showing page {pagination.from} to {pagination.last_page} of {pagination.total} results
+                    </div>
+
+                    {/* Pagination Controls */}
+                    <div className="flex items-center space-x-2">
+                        {/* Previous Button */}
                         <button
-                            className="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-red-800 rounded-s hover:bg-red-900"
+                            className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-l ${currentPage === 1
+                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                : 'text-white bg-red-800 hover:bg-red-900'
+                                }`}
                             onClick={handlePrevPage}
-                            disabled={currentPage === 1}
+                            disabled={currentPage === 1 || loading}
                         >
                             <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
                                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4" />
                             </svg>
                             Previous
                         </button>
-                    )}
 
+                        {/* Page Numbers */}
+                        {generatePageNumbers().map((pageNum) => (
+                            <button
+                                key={pageNum}
+                                className={`flex items-center justify-center px-3 h-8 text-sm font-medium ${pageNum === currentPage
+                                    ? 'text-white bg-red-800'
+                                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-100'
+                                    }`}
+                                onClick={() => handlePageClick(pageNum)}
+                                disabled={loading}
+                            >
+                                {pageNum}
+                            </button>
+                        ))}
 
-                    <span className="text-sm text-gray-700">
-                        Showing page <span className="font-semibold text-gray-900">{pagination.from}</span> of <span className="font-semibold text-gray-900">{pagination.last_page}</span>
-                    </span>
-                    <button
-                        className="flex items-center justify-center px-3 h-8 text-sm font-medium text-white bg-red-800 border-0 border-s border-red-700 rounded-e hover:bg-red-900"
-                        onClick={handleNextPage}
-                        disabled={currentPage === totalPages}
-                    >
-                        Next
-                        <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
-                        </svg>
-                    </button>
+                        {/* Next Button */}
+                        <button
+                            className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-r ${currentPage === pagination.last_page
+                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                : 'text-white bg-red-800 hover:bg-red-900'
+                                }`}
+                            onClick={handleNextPage}
+                            disabled={currentPage === pagination.last_page || loading}
+                        >
+                            Next
+                            <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             )}
         </>
