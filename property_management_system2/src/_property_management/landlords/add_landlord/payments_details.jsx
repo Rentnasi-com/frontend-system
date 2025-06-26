@@ -15,7 +15,7 @@ const AddLandlordPaymentsDetails = () => {
     const [selectedProperties, setSelectedProperties] = useState([])
     const [isLoadingProperties, setIsLoadingProperties] = useState(true)
     const token = localStorage.getItem('token')
-    
+
     const [selectedDate, setSelectedDate] = useState(null);
 
     const landlord_id = localStorage.getItem("landlord_id")
@@ -23,6 +23,7 @@ const AddLandlordPaymentsDetails = () => {
     const baseUrl = import.meta.env.VITE_BASE_URL
     const schema = z.object({
         payment_method: z.enum(["mpesa", "bank"]).optional(),
+        date_of_payment: z.string().optional(),
 
         mpesa_method: z.enum(["send_money", "pay_bill", "buy_goods"]).optional(), // Changed to match your UI values
         mpesa_phone_number: z.string().min(5, "Invalid mpesa phone number").optional(),
@@ -35,11 +36,18 @@ const AddLandlordPaymentsDetails = () => {
         bank_account_name: z.string().min(5, "Invalid bank account name").optional(),
         bank_name: z.string().min(5, "Invalid bank name").optional(),
         bank_branch: z.string().min(5, "Invalid bank branch").optional(),
-        bank_code: z.string().min(5, "Invalid bank code").optional(),
+        bank_code: z.string().min(1, "Invalid bank code").optional(),
 
         is_property_created: z.enum(["0", "1"]).optional(), // Changed to enum for strict validation
         properties: z.array(z.string().min(1)).optional(),
     }).superRefine((data, ctx) => {
+        if (!data.date_of_payment || data.date_of_payment.trim() === "" || data.date_of_payment.length < 1) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Select a valid date",
+                path: ["date_of_payment"]
+            });
+        }
         // Mpesa validation
         if (data.payment_method === "mpesa") {
             if (!data.mpesa_method) {
@@ -245,14 +253,21 @@ const AddLandlordPaymentsDetails = () => {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-900" htmlFor="date">1. Select date to receive payment</label>
-                            <DatePicker
-                                selected={selectedDate}
-                                onChange={(date) => setSelectedDate(date)}
-                                className="mt-2 border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400"
-                                placeholderText="Select a date"
-                                name="date_of_payment"
-                                dateFormat="dd-MM-yyyy"
-                            />
+                            <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+                                {...register("date_of_payment")}
+                            >
+                                <option disabled>Select due rent reminder date</option>
+                                {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                    <option key={day} value={day.toString()}>
+                                        {day}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.due_rent_fine_start_date && (
+                                <p className="text-xs text-red-500">
+                                    {errors.date_of_payment.message}
+                                </p>
+                            )}
                         </div>
                         <div className="flex space-x-6">
                             <h6 className="text-sm font-medium text-gray-900">2. What is your preferred method of payment</h6>

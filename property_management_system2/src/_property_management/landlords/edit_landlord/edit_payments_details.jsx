@@ -18,8 +18,10 @@ const EditLandlordPaymentsDetails = () => {
     const landlordId = searchParams.get('landlord_id')
     const [fetchError, setFetchError] = useState(null)
     const baseUrl = import.meta.env.VITE_BASE_URL
+
     const schema = z.object({
         payment_method: z.enum(["mpesa", "bank"]).optional(),
+        date_of_payment: z.string().optional(),
 
         mpesa_method: z.enum(["send_money", "pay_bill", "buy_goods"]).optional(), // Changed to match your UI values
         mpesa_phone_number: z.string().min(5, "Invalid mpesa phone number").optional(),
@@ -32,43 +34,118 @@ const EditLandlordPaymentsDetails = () => {
         bank_account_name: z.string().min(5, "Invalid bank account name").optional(),
         bank_name: z.string().min(5, "Invalid bank name").optional(),
         bank_branch: z.string().min(5, "Invalid bank branch").optional(),
-        bank_code: z.string().min(5, "Invalid bank code").optional(),
+        bank_code: z.string().min(1, "Invalid bank code").optional(),
 
         is_property_created: z.enum(["0", "1"]).optional(), // Changed to enum for strict validation
         properties: z.array(z.string().min(1)).optional(),
-    }).refine((data) => {
+    }).superRefine((data, ctx) => {
+        if (!data.date_of_payment || data.date_of_payment.trim() === "" || data.date_of_payment.length < 1) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Select a valid date",
+                path: ["date_of_payment"]
+            });
+        }
+        // Mpesa validation
         if (data.payment_method === "mpesa") {
             if (!data.mpesa_method) {
-                throw new Error("Please select an Mpesa payment method");
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Please select an Mpesa payment method",
+                    path: ["mpesa_method"]
+                });
+                return;
             }
 
             switch (data.mpesa_method) {
                 case "send_money":
-                    if (!data.mpesa_phone_number || !data.mpesa_hakikisha_name) {
-                        throw new Error("Phone number and Hakikisha name are required for send money");
+                    if (!data.mpesa_phone_number || data.mpesa_phone_number.trim() === "") {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Phone number is required",
+                            path: ["mpesa_phone_number"]
+                        });
+                    }
+                    if (!data.mpesa_hakikisha_name || data.mpesa_hakikisha_name.trim() === "") {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Hakikisha name is required",
+                            path: ["mpesa_hakikisha_name"]
+                        });
                     }
                     break;
+
                 case "pay_bill":
-                    if (!data.mpesa_pay_bill_number || !data.mpesa_account_number) {
-                        throw new Error("Paybill number and account number are required");
+                    if (!data.mpesa_pay_bill_number || data.mpesa_pay_bill_number.trim() === "") {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Paybill number is required",
+                            path: ["mpesa_pay_bill_number"]
+                        });
+                    }
+                    if (!data.mpesa_account_number || data.mpesa_account_number.trim() === "") {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Account number is required",
+                            path: ["mpesa_account_number"]
+                        });
                     }
                     break;
+
                 case "buy_goods":
-                    if (!data.mpesa_till_number) {
-                        throw new Error("Till number is required for buy goods");
+                    if (!data.mpesa_till_number || data.mpesa_till_number.trim() === "") {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Till number is required",
+                            path: ["mpesa_till_number"]
+                        });
                     }
                     break;
-            }
-        } else if (data.payment_method === "bank") {
-            if (!data.bank_account_number || !data.bank_account_name ||
-                !data.bank_name || !data.bank_branch || !data.bank_code) {
-                throw new Error("All bank details are required");
             }
         }
+        // Bank validation
+        else if (data.payment_method === "bank") {
+            // Check each bank field individually
+            if (!data.bank_account_number || data.bank_account_number.trim() === "") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Bank account number is required",
+                    path: ["bank_account_number"]
+                });
+            }
 
-        return true;
-    }, {
-        message: "Please complete all required fields",
+            if (!data.bank_account_name || data.bank_account_name.trim() === "") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Bank account name is required",
+                    path: ["bank_account_name"]
+                });
+            }
+
+            if (!data.bank_name || data.bank_name.trim() === "") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Bank name is required",
+                    path: ["bank_name"]
+                });
+            }
+
+            if (!data.bank_branch || data.bank_branch.trim() === "") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Bank branch is required",
+                    path: ["bank_branch"]
+                });
+            }
+
+            if (!data.bank_code || data.bank_code.trim() === "") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Bank code is required",
+                    path: ["bank_code"]
+                });
+            }
+        }
     });
 
     const {
@@ -124,6 +201,7 @@ const EditLandlordPaymentsDetails = () => {
                 const data = response.data.result
                 if (data) {
                     setValue("payment_method", String(data.payment_method))
+                    setValue("date_of_payment", String(data.date_of_payment))
                     setValue("mpesa_method", String(data.mpesa_method))
                     setValue("is_property_created", String(data.is_property_created))
                     if (data.payment_method === "mpesa") {
@@ -152,8 +230,6 @@ const EditLandlordPaymentsDetails = () => {
                         const propertyIds = data.properties.map(property => Number(property.property_id));
                         setValue("properties", propertyIds);
                         setSelectedProperties(propertyIds);
-
-                        console.log("Initialized properties:", propertyIds)
                     }
                 }
             }
@@ -228,8 +304,26 @@ const EditLandlordPaymentsDetails = () => {
                     <h3 className="font-bold text-gray-600 mt-2">(c) Payment information</h3>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-900" htmlFor="date">1. Select date to receive payment</label>
+                            <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+                                {...register("date_of_payment")}
+                            >
+                                <option disabled>Select due rent reminder date</option>
+                                {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                    <option key={day} value={day.toString()}>
+                                        {day}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.due_rent_fine_start_date && (
+                                <p className="text-xs text-red-500">
+                                    {errors.date_of_payment.message}
+                                </p>
+                            )}
+                        </div>
                         <div className="flex space-x-6">
-                            <h6 className="text-sm font-medium text-gray-900">What is your preferred method of payment</h6>
+                            <h6 className="text-sm font-medium text-gray-900">2. What is your preferred method of payment</h6>
                             <label>
                                 <input
                                     {...register("payment_method")}
@@ -259,7 +353,7 @@ const EditLandlordPaymentsDetails = () => {
                                 <div className="w-full">
                                     <label
                                         htmlFor="property-name"
-                                        className="block my-2 text-sm font-medium text-gray-900"
+                                        className="block my-2 text-sm font-medium text-gray-600"
                                     >
                                         Select mode for late payment fine
                                     </label>
@@ -269,7 +363,7 @@ const EditLandlordPaymentsDetails = () => {
                                         <option selected>Select model for payment</option>
                                         <option value="send_money">Phone number</option>
                                         <option value="buy_goods">Buy goods</option>
-                                        <option value="pay_bill">Paybil</option>
+                                        <option value="pay_bill">Paybill</option>
                                     </select>
 
                                 </div>
@@ -282,7 +376,7 @@ const EditLandlordPaymentsDetails = () => {
                                                     htmlFor="property-name"
                                                     className="block my-2 text-sm font-medium text-gray-900"
                                                 >
-                                                    pay_bill number
+                                                    Business Number
                                                 </label>
                                                 <input
                                                     {...register("mpesa_pay_bill_number")}
@@ -301,7 +395,7 @@ const EditLandlordPaymentsDetails = () => {
                                                     htmlFor="property-name"
                                                     className="block my-2 text-sm font-medium text-gray-900"
                                                 >
-                                                    Account number
+                                                    Account Number
                                                 </label>
                                                 <input
                                                     {...register("mpesa_account_number")}
@@ -495,7 +589,7 @@ const EditLandlordPaymentsDetails = () => {
                         )}
 
                         <div className="flex space-x-6">
-                            <h6 className="text-sm font-medium text-gray-900">Is the property already created</h6>
+                            <h6 className="text-sm font-medium text-gray-900">3. Is the property already created</h6>
                             <label>
                                 <input
                                     {...register("is_property_created")}
@@ -549,7 +643,8 @@ const EditLandlordPaymentsDetails = () => {
                                 </div>
                                 <div>
                                     {selectedProperties.map((propertyId) => {
-                                        const property = properties.find(p => String(p.id) === String(propertyId))
+                                        const property = properties.find((property) => String(property.id) === String(propertyId));
+
                                         return (
                                             < span
                                                 key={propertyId}
