@@ -97,25 +97,25 @@ const ViewLandlord = () => {
                                         <td className="px-2 py-4">{landlord.properties}</td>
                                         <td className="px-2 py-4">{landlord.vacant_units}</td>
                                         <td className="px-2 py-4">{landlord.occupied_units}</td>
-                                        
+
                                         <td className="py-4 px-2">
                                             <p className="text-center border border-green-700 align-baseline inline-flex px-2 py-1 items-center text-green-700 bg-green-200 rounded font-semibold">
-                                                {(landlord.expected_revenue)}
+                                                Ksh {(landlord.expected_revenue.toLocaleString() || 0)}
                                             </p>
                                         </td>
                                         <td className="py-4 px-2">
                                             <p className="text-center border border-blue-700 align-baseline inline-flex px-2 py-1 items-center text-blue-700 bg-blue-200 rounded font-semibold">
-                                                {(landlord.outstanding_revenue)}
+                                                Ksh {(landlord.outstanding_revenue.toLocaleString() || 0)}
                                             </p>
                                         </td>
                                         <td className="py-4 px-2">
                                             <p className="text-center border border-red-700 align-baseline inline-flex px-2 py-1 items-center text-success bg-red-200 rounded font-semibold">
-                                                {(landlord.pending_balance)}
+                                                Ksh {(landlord.pending_balance.toLocaleString() || 0)}
                                             </p>
                                         </td>
                                         <td className="py-4 px-2">
                                             <p className="text-center border border-red-700 align-baseline inline-flex px-2 py-1 items-center text-success bg-red-200 rounded font-semibold">
-                                                {landlord.fines}
+                                                Ksh {landlord.fines.toLocaleString() || 0}
                                             </p>
                                         </td>
                                         <td className="flex pt-10 px-2 space-x-4">

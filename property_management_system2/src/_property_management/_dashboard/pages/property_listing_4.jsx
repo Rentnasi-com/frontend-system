@@ -55,10 +55,13 @@ const PropertyListing = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null); // Changed from array to null
-    
+
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const token = localStorage.getItem("token");
     const navigate = useNavigate();
+
+    const [searchQuery, setSearchQuery] = useState('')
+    const [confirmedSearch, setConfirmedSearch] = useState("");
 
     const fetchProperties = async (page = 1) => {
         try {
@@ -66,7 +69,7 @@ const PropertyListing = () => {
             console.log(`Fetching page ${page}`); // Debug log
 
             const response = await axios.get(
-                `${baseUrl}/manage-property/view-properties/saved?pagination=${page}`,
+                `${baseUrl}/manage-property/view-properties/saved?pagination=${page}&query=${confirmedSearch}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -97,7 +100,7 @@ const PropertyListing = () => {
     // Remove currentPage from dependency array to prevent infinite loops
     useEffect(() => {
         fetchProperties(currentPage);
-    }, [token]); // Only depend on token
+    }, [token, confirmedSearch]); // Only depend on token
 
     // Separate effect for page changes
     useEffect(() => {
@@ -239,6 +242,15 @@ const PropertyListing = () => {
         }
     };
 
+    const handleSearch = (event) => {
+        setSearchQuery(event.target.value); // Update the search input state
+    };
+
+    const handleSubmitSearch = (event) => {
+        event.preventDefault();
+        setConfirmedSearch(searchQuery); // Only confirm search upon submission
+    };
+
     return (
         <>
             <DashboardHeader
@@ -268,7 +280,26 @@ const PropertyListing = () => {
                 )}
             </div>
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
-                <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
+                <div className="flex justify-between items-center">
+                    <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
+                    <form onSubmit={handleSubmitSearch} className="w-72 mr-2">
+                        <label className="text-sm font-medium text-gray-900 sr-only">Search</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                                <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                                </svg>
+                            </div>
+                            <input
+                                type="search"
+                                className="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-red-500 focus:border-red-500"
+                                placeholder="Search Tenants..."
+                                value={searchQuery}
+                                onChange={handleSearch}
+                            />
+                        </div>
+                    </form>
+                </div>
                 <div className="w-full">
                     <div className="overflow-x-auto">
                         <table className="min-w-full table-auto">

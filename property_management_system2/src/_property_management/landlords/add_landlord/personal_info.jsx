@@ -24,7 +24,7 @@ const AddLandlordPersonalInfo = () => {
 
     const schema = z.object({
         name: z.string().min(3, "Username must be at least 3 characters long"),
-        email: z.string().email("Invalid email").or(z.literal("")),
+        email: z.string().email("Invalid email"),
         phone: z.string().min(5, "Invalid phone number"),
         id_or_passport_number: z.string().min(4, "Invalid Id or passport number"),
         next_of_kin_name: z.string().min(3, "Kin name must be at least 3 characters long").or(z.literal("")),

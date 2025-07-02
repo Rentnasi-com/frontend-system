@@ -32,7 +32,7 @@ const AuthHandler = () => {
   const redirectToAuth = (message = "Redirecting to authentication...") => {
     toast.error(message);
     setTimeout(() => {
-      window.location.href = "https://auth.rentnasi.com";
+      window.location.href = "https://auth.rentalpay.africa";
     }, 1000);
   };
 
@@ -59,7 +59,7 @@ const AuthHandler = () => {
       const response = await axios.post(
         `${baseUrl}/auth/refresh-token`,
         { refreshToken: token },
-        { 
+        {
           headers: { 'Authorization': `Bearer ${token}` },
           timeout: 10000 // 10 second timeout
         }
@@ -98,7 +98,7 @@ const AuthHandler = () => {
 
     // Token is expired, try to refresh
     const refreshResult = await refreshToken(token, baseUrl);
-    
+
     if (refreshResult.success) {
       return { isValid: true, refreshed: true };
     } else {
@@ -113,15 +113,15 @@ const AuthHandler = () => {
       console.warn('No package expiry date provided');
       return true; // Allow access if no expiry date
     }
-    
+
     try {
       const now = new Date();
       const packageExpiry = new Date(packageExpiryDate);
-      
+
       // Add some buffer (1 minute) to handle timezone/sync issues
       const bufferTime = 60 * 1000; // 1 minute in milliseconds
       const effectiveExpiry = new Date(packageExpiry.getTime() + bufferTime);
-      
+
       console.log('Package expiry check:', {
         now: now.toISOString(),
         packageExpiry: packageExpiry.toISOString(),
@@ -157,7 +157,7 @@ const AuthHandler = () => {
         { sessionId, userId, appUrl },
         { timeout: 15000 } // 15 second timeout
       );
-
+      console.log("auth", response)
       const token = response.data?.data?.token;
       const expiry = response.data?.data?.expiry;
       const packageExpiryDate = response.data?.package?.expiry_date;
@@ -191,12 +191,12 @@ const AuthHandler = () => {
 
     } catch (error) {
       console.error('Error during authentication:', error);
-      
+
       // Handle specific 403 errors
       if (error.response?.status === 403) {
         const errorData = error.response.data;
         console.log('403 Error details:', errorData);
-        
+
         if (errorData?.error?.includes('Package has expired')) {
           toast.error("Package has expired. Redirecting to billing...");
           const sessionId = localStorage.getItem('sessionId');
@@ -207,7 +207,7 @@ const AuthHandler = () => {
           return;
         }
       }
-      
+
       clearSession();
       redirectToAuth("Authentication failed");
     }
@@ -233,10 +233,10 @@ const AuthHandler = () => {
   const setupTokenValidation = () => {
     // Clear any existing interval
     cleanup();
-    
+
     intervalRef.current = setInterval(async () => {
       if (!isMountedRef.current) return;
-      
+
       const result = await validateToken();
       if (!result.isValid) {
         console.warn("Token expired during session. Logging out.");
@@ -252,7 +252,7 @@ const AuthHandler = () => {
   useEffect(() => {
     const initialize = async () => {
       if (isProcessing) return;
-      
+
       safeSetState(() => setIsProcessing(true));
 
       try {
@@ -321,10 +321,10 @@ const AuthHandler = () => {
   }, []);
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
       height: '100vh',
       flexDirection: 'column',
       gap: '1rem'

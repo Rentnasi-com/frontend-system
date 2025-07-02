@@ -26,7 +26,7 @@ const Add_Personal_Info = () => {
     name: z.coerce.string().min(3, "Username must be at least 3 characters long"),
     email: z.string().email("Invalid email").optional().or(z.literal("")),
     phone: z.string().min(5, "Invalid phone number"),
-    id_or_passport_number: z.string().min(4, "Invalid ID or passport number").optional().or(z.literal("")),
+    id_or_passport_number: z.string().min(4, "Invalid ID or passport number"),
     next_of_kin_name: z.coerce.string().min(3, "Kin name must be at least 3 characters long").optional().or(z.literal("")),
     next_of_kin_relationship: z.coerce.string().min(2, "Kin relationship must be at least 2 characters long").optional().or(z.literal("")),
     next_of_kin_phone: z.coerce.string().min(5, "Invalid phone number").optional().or(z.literal("")),

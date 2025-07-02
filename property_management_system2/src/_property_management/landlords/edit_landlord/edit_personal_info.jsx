@@ -30,9 +30,9 @@ const EditLandlordPersonalInfo = () => {
         email: z.string().email("Invalid email"),
         phone: z.string().min(5, "Invalid phone number"),
         id_or_passport_number: z.string().min(4, "Invalid Id or passport number"),
-        next_of_kin_name: z.string().min(3, "Kin name must be at least 3 characters long"),
-        next_of_kin_relationship: z.string().min(2, "Kin relationship must be at least 3 characters long"),
-        next_of_kin_phone: z.string().min(5, "Invalid phone number")
+        next_of_kin_name: z.string().min(3, "Kin name must be at least 3 characters long").or(z.literal("")),
+        next_of_kin_relationship: z.string().min(2, "Kin relationship must be at least 3 characters long").or(z.literal("")),
+        next_of_kin_phone: z.string().min(5, "Invalid phone number").or(z.literal(""))
     })
 
     const {
@@ -103,9 +103,9 @@ const EditLandlordPersonalInfo = () => {
             const dataToSend = {
                 ...values,
                 document_url,
-                landlord_id:landlordId
+                landlord_id: landlordId
             }
-            
+
             const response = await axios.patch(
                 `${baseUrl}/manage-landlord/create-landlord/basic-info`, dataToSend,
                 {
@@ -120,7 +120,7 @@ const EditLandlordPersonalInfo = () => {
                 const landlord_id = response.data.landlord_id
                 localStorage.setItem('landlord_id', landlord_id)
                 toast.success(response.data.message)
-                navigate( `/edit-landlord/payment-details?landlord_id=${landlordId}`)
+                navigate(`/edit-landlord/payment-details?landlord_id=${landlordId}`)
             } else {
                 toast.error(response.data.error.email || response.data.error.passport || response.data.error.phone || "Error sending data")
 

@@ -21,33 +21,46 @@ const AddLandlordPaymentsDetails = () => {
     const landlord_id = localStorage.getItem("landlord_id")
     const [fetchError, setFetchError] = useState(null)
     const baseUrl = import.meta.env.VITE_BASE_URL
+
     const schema = z.object({
         payment_method: z.enum(["mpesa", "bank"]).optional(),
-        date_of_payment: z.string().optional(),
+        date_of_payment: z.number().min(1, "Day must be at least 1").max(31, "Day must be at most 31"),
 
-        mpesa_method: z.enum(["send_money", "pay_bill", "buy_goods"]).optional(), // Changed to match your UI values
-        mpesa_phone_number: z.string().min(5, "Invalid mpesa phone number").optional(),
-        mpesa_hakikisha_name: z.string().min(2, "Invalid mpesa hakikisha name").optional(),
-        mpesa_pay_bill_number: z.string().min(3, "Invalid mpesa pay bill number").optional(),
-        mpesa_account_number: z.string().min(2, "Invalid mpesa account number").optional(),
-        mpesa_till_number: z.string().min(3, "Invalid mpesa till number").optional(),
+        mpesa_method: z.enum(["send_money", "pay_bill", "buy_goods"]).optional(),
+        mpesa_phone_number: z.string().optional(),
+        mpesa_hakikisha_name: z.string().optional(),
+        mpesa_pay_bill_number: z.string().optional(),
+        mpesa_account_number: z.string().optional(),
+        mpesa_till_number: z.string().optional(),
 
-        bank_account_number: z.string().min(5, "Invalid bank account number").optional(),
-        bank_account_name: z.string().min(5, "Invalid bank account name").optional(),
-        bank_name: z.string().min(5, "Invalid bank name").optional(),
-        bank_branch: z.string().min(5, "Invalid bank branch").optional(),
-        bank_code: z.string().min(1, "Invalid bank code").optional(),
+        bank_account_number: z.string().optional(),
+        bank_account_name: z.string().optional(),
+        bank_name: z.string().optional(),
+        bank_branch: z.string().optional(),
+        bank_code: z.string().optional(),
 
-        is_property_created: z.enum(["0", "1"]).optional(), // Changed to enum for strict validation
+        is_property_created: z.enum(["0", "1"]).optional(),
         properties: z.array(z.string().min(1)).optional(),
     }).superRefine((data, ctx) => {
-        if (!data.date_of_payment || data.date_of_payment.trim() === "" || data.date_of_payment.length < 1) {
+
+        if (!data.date_of_payment || data.date_of_payment < 1) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: "Select a valid date",
                 path: ["date_of_payment"]
             });
         }
+
+        // Payment method validation
+        if (!data.payment_method) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Please select a payment method",
+                path: ["payment_method"]
+            });
+            return; // Early return if no payment method selected
+        }
+
         // Mpesa validation
         if (data.payment_method === "mpesa") {
             if (!data.mpesa_method) {
@@ -107,49 +120,25 @@ const AddLandlordPaymentsDetails = () => {
         }
         // Bank validation
         else if (data.payment_method === "bank") {
-            // Check each bank field individually
-            if (!data.bank_account_number || data.bank_account_number.trim() === "") {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: "Bank account number is required",
-                    path: ["bank_account_number"]
-                });
-            }
+            const bankFields = [
+                { field: "bank_account_number", message: "Bank account number is required" },
+                { field: "bank_account_name", message: "Bank account name is required" },
+                { field: "bank_name", message: "Bank name is required" },
+                { field: "bank_branch", message: "Bank branch is required" },
+                { field: "bank_code", message: "Bank code is required" }
+            ];
 
-            if (!data.bank_account_name || data.bank_account_name.trim() === "") {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: "Bank account name is required",
-                    path: ["bank_account_name"]
-                });
-            }
-
-            if (!data.bank_name || data.bank_name.trim() === "") {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: "Bank name is required",
-                    path: ["bank_name"]
-                });
-            }
-
-            if (!data.bank_branch || data.bank_branch.trim() === "") {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: "Bank branch is required",
-                    path: ["bank_branch"]
-                });
-            }
-
-            if (!data.bank_code || data.bank_code.trim() === "") {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: "Bank code is required",
-                    path: ["bank_code"]
-                });
-            }
+            bankFields.forEach(({ field, message }) => {
+                if (!data[field] || data[field].trim() === "") {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message,
+                        path: [field]
+                    });
+                }
+            });
         }
     });
-
 
     const {
         register,
@@ -220,6 +209,8 @@ const AddLandlordPaymentsDetails = () => {
                 landlord_id
             }
 
+            console.log(dataToSend)
+
             const response = await axios.post(`${baseUrl}/manage-landlord/create-landlord/other-info`, dataToSend,
                 {
                     headers: {
@@ -236,13 +227,16 @@ const AddLandlordPaymentsDetails = () => {
             toast.success(error.data.message)
         }
     }
-
+    // Add this somewhere in your component to debug
+    console.log("Current form values:", watch());
+    console.log("Form errors:", errors);
+    console.log("Is form valid:", Object.keys(errors).length === 0);
     return (
         <>
             <div className="p-4 flex justify-between mx-4">
                 <div>
-                    <h1 className="text-xl font-bold text-gray-700">Edit landlord account</h1>
-                    <p className="text-sm text-gray-500">Edit landlord account to your preference </p>
+                    <h1 className="text-xl font-bold text-gray-700">Add landlord account</h1>
+                    <p className="text-sm text-gray-500">Add landlord account to your preference </p>
                 </div>
             </div>
             <div className="grid grid-cols-2">
@@ -253,17 +247,18 @@ const AddLandlordPaymentsDetails = () => {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-900" htmlFor="date">1. Select date to receive payment</label>
-                            <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                                {...register("date_of_payment")}
+                            <select
+                                {...register("date_of_payment", { valueAsNumber: true })}
+                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
                             >
-                                <option disabled>Select due rent reminder date</option>
+                                <option value="">Select due rent reminder date</option>
                                 {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
                                     <option key={day} value={day.toString()}>
                                         {day}
                                     </option>
                                 ))}
                             </select>
-                            {errors.due_rent_fine_start_date && (
+                            {errors.date_of_payment && (
                                 <p className="text-xs text-red-500">
                                     {errors.date_of_payment.message}
                                 </p>
@@ -302,7 +297,7 @@ const AddLandlordPaymentsDetails = () => {
                                         htmlFor="property-name"
                                         className="block my-2 text-sm font-medium text-gray-600"
                                     >
-                                        Select mode for late payment fine
+                                        Select mode of payment
                                     </label>
                                     <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
                                         {...register("mpesa_method")}

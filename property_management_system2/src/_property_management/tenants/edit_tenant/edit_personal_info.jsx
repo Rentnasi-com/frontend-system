@@ -31,7 +31,7 @@ const EditPersonalInfo = () => {
     name: z.coerce.string().min(3, "Username must be at least 3 characters long"),
     email: z.string().email("Invalid email").optional().or(z.literal("")),
     phone: z.string().min(5, "Invalid phone number"),
-    id_or_passport_number: z.string().min(4, "Invalid ID or passport number").optional().or(z.literal("")),
+    id_or_passport_number: z.string().min(4, "Invalid ID or passport number"),
     next_of_kin_name: z.coerce.string().min(3, "Kin name must be at least 3 characters long").optional().or(z.literal("")),
     next_of_kin_relationship: z.coerce.string().min(2, "Kin relationship must be at least 2 characters long").optional().or(z.literal("")),
     next_of_kin_phone: z.coerce.string().min(5, "Invalid phone number").optional().or(z.literal("")),
@@ -169,12 +169,11 @@ const EditPersonalInfo = () => {
                   htmlFor="property-name"
                   className="block my-2 text-sm font-medium text-gray-900"
                 >
-                  Email Address <span className="text-red-600 text-xs">*Not Editable</span>
+                  Email Address
                 </label>
                 <input
-                  readOnly="true"
                   aria-label="email"
-                  {...register("email", { required: true })}
+                  {...register("email")}
                   type="text"
                   placeholder="Enter tenant email address"
                   className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
