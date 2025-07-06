@@ -227,10 +227,7 @@ const AddLandlordPaymentsDetails = () => {
             toast.success(error.data.message)
         }
     }
-    // Add this somewhere in your component to debug
-    console.log("Current form values:", watch());
-    console.log("Form errors:", errors);
-    console.log("Is form valid:", Object.keys(errors).length === 0);
+
     return (
         <>
             <div className="p-4 flex justify-between mx-4">

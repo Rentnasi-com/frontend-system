@@ -33,27 +33,30 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await axios.post(`${BASE_URL}/v2/logout-api`,
+      const response = await axios.post(
+        `${BASE_URL}/v2/logout-api`,
+        dataToSend,
         {
           headers: {
-            Authoraization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Accept: "application/json",
           },
-        },
-        dataToSend
+        }
       )
+
       if (response.data.success) {
         toast.success(response.data.message)
         localStorage.clear()
-        // window.location.href = "http://localhost:5173"
-        window.location.href = `${AUTH_URL}`
+        window.location.href = `${AUTH_URL}` // redirect to login page or base
       } else {
         console.error("Failed to log out:", response.data.message)
       }
     } catch (error) {
-      console.error("Error clearing local storage:", error)
+      console.error("Error during logout:", error)
+      toast.error("Logout failed. Please try again.")
     }
   }
+
 
   const menuItems = [
     { label: 'Dashboard', action: () => console.log('Dashboard clicked') },

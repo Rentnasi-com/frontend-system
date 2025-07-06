@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { DashboardHeader, TableRow } from "../../_dashboard/pages/page_components";
+import { DashboardHeader, PropertyCard, TableRow } from "../../_dashboard/pages/page_components";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -28,6 +28,19 @@ const TableRowSkeleton = () => (
     </tr>
 );
 
+const StatCardSkeleton = () => (
+    <div className="bg-white border border-gray-200 rounded-lg p-2">
+        <div className="flex justify-between items-center">
+            <SkeletonLoader className="h-8 w-8 rounded" />
+            <SkeletonLoader className="h-6 w-6 rounded" />
+        </div>
+        <div className="mt-3">
+            <SkeletonLoader className="h-4 w-24 mb-2" />
+            {/* <SkeletonLoader className="h-6 w-16" /> */}
+        </div>
+    </div>
+);
+
 const Tenants = () => {
     const [properties, setProperties] = useState([])
     const [tenants, setTenants] = useState([])
@@ -40,7 +53,6 @@ const Tenants = () => {
     const [selectedProperty, setSelectedProperty] = useState('')
     const [searchQuery, setSearchQuery] = useState('')
     const [confirmedSearch, setConfirmedSearch] = useState("");
-
 
     const [loading, setLoading] = useState(true);
 
@@ -131,7 +143,6 @@ const Tenants = () => {
         setSelectedProperty(event.target.value);
     };
 
-
     const handleSearch = (event) => {
         setSearchQuery(event.target.value); // Update the search input state
     };
@@ -141,6 +152,37 @@ const Tenants = () => {
         setConfirmedSearch(searchQuery); // Only confirm search upon submission
         console.log("Searching for:", searchQuery); // Replace this with your API call
     };
+
+    const stats = [
+        {
+            redirectUrl: "/property/property-listing",
+            iconSrc: "../../../assets/icons/png/total_property.png",
+            progress: 2.2,
+            label: "Total Tenants",
+            value: 6,
+        },
+        {
+            redirectUrl: "/property/all-property-units?status=",
+            iconSrc: "../../../assets/icons/png/total_units.png",
+            progress: 4.2,
+            label: "Fully Paid Tenants",
+            value: 10,
+        },
+        {
+            redirectUrl: "/property/all-property-units?status=occupied",
+            iconSrc: "../../../assets/icons/png/occupied_units.png",
+            progress: 3.2,
+            label: "Partially Paid Tenants",
+            value: 13,
+        },
+        {
+            redirectUrl: "/property/all-property-units?status=occupied",
+            iconSrc: "../../../assets/icons/png/occupied_units.png",
+            progress: 3.2,
+            label: "Not Paid Tenants",
+            value: 13,
+        }
+    ]
 
     return (
         <>
@@ -155,11 +197,30 @@ const Tenants = () => {
                 onSelectChange={handleSelectChange}
             />
 
-            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
-                <div className="flex justify-between items-center">
-                    <h4 className="text-md text-gray-600 my-4 px-2">All tenant list</h4>
+            <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 py-1 px-4">
+                {loading ? (
+                    Array(4).fill(0).map((_, index) => (
+                        <StatCardSkeleton key={index} />
+                    ))
+                ) : (
+                    stats.map((stat, index) => (
+                        <div key={index} className={` bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2`}>
+                            <PropertyCard
+                                redirectUrl={stat.redirectUrl}
+                                iconSrc={stat.iconSrc}
+                                label={stat.label}
+                                value={stat.value}
+                            />
+                        </div>
+                    ))
+                )}
+            </div>
 
-                    <form onSubmit={handleSubmitSearch} className="w-72 mr-2">
+            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
+                <div className="flex justify-between items-center px-4 py-4 border-b border-gray-200">
+                    <h4 className="text-md text-gray-600">All tenant list</h4>
+
+                    <form onSubmit={handleSubmitSearch} className="w-72">
                         <label className="text-sm font-medium text-gray-900 sr-only">Search</label>
                         <div className="relative">
                             <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
@@ -176,51 +237,49 @@ const Tenants = () => {
                             />
                         </div>
                     </form>
-
-                </div>
-                <div className="w-full">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full table-auto">
-                            <thead className="bg-gray-100 text-left text-xs border-y ">
-                                <tr className="py-2">
-                                    <th className="px-4 py-2">Tenant Name</th>
-                                    <th className="px-4 py-2">Property Name</th>
-                                    <th className="px-4 py-2">Unit No</th>
-                                    <th className="px-4 py-2">Unit Type</th>
-                                    <th className="px-4 py-2">Phone</th>
-                                    <th className="px-4 py-2">Rent Amount</th>
-                                    <th className="px-4 py-2">Inquiries</th>
-                                    <th className="px-4 py-2">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {loading ? (
-                                    Array(5).fill(0).map((_, index) => (
-                                        <TableRowSkeleton key={index} />
-                                    ))
-                                ) : (
-                                    tenants.map((tenant, index) => (
-                                        <TableRow
-                                            key={index}
-                                            tenant={tenant.name}
-                                            title={tenant.property_name}
-                                            unit={tenant.unit_no}
-                                            type={tenant.unit_floor}
-                                            status={tenant.roomStatus}
-                                            phone_no={tenant.phone}
-                                            monthly_rent={tenant.rent_amount}
-                                            openIssues={"Pending Issues"}
-                                            isShowing={true}
-                                            eyeLink={`/property/single-unit/unit_id:${tenant.unit_id}`}
-                                            eyeEdit={`/tenants/edit-personal-details?tenant_id=${tenant.id}&unit_id=${tenant.unit_id}`}
-                                        />
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
 
+                {/* Table Container with Fixed Height and Scroll */}
+                <div className="relative max-h-[590px] overflow-y-auto">
+                    <table className="min-w-full table-auto">
+                        <thead className="bg-gray-100 text-left text-xs border-b sticky top-0 z-20">
+                            <tr className="py-2">
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Tenant Name</th>
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Property Name</th>
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Unit No</th>
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Unit Type</th>
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Phone</th>
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Rent Amount</th>
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Inquiries</th>
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {loading ? (
+                                Array(5).fill(0).map((_, index) => (
+                                    <TableRowSkeleton key={index} />
+                                ))
+                            ) : (
+                                tenants.map((tenant, index) => (
+                                    <TableRow
+                                        key={index}
+                                        tenant={tenant.name}
+                                        title={tenant.property_name}
+                                        unit={tenant.unit_no}
+                                        type={tenant.unit_floor}
+                                        status={tenant.roomStatus}
+                                        phone_no={tenant.phone}
+                                        monthly_rent={tenant.rent_amount}
+                                        openIssues={"Pending Issues"}
+                                        isShowing={true}
+                                        eyeLink={`/property/single-unit/unit_id:${tenant.unit_id}`}
+                                        eyeEdit={`/tenants/edit-personal-details?tenant_id=${tenant.id}&unit_id=${tenant.unit_id}`}
+                                    />
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {pagination && pagination.last_page > 1 && (

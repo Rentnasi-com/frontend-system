@@ -1017,7 +1017,7 @@ const EditTenantProperty = () => {
                       <label
                         htmlFor="property-name"
                         className="block my-2 text-sm font-medium text-gray-900">
-                        Enter the current meter reading
+                        Enter the current water meter reading
                       </label>
                       <input
                         {...register('initial_meter_reading')}

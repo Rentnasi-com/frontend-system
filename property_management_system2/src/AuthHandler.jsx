@@ -12,6 +12,7 @@ const AuthHandler = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const isMountedRef = useRef(true);
   const intervalRef = useRef(null);
+  const networkStatusRef = useRef(navigator.onLine);
 
   // Cleanup function
   const cleanup = () => {
@@ -42,7 +43,37 @@ const AuthHandler = () => {
     localStorage.removeItem('expiry');
     localStorage.removeItem('sessionId');
     localStorage.removeItem('userId');
+    localStorage.removeItem('packageInfo');
+    localStorage.removeItem('packageExpiry');
     dispatch(setAuthToken(null));
+  };
+
+  // Handle tab/window close - clear session
+  const handleBeforeUnload = (event) => {
+    // Clear session data when tab is being closed
+    clearSession();
+
+    // Note: Modern browsers ignore custom messages, but we can still perform cleanup
+    const message = "Are you sure you want to leave? Your session will be cleared.";
+    event.returnValue = message;
+    return message;
+  };
+
+  // Handle page visibility change (when tab becomes hidden/visible)
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      // Tab is now hidden/minimized
+      console.log('Tab hidden - session remains active');
+    } else {
+      // Tab is now visible again - validate token
+      console.log('Tab visible - validating session');
+      validateToken().then(result => {
+        if (!result.isValid && isMountedRef.current) {
+          clearSession();
+          redirectToAuth("Session expired while tab was inactive");
+        }
+      });
+    }
   };
 
   // Check if token is expired
@@ -213,19 +244,42 @@ const AuthHandler = () => {
     }
   };
 
-  // Handle network changes
+  // Enhanced network change handler
   const handleNetworkChange = () => {
-    if (!navigator.onLine) {
-      toast.error("Network connection lost");
-      // Don't immediately log out on offline - user might come back online
-    } else {
-      // User has regained connection - validate token
-      validateToken().then(result => {
-        if (!result.isValid && isMountedRef.current) {
-          clearSession();
-          redirectToAuth("Session expired after network reconnection");
-        }
+    const wasOnline = networkStatusRef.current;
+    const isOnline = navigator.onLine;
+    networkStatusRef.current = isOnline;
+
+    if (!isOnline) {
+      toast.error("Network connection lost - you will be redirected to auth when connection changes");
+    } else if (wasOnline === false && isOnline === true) {
+      // Network just came back online
+      toast.info("Network reconnected - validating session...");
+
+      // Clear session and redirect to auth on network change
+      clearSession();
+      setTimeout(() => {
+        redirectToAuth("Network connection changed - please authenticate again");
+      }, 1500);
+    }
+  };
+
+  // Detect WiFi/network changes using connection API (if available)
+  const handleConnectionChange = () => {
+    if ('connection' in navigator) {
+      const connection = navigator.connection;
+      console.log('Connection changed:', {
+        type: connection.effectiveType,
+        downlink: connection.downlink,
+        rtt: connection.rtt
       });
+
+      // Clear session on significant connection changes
+      clearSession();
+      toast.warning("Network connection changed - redirecting to authentication...");
+      setTimeout(() => {
+        redirectToAuth("Network connection changed");
+      }, 1500);
     }
   };
 
@@ -299,16 +353,29 @@ const AuthHandler = () => {
 
     initialize();
 
-    // Set up network change listeners
+    // Set up event listeners
+    window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('offline', handleNetworkChange);
     window.addEventListener('online', handleNetworkChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Network connection change detection (if supported)
+    if ('connection' in navigator) {
+      navigator.connection.addEventListener('change', handleConnectionChange);
+    }
 
     // Cleanup function
     return () => {
       isMountedRef.current = false;
       cleanup();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('offline', handleNetworkChange);
       window.removeEventListener('online', handleNetworkChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+      if ('connection' in navigator) {
+        navigator.connection.removeEventListener('change', handleConnectionChange);
+      }
     };
   }, [dispatch, location, navigate]); // Dependencies
 

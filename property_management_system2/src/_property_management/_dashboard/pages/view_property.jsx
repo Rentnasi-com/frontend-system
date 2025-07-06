@@ -231,9 +231,9 @@ const Property = () => {
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
                 <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
                 <div className="w-full">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-auto">
                         <table className="min-w-full table-auto">
-                            <thead className="bg-gray-100 text-left text-xs">
+                            <thead className="sticky top-0 bg-gray-100 text-left text-xs">
                                 <tr>
                                     <th className="px-4 py-2">Unit name</th>
                                     <th className="px-4 py-2">Unit type</th>
@@ -276,9 +276,9 @@ const Property = () => {
                     </div>
                 </div>
             </div>
-            
 
-             {pagination && pagination.last_page > 1 && (
+
+            {pagination && pagination.last_page > 1 && (
                 <div className="flex flex-col sm:flex-row justify-between items-center mt-4 px-4 gap-4">
                     {/* Pagination Info */}
                     <div className="text-sm text-gray-700">
