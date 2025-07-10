@@ -422,8 +422,8 @@ const AddTenantProperty = () => {
     <>
       <div className="p-4 flex justify-between mx-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-700">Add new tenant</h1>
-          <p className="text-sm text-gray-500">Create new tenant and link them to a property unit </p>
+          <h1 className="text-xl font-bold text-gray-700">Assign tenant unit</h1>
+          <p className="text-sm text-gray-500">Assign tenant to a property unit </p>
         </div>
       </div>
       <div className="grid grid-cols-2">

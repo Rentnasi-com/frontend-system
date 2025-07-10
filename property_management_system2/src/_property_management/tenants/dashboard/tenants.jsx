@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { DashboardHeader, PropertyCard, TableRow } from "../../_dashboard/pages/page_components";
+import { DashboardHeader, PropertyCard } from "../../_dashboard/pages/page_components";
+import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -10,21 +12,15 @@ const SkeletonLoader = ({ className, rounded = false }) => (
 
 const TableRowSkeleton = () => (
     <tr className="border-b">
-        <td className="px-4 py-3"><SkeletonLoader className="w-12 h-12" rounded /></td>
+        <td className="px-4 py-3"><SkeletonLoader className="w-12 h-5" /></td>
         <td className="px-4 py-3">
             <SkeletonLoader className="h-4 w-32 mb-1" />
-            <SkeletonLoader className="h-3 w-24" />
         </td>
-        {[...Array(4)].map((_, i) => (
+        {[...Array(1)].map((_, i) => (
             <td key={i} className="px-4 py-3">
                 <SkeletonLoader className="h-6 w-12 mx-auto" />
             </td>
         ))}
-        <td className="px-4 py-3 flex space-x-4">
-            <SkeletonLoader className="h-5 w-5 rounded" />
-            <SkeletonLoader className="h-5 w-5 rounded" />
-            <SkeletonLoader className="h-5 w-5 rounded" />
-        </td>
     </tr>
 );
 
@@ -44,6 +40,7 @@ const StatCardSkeleton = () => (
 const Tenants = () => {
     const [properties, setProperties] = useState([])
     const [tenants, setTenants] = useState([])
+    const [tenantsStats, setTenantsStats] = useState([])
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const token = localStorage.getItem('token')
 
@@ -55,6 +52,10 @@ const Tenants = () => {
     const [confirmedSearch, setConfirmedSearch] = useState("");
 
     const [loading, setLoading] = useState(true);
+    const [openDropdownId, setOpenDropdownId] = useState(null);
+    const [showCheckboxes, setShowCheckboxes] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [tenantsToDelete, setTenantsToDelete] = useState([]);
 
     useEffect(() => {
         fetchProperties()
@@ -90,6 +91,7 @@ const Tenants = () => {
             )
             if (response.data.success) {
                 setTenants(response.data.result.data)
+                setTenantsStats(response.data.tenant_stats)
                 setCurrentPage(response.data.result.current_page);
                 setPagination(response.data.result)
             }
@@ -158,31 +160,130 @@ const Tenants = () => {
             redirectUrl: "/property/property-listing",
             iconSrc: "../../../assets/icons/png/total_property.png",
             progress: 2.2,
-            label: "Total Tenants",
-            value: 6,
+            label: "Total Expected",
+            value: `KES ${(tenantsStats?.total_expected || 0).toLocaleString()}`,
         },
         {
             redirectUrl: "/property/all-property-units?status=",
             iconSrc: "../../../assets/icons/png/total_units.png",
             progress: 4.2,
-            label: "Fully Paid Tenants",
-            value: 10,
+            label: "Total Arrears",
+            value: `KES ${(tenantsStats?.total_arrears || 0).toLocaleString()}`,
         },
         {
             redirectUrl: "/property/all-property-units?status=occupied",
             iconSrc: "../../../assets/icons/png/occupied_units.png",
             progress: 3.2,
-            label: "Partially Paid Tenants",
-            value: 13,
+            label: "Total Fines",
+            value: `KES ${(tenantsStats?.total_fines || 0).toLocaleString()}`,
         },
         {
             redirectUrl: "/property/all-property-units?status=occupied",
             iconSrc: "../../../assets/icons/png/occupied_units.png",
             progress: 3.2,
-            label: "Not Paid Tenants",
-            value: 13,
+            label: "Total Received",
+            value: `KES ${(tenantsStats?.total_received || 0).toLocaleString()}`,
         }
     ]
+
+    const toggleDropdown = (tenantId) => {
+        setOpenDropdownId(openDropdownId === tenantId ? null : tenantId);
+    };
+
+    const handleAction = (tenantId, action) => {
+        setOpenDropdownId(null);
+
+        if (action === 'delete') {
+            if (!showCheckboxes) setShowCheckboxes(true);
+            setTenants(tenants.map(tenant =>
+                tenant.id === tenantId ? { ...tenant, checked: true } : tenant
+            ));
+        }
+        // Handle other actions...
+    };
+
+    const toggleCheckbox = (tenantId) => {
+        setTenants(tenants.map(tenant =>
+            tenant.id === tenantId ? { ...tenant, checked: !tenant.checked } : tenant
+        ));
+    };
+
+    const toggleSelectAll = (e) => {
+        const isChecked = e.target.checked;
+        setTenants(tenants.map(tenant => ({ ...tenant, checked: isChecked })));
+    };
+
+    const allChecked = tenants.length > 0 && tenants.every(tenant => tenant.checked);
+
+
+
+    // Open delete confirmation modal
+    const showDeleteModal = () => {
+        const selected = tenants.filter(t => t.checked);
+        if (selected.length === 0) return; // Don't show if nothing selected
+
+        setTenantsToDelete(selected);
+        setShowDeleteConfirm(true);
+    };
+
+    const deleteTenants = async (tenantIds) => {
+        const dataToSend = Array.isArray(tenantIds) && tenantIds.length > 1
+            ? { tenant_ids: tenantIds }
+            : { tenant_id: Array.isArray(tenantIds) ? tenantIds[0] : tenantIds };
+        try {
+            const response = await toast.promise(
+                axios.delete(
+                    `${baseUrl}/manage-tenant/delete-and-restore-tenant`, dataToSend,
+
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                ),
+                {
+                    loading: "Deleting your tenant ...",
+                    success: "Tenant deleted successfully, check your bin.",
+                    error: "Failed to delete tenant. Please try again later.",
+                }
+            )
+            if (response.status === 200) {
+                toast.success = response.message
+                fetchTenants()
+            }
+        } catch (error) {
+            console.error(error.message);
+            return false;
+        }
+    };
+
+
+    const confirmDelete = async () => {
+        const tenantIds = tenantsToDelete.map(t => t.id);
+
+        if (tenantIds.length === 1) {
+            const success = await deleteTenants(tenantIds[0]);
+            if (success) {
+                setTenants(tenants.filter(tenant => tenant.id !== tenantIds[0]));
+            }
+        }
+        else {
+            const success = await deleteTenants(tenantIds);
+            if (success) {
+                setTenants(tenants.filter(tenant =>
+                    !tenantIds.includes(tenant.id)
+                ));
+            }
+        }
+
+        setShowDeleteConfirm(false);
+        setTenantsToDelete([]);
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteConfirm(false);
+        setTenantsToDelete([]);
+    };
 
     return (
         <>
@@ -239,18 +340,51 @@ const Tenants = () => {
                     </form>
                 </div>
 
-                {/* Table Container with Fixed Height and Scroll */}
-                <div className="relative max-h-[590px] overflow-y-auto">
+                <div className="flex justify-between items-center px-4 text-xs">
+                    {showCheckboxes && (
+                        <div className="my-2 space-x-2">
+                            <button
+                                onClick={() => setTenants(tenants.map(t => ({ ...t, checked: true })))}
+                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            >
+                                Select All
+                            </button>
+                            <button
+                                onClick={() => setTenants(tenants.map(t => ({ ...t, checked: false })))}
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                            >
+                                Deselect All
+                            </button>
+                            <button
+                                onClick={showDeleteModal}
+                                disabled={tenants.filter(t => t.checked).length === 0}
+                                className={`px-4 py-2 text-white rounded ${tenants.filter(t => t.checked).length === 0
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-red-500 hover:bg-red-600'
+                                    }`}
+                            >
+                                Delete Selected ({tenants.filter(t => t.checked).length})
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="relative max-h-[590px] overflow-auto">
                     <table className="min-w-full table-auto">
                         <thead className="bg-gray-100 text-left text-xs border-b sticky top-0 z-20">
-                            <tr className="py-2">
+                            <tr className="px-4 py-2">
+                                {showCheckboxes && (
+                                    <th className="px-4 py-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={allChecked}
+                                            onChange={toggleSelectAll}
+                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                        />
+                                    </th>
+                                )}
                                 <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Tenant Name</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Property Name</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Unit No</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Unit Type</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Phone</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Rent Amount</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Inquiries</th>
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Tenant Next of Kin</th>
                                 <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Actions</th>
                             </tr>
                         </thead>
@@ -261,26 +395,106 @@ const Tenants = () => {
                                 ))
                             ) : (
                                 tenants.map((tenant, index) => (
-                                    <TableRow
-                                        key={index}
-                                        tenant={tenant.name}
-                                        title={tenant.property_name}
-                                        unit={tenant.unit_no}
-                                        type={tenant.unit_floor}
-                                        status={tenant.roomStatus}
-                                        phone_no={tenant.phone}
-                                        monthly_rent={tenant.rent_amount}
-                                        openIssues={"Pending Issues"}
-                                        isShowing={true}
-                                        eyeLink={`/property/single-unit/unit_id:${tenant.unit_id}`}
-                                        eyeEdit={`/tenants/edit-personal-details?tenant_id=${tenant.id}&unit_id=${tenant.unit_id}`}
-                                    />
+                                    <tr key={index} className="border-b text-sm">
+                                        {showCheckboxes && (
+                                            <td className="px-4 py-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={tenant.checked}
+                                                    onChange={() => toggleCheckbox(tenant.id)}
+                                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                                />
+                                            </td>
+                                        )}
+                                        <td className="px-4 py-2">
+                                            {tenant.name}
+                                            <br />
+                                            <span className="text-gray-500 text-xs">
+                                                Phone: {tenant.phone}
+                                            </span>
+                                            <br />
+                                            <span className="text-gray-500 text-xs">
+                                                Email: {tenant.email || 'None'}
+                                            </span>
+                                            <br />
+                                            <span className="text-gray-500 text-xs">
+                                                Id No: {tenant.id_or_passport_number}
+                                            </span>
+                                        </td>
+                                        {tenant.next_of_kin_name == "" ? (
+                                            <td className="px-4 py-2">None</td>
+                                        ) :
+                                            < td className="px-4 py-2">
+                                                {tenant.next_of_kin_name}
+                                                <br />
+                                                <span className="text-gray-500 text-xs">
+                                                    {tenant.next_of_kin_phone}
+                                                </span>
+                                                <br />
+                                                <span className="text-gray-500 text-xs">
+                                                    Relationship: {tenant.next_of_kin_relationship}
+                                                </span>
+                                            </td>
+                                        }
+
+
+                                        <td className="relative px-4 py-2 text-sm">
+                                            {/* Dropdown button - only in Actions column */}
+                                            <button
+                                                onClick={() => toggleDropdown(tenant.id)}
+                                                className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                                            >
+                                                Actions
+                                                <svg className="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                </svg>
+                                            </button>
+
+
+                                            {openDropdownId === tenant.id && (
+                                                <div className="absolute right-0 z-10 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                    <div className="py-1">
+                                                        <Link
+                                                            to={`/property/single-unit/unit_id:${tenant.unit_id}`}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                        >
+                                                            View Tenant
+                                                        </Link>
+                                                        <Link
+                                                            to={`/tenants/edit-personal-details?tenant_id=${tenant.id}&unit_id=${tenant.unit_id}`}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                        >
+                                                            Edit Profile
+                                                        </Link>
+                                                        <Link
+                                                            to={`/tenants/edit-tenant-unit?tenant_id=${tenant.id}&unit_id=${tenant.unit_id}`}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                        >
+                                                            Edit/Assign Unit
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => handleAction(tenant.id, 'vacate')}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                        >
+                                                            Vacate Tenant
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleAction(tenant.id, 'delete')}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"
+                                                        >
+                                                            Delete Tenant
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
                                 ))
                             )}
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </div >
 
             {pagination && pagination.last_page > 1 && (
                 <div className="flex flex-col sm:flex-row justify-between items-center mt-4 px-4 gap-4">
@@ -335,6 +549,34 @@ const Tenants = () => {
                                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
                             </svg>
                         </button>
+                    </div>
+                </div>
+            )
+            }
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                            Confirm Delete
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to delete {tenantsToDelete.length} selected tenant(s)?
+                            to recycle bin? This action can be undone.
+                        </p>
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={cancelDelete}
+                                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

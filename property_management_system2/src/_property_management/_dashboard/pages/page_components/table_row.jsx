@@ -6,6 +6,7 @@ const TableRow = ({ index, title, unit, type, floor, tenant, phone_no, arrears, 
     return (
         <>
             <tr key={index} className="border-b text-sm">
+
                 {photo && (
                     <td className="px-4 py-2">
                         <img src={photo} alt={name} className="w-12 h-12 rounded-full" />
@@ -132,6 +133,7 @@ const TableRow = ({ index, title, unit, type, floor, tenant, phone_no, arrears, 
                         </Link>
                         <Link to={eyeEdit}><FaEdit className="text-purple-500 hover:text-purple-700 cursor-pointer" /></Link>
                         <FaTrash className="text-red-500 hover:text-red-700 cursor-pointer" />
+
 
                         {isShowingButtons && (
                             <>

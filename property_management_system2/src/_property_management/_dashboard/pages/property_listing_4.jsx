@@ -373,7 +373,7 @@ const PropertyListing = () => {
                         <p className="text-gray-600 text-center mt-2">
                             Are you sure you want to move this property{" "}
                             <span className="font-bold">{itemToDelete?.property_name}</span> to recycle bin? This action
-                            cannot be undone.
+                            can be undone.
                         </p>
                         <div className="mt-4 flex justify-center gap-2">
                             <Button onClick={() => setIsModalOpen(false)}>
