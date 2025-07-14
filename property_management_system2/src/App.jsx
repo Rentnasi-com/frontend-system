@@ -13,9 +13,9 @@ import { EditAmenities, EditGeneralInformation, EditManageImages, EditMultiUnit,
 import { AddLandlordPaymentsDetails, AddLandlordPersonalInfo } from './_property_management/landlords/add_landlord';
 import { LandlordSingleView, ViewLandlord } from './_property_management/landlords/dashboard';
 import { EditLandlordPaymentsDetails, EditLandlordPersonalInfo } from './_property_management/landlords/edit_landlord';
-import {Add_Personal_Info, AddTenantProperty } from './_property_management/tenants/add_tenant';
-import {EditPersonalInfo, EditTenantProperty } from './_property_management/tenants/edit_tenant';
-import { Tenants } from './_property_management/tenants/dashboard';
+import { Add_Personal_Info, AddTenantProperty } from './_property_management/tenants/add_tenant';
+import { EditPersonalInfo, EditTenantProperty } from './_property_management/tenants/edit_tenant';
+import { Tenants, TenantUnits } from './_property_management/tenants/dashboard';
 import PaymentsDetails from './_property_management/_dashboard/pages/settings/payments_details';
 
 const App = () => {
@@ -36,7 +36,7 @@ const App = () => {
               path="/properties"
               element={<ProtectedRoute element={<PropertyDashboard />} />}
             />
-            
+
             <Route
               path="/add-property/general-information"
               element={<ProtectedRoute element={<General_information />} />}
@@ -93,7 +93,7 @@ const App = () => {
               path="/edit-property/single-unit/:property_id/:unit_id"
               element={<ProtectedRoute element={<EditMultiUnitSingleUnit />} />}
             />
-            
+
             <Route
               path="/add-property/property-summary"
               element={<ProtectedRoute element={<Property_summary />} />}
@@ -217,6 +217,10 @@ const App = () => {
             <Route
               path="/tenants"
               element={<ProtectedRoute element={<Tenants />} />}
+            />
+            <Route
+              path="/tenants/view-tenant-units"
+              element={<ProtectedRoute element={<TenantUnits />} />}
             />
             <Route
               path="/property/receive-payment"

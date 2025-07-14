@@ -354,16 +354,18 @@ const EditTenantProperty = () => {
       if (tenantResponse.data.success) {
         const formData = {
           ...data,
-          is_rent_agreed: data.is_rent_agreed ? "1" : "0",
-          is_taxable: data.is_taxable ? "1" : "0",
-          is_meter_read: data.is_meter_read ? "1" : "0",
-          tax_percentage: data.tax_percentage?.toString() || "",
-          initial_meter_reading: data.initial_meter_reading?.toString() || "",
+          is_rent_agreed: data.is_rent_agreed,
+          is_taxable: data.is_taxable,
+          is_meter_read: data.is_meter_read,
+          tax_percentage: data.tax_percentage,
+          initial_meter_reading: data.initial_meter_reading,
+
           rent_amount: data.rent_amount,
           rent_deposit: data.rent_deposit,
           water: data.water,
           garbage: data.garbage,
           electricity: data.electricity,
+
           rent_due_date: data.rent_due_date,
           due_rent_reminder_date: data.due_rent_reminder_date,
           due_rent_fine_start_date: data.due_rent_fine_start_date,
@@ -1062,8 +1064,8 @@ const EditTenantProperty = () => {
                 )}
               </div>
             </div>
-            <h3 className="font-bold text-gray-600 mt-2">(f) Fines payment settings</h3>
 
+            <h3 className="font-bold text-gray-600 mt-2">(f) Fines payment settings</h3>
             <div className="flex justify-between space-x-4">
               <div className="w-full">
                 <label
@@ -1253,7 +1255,7 @@ const EditTenantProperty = () => {
                   </div>
                 ) : (
                   <div className="flex justify-center items-center space-x-2">
-                    <p>Finish</p> <FaArrowRight />
+                    <p>Save</p> <FaArrowRight />
                   </div>
                 )}
               </button>

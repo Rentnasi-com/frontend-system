@@ -35,6 +35,7 @@ const ViewLandlord = () => {
 
     const [openDropdownId, setOpenDropdownId] = useState(null);
     const [showCheckboxes, setShowCheckboxes] = useState(false);
+
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [landlordsToDelete, setLandlordsToDelete] = useState([]);
 
@@ -44,6 +45,7 @@ const ViewLandlord = () => {
 
         fetchLandlord()
     }, [baseUrl, token, confirmedSearch])
+
     const fetchLandlord = async () => {
         try {
             const response = await axios.get(
@@ -101,12 +103,9 @@ const ViewLandlord = () => {
 
     const allChecked = landlords.length > 0 && landlords.every(landlord => landlord.checked);
 
-
-
-    // Open delete confirmation modal
     const showDeleteModal = () => {
         const selected = landlords.filter(t => t.checked);
-        if (selected.length === 0) return; // Don't show if nothing selected
+        if (selected.length === 0) return;
 
         setLandlordsToDelete(selected);
         setShowDeleteConfirm(true);
@@ -118,21 +117,18 @@ const ViewLandlord = () => {
             : { landlord_id: Array.isArray(landlordIds) ? landlordIds[0] : landlordIds };
         try {
             const response = await toast.promise(
-                axios.delete(
-                    `${baseUrl}/manage-landlord/delete-and-restore-landlord`, dataToSend,
-
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                ),
+                axios.delete(`${baseUrl}/manage-landlord/delete-and-restore-landlord`, {
+                    data: dataToSend,
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }),
                 {
                     loading: "Deleting your landlord ...",
-                    success: "landlord deleted successfully, check your bin.",
+                    success: "Landlord deleted successfully, check your bin.",
                     error: "Failed to delete landlord. Please try again later.",
                 }
-            )
+            );
             if (response.status === 200) {
                 toast.success = response.message
                 fetchLandlord()
@@ -145,7 +141,7 @@ const ViewLandlord = () => {
 
 
     const confirmDelete = async () => {
-        const landlordIds = landlordsToDelete.map(t => t.id);
+        const landlordIds = landlordsToDelete.map(t => t.landlord_info.landlord_id);
 
         if (landlordIds.length === 1) {
             const success = await deletelandlords(landlordIds[0]);
@@ -170,6 +166,7 @@ const ViewLandlord = () => {
         setShowDeleteConfirm(false);
         setLandlordsToDelete([]);
     };
+
     return (
         <>
             <DashboardHeader
@@ -297,9 +294,10 @@ const ViewLandlord = () => {
                                             </div>
                                         </td>
                                         <td className="px-4 py-4">
+                                            <span className="text-sm">Total Properties: {landlord.properties}</span>
                                             {landlord.landlord_details?.map((property, index) => (
                                                 <div className="text-xs text-gray-800" key={index}>
-                                                    <span className="font-semibold text-gray-900">{index + 1}</span>. {property.property_name}
+                                                    {property.property_name}
                                                 </div>
                                             ))}
 
@@ -321,16 +319,16 @@ const ViewLandlord = () => {
 
 
                                         <td className="py-4 px-4 text-sm text-gray-700">
-                                            KES {(landlord.expected_revenue.toLocaleString() || 0)}
+                                            <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">KES {(landlord.expected_revenue.toLocaleString() || 0)}</span>
                                         </td>
                                         <td className="py-4 px-4 text-sm text-gray-700">
-                                            KES {(landlord.outstanding_revenue.toLocaleString() || 0)}
+                                            <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded">KES {(landlord.outstanding_revenue.toLocaleString() || 0)}</span>
                                         </td>
                                         <td className="py-4 px-4 text-sm text-gray-700">
-                                            KES {(landlord.pending_balance.toLocaleString() || 0)}
+                                            <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">KES {(landlord.pending_balance.toLocaleString() || 0)}</span>
                                         </td>
                                         <td className="py-4 px-4 text-sm text-gray-700">
-                                            KES {landlord.fines.toLocaleString() || 0}
+                                            <span className="bg-blue-100 border border-blue-400 text-blue-600 px-2 py-1 rounded">KES {landlord.fines.toLocaleString() || 0}</span>
                                         </td>
                                         <td className="relative px-4 py-2 text-sm">
                                             {/* Dropdown button - only in Actions column */}
@@ -410,8 +408,3 @@ const ViewLandlord = () => {
 }
 
 export default ViewLandlord
-
-{/* <td className="flex pt-10 px-4 space-x-4">
-                                        <FaEye  className="text-gray-500 hover:text-gray-700 cursor-pointer" />
-                                        <FaEdit onClick={() => navigate(`/edit-landlord/personal-information?landlord_id=${landlord.landlord_info.landlord_id}`)} className="text-purple-500 hover:text-purple-700 cursor-pointer" />
-                                        {/* <FaTrash onClick={() => openDeleteModal(property)} className="text-red-500 hover:text-red-700 cursor-pointer" /> */}

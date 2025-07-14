@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { FaArrowRight } from "react-icons/fa";
 import ImageUploading from 'react-images-uploading';
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod"
 
 const EditPersonalInfo = () => {
@@ -19,7 +19,7 @@ const EditPersonalInfo = () => {
   const token = localStorage.getItem("token")
   const [searchParams] = useSearchParams();
   const tenantId = searchParams.get('tenant_id')
-  const unitId = searchParams.get('unit_id')
+  const [tenantUnits, setTenantUnits] = useState([])
 
   const onChange = (imageList, addUpdateIndex) => {
     // data for submit
@@ -51,6 +51,8 @@ const EditPersonalInfo = () => {
     fetchTenantDetails()
   }, [token, tenantId])
 
+
+
   const fetchTenantDetails = async () => {
     try {
       const response = await axios.get(
@@ -71,6 +73,7 @@ const EditPersonalInfo = () => {
         setValue("next_of_kin_relationship", response.data.result.next_of_kin_relationship)
         setValue("next_of_kin_phone", response.data.result.next_of_kin_phone)
         setDocumentUrl(response.data.result.document_url)
+        setTenantUnits(response.data.result.tenantUnits)
       } else {
         toast.error(response.data.message || "Error fetching tenant details!")
       }
@@ -118,11 +121,9 @@ const EditPersonalInfo = () => {
         const tenant_id = response.data.tenant_id
         localStorage.setItem('tenant_id', tenant_id)
         toast.success(response.data.message)
-        navigate(`/tenants/edit-tenant-unit?tenant_id=${tenant_id}&unit_id=${unitId}`)
-        console.log(response.data)
       } else {
         toast.error(response.data.error.email || response.data.error.passport || response.data.error.phone)
-        // console.log("Step 1 error", response.data)
+
       }
     } catch (error) {
       toast.error(error.response.data.message)
@@ -408,6 +409,32 @@ const EditPersonalInfo = () => {
                 )}
               </div>
             </div>
+            <h3 className="font-bold text-gray-600 mt-2">(c) Units Assign to this tenant</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {tenantUnits.map((unit, index) => (
+                <div className="rounded border border-gray-200 p-4 text-xs" key={index}>
+                  <div className="grid grid-cols-3 ">
+                    <p className="font-semibold text-sm">Property Details:</p>
+                    <div className="col-span-2">
+                      <p>Property name: <span className="italic text-gray-700">{unit.property_name}</span></p>
+                      <p>Property location: <span className="italic text-gray-700">{unit.property_location}</span></p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 mt-4">
+                    <p className="font-semibold text-sm">Units Details:</p>
+                    <div className="col-span-2">
+                      <p>Unit no: <span className="italic text-gray-700">{unit.unit_number}</span></p>
+                    </div>
+                  </div>
+                  <div className="flex flex-row-reverse">
+                    <Link className="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-sm px-5 py-1"
+                      to={`/tenants/edit-tenant-unit?unit_id=${unit.unit_id}&tenant_id=${tenantId}`}>
+                      Edit Unit
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
             <div className="flex flex-row-reverse mt-4">
               <button
                 disabled={isSubmitting}
@@ -419,7 +446,7 @@ const EditPersonalInfo = () => {
                   </div>
                 ) : (
                   <div className="flex justify-center items-center space-x-2">
-                    <p>Next</p> <FaArrowRight />
+                    <p>Save</p>
                   </div>
                 )}
               </button>

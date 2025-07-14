@@ -16,9 +16,12 @@ const TableRowSkeleton = () => (
         <td className="px-4 py-3">
             <SkeletonLoader className="h-4 w-32 mb-1" />
         </td>
+        <td className="px-4 py-3">
+            <SkeletonLoader className="h-4 w-32 mb-1" />
+        </td>
         {[...Array(1)].map((_, i) => (
             <td key={i} className="px-4 py-3">
-                <SkeletonLoader className="h-6 w-12 mx-auto" />
+                <SkeletonLoader className="h-6 w-12" />
             </td>
         ))}
     </tr>
@@ -216,7 +219,6 @@ const Tenants = () => {
     const allChecked = tenants.length > 0 && tenants.every(tenant => tenant.checked);
 
 
-
     // Open delete confirmation modal
     const showDeleteModal = () => {
         const selected = tenants.filter(t => t.checked);
@@ -232,15 +234,13 @@ const Tenants = () => {
             : { tenant_id: Array.isArray(tenantIds) ? tenantIds[0] : tenantIds };
         try {
             const response = await toast.promise(
-                axios.delete(
-                    `${baseUrl}/manage-tenant/delete-and-restore-tenant`, dataToSend,
-
+                axios.delete(`${baseUrl}/manage-tenant/delete-and-restore-tenant`,
                     {
+                        data: dataToSend,
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
-                    }
-                ),
+                    }),
                 {
                     loading: "Deleting your tenant ...",
                     success: "Tenant deleted successfully, check your bin.",
@@ -385,6 +385,7 @@ const Tenants = () => {
                                 )}
                                 <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Tenant Name</th>
                                 <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Tenant Next of Kin</th>
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">No of Unit Assigned</th>
                                 <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Actions</th>
                             </tr>
                         </thead>
@@ -437,6 +438,9 @@ const Tenants = () => {
                                             </td>
                                         }
 
+                                        < td className="px-4 py-2">
+                                            {tenant.number_of_units}
+                                        </td>
 
                                         <td className="relative px-4 py-2 text-sm">
                                             {/* Dropdown button - only in Actions column */}
@@ -455,13 +459,13 @@ const Tenants = () => {
                                                 <div className="absolute right-0 z-10 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
                                                     <div className="py-1">
                                                         <Link
-                                                            to={`/property/single-unit/unit_id:${tenant.unit_id}`}
+                                                            to={`/tenants/view-tenant-units?tenant_id=${tenant.id}`}
                                                             className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                                                         >
                                                             View Tenant
                                                         </Link>
                                                         <Link
-                                                            to={`/tenants/edit-personal-details?tenant_id=${tenant.id}&unit_id=${tenant.unit_id}`}
+                                                            to={`/tenants/edit-personal-details?tenant_id=${tenant.id}`}
                                                             className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                                                         >
                                                             Edit Profile

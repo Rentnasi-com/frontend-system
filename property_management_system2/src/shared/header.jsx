@@ -66,25 +66,7 @@ const Header = () => {
             />
           </Link>
 
-          {/* Tabs */}
-          <ul className="flex space-x-5 rounded-xl bg-gray-100 px-4 py-1 text-xs">
 
-            <li className="bg-white py-1 px-3 border border-gray-800 rounded">
-              <a href="/dashboard">Home</a>
-            </li>
-            <li className="p-1 rounded-lg">
-              <Link to="/view-apps">
-                Apps
-              </Link>
-            </li>
-            <li className="p-1 rounded-lg">
-              <Link to="">
-                Profile Info
-              </Link>
-            </li>
-            <li className="p-1"><a href="">Payment & Subscriptions</a></li>
-
-          </ul>
 
           <div className="flex space-x-3">
             <div className="bg-gray-100 px-2 py-1 flex justify-center items-center rounded-xl">
@@ -92,7 +74,7 @@ const Header = () => {
             </div>
 
             <div className="relative inline-block" ref={dropdownRef}>
-              {/* Trigger Button */}
+
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center justify-center rounded-xl bg-gray-100 p-2 hover:bg-gray-200 transition-colors"
@@ -113,7 +95,6 @@ const Header = () => {
                 </svg>
               </button>
 
-              {/* Dropdown Panel */}
               {isOpen && (
                 <div
                   className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
