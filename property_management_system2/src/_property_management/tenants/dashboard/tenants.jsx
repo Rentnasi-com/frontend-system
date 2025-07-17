@@ -62,7 +62,7 @@ const Tenants = () => {
 
     useEffect(() => {
         fetchProperties()
-        fetchTenants(currentPage)
+        fetchTenants(currentPage, selectedProperty)
 
     }, [currentPage, baseUrl, token, selectedProperty, confirmedSearch])
 
@@ -218,8 +218,6 @@ const Tenants = () => {
 
     const allChecked = tenants.length > 0 && tenants.every(tenant => tenant.checked);
 
-
-    // Open delete confirmation modal
     const showDeleteModal = () => {
         const selected = tenants.filter(t => t.checked);
         if (selected.length === 0) return; // Don't show if nothing selected
@@ -256,7 +254,6 @@ const Tenants = () => {
             return false;
         }
     };
-
 
     const confirmDelete = async () => {
         const tenantIds = tenantsToDelete.map(t => t.id);
@@ -369,7 +366,7 @@ const Tenants = () => {
                     )}
                 </div>
 
-                <div className="relative max-h-[590px] overflow-auto">
+                <div className="relative">
                     <table className="min-w-full table-auto">
                         <thead className="bg-gray-100 text-left text-xs border-b sticky top-0 z-20">
                             <tr className="px-4 py-2">
@@ -456,7 +453,7 @@ const Tenants = () => {
 
 
                                             {openDropdownId === tenant.id && (
-                                                <div className="absolute right-0 z-10 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                <div className="absolute right-0 z-50 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
                                                     <div className="py-1">
                                                         <Link
                                                             to={`/tenants/view-tenant-units?tenant_id=${tenant.id}`}
@@ -470,18 +467,7 @@ const Tenants = () => {
                                                         >
                                                             Edit Profile
                                                         </Link>
-                                                        <Link
-                                                            to={`/tenants/edit-tenant-unit?tenant_id=${tenant.id}&unit_id=${tenant.unit_id}`}
-                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                        >
-                                                            Edit/Assign Unit
-                                                        </Link>
-                                                        <button
-                                                            onClick={() => handleAction(tenant.id, 'vacate')}
-                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                        >
-                                                            Vacate Tenant
-                                                        </button>
+
                                                         <button
                                                             onClick={() => handleAction(tenant.id, 'delete')}
                                                             className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"

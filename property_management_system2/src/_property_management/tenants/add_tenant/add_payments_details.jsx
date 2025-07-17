@@ -8,7 +8,7 @@ import { Loader } from "lucide-react";
 import 'react-datepicker/dist/react-datepicker.css'
 import { format } from 'date-fns';
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const AddTenantProperty = () => {
   const [properties, setProperties] = useState([])
@@ -19,6 +19,9 @@ const AddTenantProperty = () => {
   const navigate = useNavigate()
   const baseUrl = import.meta.env.VITE_BASE_URL;
   const token = localStorage.getItem('token')
+
+  const [searchParams] = useSearchParams();
+  const tenantId = searchParams.get('tenant_id')
 
   const schema = z.object({
     is_rent_agreed: z.enum(["1", "0"], {
@@ -364,7 +367,6 @@ const AddTenantProperty = () => {
   const handleUnitChange = async (event) => {
     const unitId = event.target.value
     setSelectedUnit(unitId)
-    localStorage.setItem("unit_id", unitId)
 
     try {
       const token = localStorage.getItem('token')
@@ -388,18 +390,18 @@ const AddTenantProperty = () => {
   }
 
   const onSubmit = async (values) => {
-    try {
-      const token = localStorage.getItem("token")
-      const tenant_id = localStorage.getItem("tenant_id")
-      const unit_id = localStorage.getItem("unit_id")
 
+    try {
       const dataToSend = {
         ...values,
-        tenant_id,
-        unit_id,
+        tenant_id: tenantId,
+        unit_id: selectedUnit,
         is_taxable: values.is_taxable === "1",
         is_meter_read: values.is_meter_read === "1",
       }
+
+      console.log(dataToSend)
+
       const response = await axios.post(`${baseUrl}/manage-tenant/create-tenant/other-info`, dataToSend,
         {
           headers: {
@@ -413,8 +415,8 @@ const AddTenantProperty = () => {
         console.log(response)
       }
     } catch (error) {
-      // toast.error(error.response.error.due_rent_reminder_date || error.response.error.due_rent_fine_start_date || error.response.message)
-      console.log("James error:", error)
+      toast.error(error.response.error.due_rent_reminder_date || error.response.error.due_rent_fine_start_date || error.response.message)
+
     }
   }
 
@@ -955,7 +957,7 @@ const AddTenantProperty = () => {
                       <input
                         {...register('initial_meter_reading')}
                         aria-label="initial_meter_reading"
-                        type="number"
+                        type="string"
                         placeholder="e.g 1000"
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
                       />

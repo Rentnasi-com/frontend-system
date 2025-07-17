@@ -48,24 +48,79 @@ const AuthHandler = () => {
     dispatch(setAuthToken(null));
   };
 
+  // Handle API errors and redirect to auth when needed
+  const handleApiError = (error, context = 'API call') => {
+    console.error(`${context} error:`, error);
+
+    // Check for 401 (Unauthorized) or 403 (Forbidden) with invalid token
+    if (error.response?.status === 401 ||
+      (error.response?.status === 403 && error.response?.data?.error?.includes('Invalid token'))) {
+
+      console.log('Token invalid - clearing session and redirecting to auth');
+      clearSession();
+      redirectToAuth("Session expired. Please login again.");
+      return true; // Indicates we handled the error
+    }
+
+    // Check for network errors
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      toast.error("Request timeout. Please check your connection.");
+      return false;
+    }
+
+    if (error.code === 'NETWORK_ERROR' || !error.response) {
+      toast.error("Network error. Please check your connection.");
+      return false;
+    }
+
+    return false; // Error not handled
+  };
+
+  // Setup axios interceptor to handle auth errors globally
+  const setupAxiosInterceptor = () => {
+    // Response interceptor to catch auth errors
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (handleApiError(error, 'Axios interceptor')) {
+          return Promise.reject(error);
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Request interceptor to add auth token
+    const requestInterceptor = axios.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // Return cleanup function
+    return () => {
+      axios.interceptors.request.eject(requestInterceptor);
+      axios.interceptors.response.eject(responseInterceptor);
+    };
+  };
+
   // Handle tab/window close - clear session
   const handleBeforeUnload = (event) => {
-    // Clear session data when tab is being closed
     clearSession();
-
-    // Note: Modern browsers ignore custom messages, but we can still perform cleanup
     const message = "Are you sure you want to leave? Your session will be cleared.";
     event.returnValue = message;
     return message;
   };
 
-  // Handle page visibility change (when tab becomes hidden/visible)
+  // Handle page visibility change
   const handleVisibilityChange = () => {
     if (document.hidden) {
-      // Tab is now hidden/minimized
       console.log('Tab hidden - session remains active');
     } else {
-      // Tab is now visible again - validate token
       console.log('Tab visible - validating session');
       validateToken().then(result => {
         if (!result.isValid && isMountedRef.current) {
@@ -84,7 +139,7 @@ const AuthHandler = () => {
     return tokenExpiry <= now;
   };
 
-  // Refresh token with proper async handling
+  // Refresh token with better error handling
   const refreshToken = async (token, baseUrl) => {
     try {
       const response = await axios.post(
@@ -92,7 +147,7 @@ const AuthHandler = () => {
         { refreshToken: token },
         {
           headers: { 'Authorization': `Bearer ${token}` },
-          timeout: 10000 // 10 second timeout
+          timeout: 10000
         }
       );
 
@@ -109,6 +164,12 @@ const AuthHandler = () => {
       }
     } catch (error) {
       console.error('Error refreshing token:', error);
+
+      // If refresh fails due to invalid token, clear session
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        clearSession();
+      }
+
       return { success: false, error };
     }
   };
@@ -138,19 +199,17 @@ const AuthHandler = () => {
     }
   };
 
-  // Check package expiry with better error handling
+  // Check package expiry
   const checkPackageExpiry = (packageExpiryDate) => {
     if (!packageExpiryDate) {
       console.warn('No package expiry date provided');
-      return true; // Allow access if no expiry date
+      return true;
     }
 
     try {
       const now = new Date();
       const packageExpiry = new Date(packageExpiryDate);
-
-      // Add some buffer (1 minute) to handle timezone/sync issues
-      const bufferTime = 60 * 1000; // 1 minute in milliseconds
+      const bufferTime = 60 * 1000; // 1 minute buffer
       const effectiveExpiry = new Date(packageExpiry.getTime() + bufferTime);
 
       console.log('Package expiry check:', {
@@ -172,7 +231,6 @@ const AuthHandler = () => {
       return true;
     } catch (error) {
       console.error('Error checking package expiry:', error);
-      // If we can't parse the date, allow access but log the error
       return true;
     }
   };
@@ -186,9 +244,11 @@ const AuthHandler = () => {
       const response = await axios.post(
         `${baseUrl}/auth`,
         { sessionId, userId, appUrl },
-        { timeout: 15000 } // 15 second timeout
+        { timeout: 15000 }
       );
-      console.log("auth", response)
+
+      console.log("auth response:", response);
+
       const token = response.data?.data?.token;
       const expiry = response.data?.data?.expiry;
       const packageExpiryDate = response.data?.package?.expiry_date;
@@ -201,7 +261,6 @@ const AuthHandler = () => {
       localStorage.setItem('expiry', expiry);
       dispatch(setAuthToken(token));
 
-      // Store package information for debugging
       if (response.data?.package) {
         localStorage.setItem('packageInfo', JSON.stringify(response.data.package));
         console.log('Package info from auth:', response.data.package);
@@ -223,7 +282,12 @@ const AuthHandler = () => {
     } catch (error) {
       console.error('Error during authentication:', error);
 
-      // Handle specific 403 errors
+      // Handle the error using our centralized handler
+      if (handleApiError(error, 'Authentication')) {
+        return; // Error was handled (redirect to auth)
+      }
+
+      // Handle specific 403 errors for package expiry
       if (error.response?.status === 403) {
         const errorData = error.response.data;
         console.log('403 Error details:', errorData);
@@ -239,12 +303,13 @@ const AuthHandler = () => {
         }
       }
 
+      // Fallback error handling
       clearSession();
       redirectToAuth("Authentication failed");
     }
   };
 
-  // Enhanced network change handler
+  // Network change handlers
   const handleNetworkChange = () => {
     const wasOnline = networkStatusRef.current;
     const isOnline = navigator.onLine;
@@ -253,10 +318,7 @@ const AuthHandler = () => {
     if (!isOnline) {
       toast.error("Network connection lost - you will be redirected to auth when connection changes");
     } else if (wasOnline === false && isOnline === true) {
-      // Network just came back online
       toast.info("Network reconnected - validating session...");
-
-      // Clear session and redirect to auth on network change
       clearSession();
       setTimeout(() => {
         redirectToAuth("Network connection changed - please authenticate again");
@@ -264,7 +326,6 @@ const AuthHandler = () => {
     }
   };
 
-  // Detect WiFi/network changes using connection API (if available)
   const handleConnectionChange = () => {
     if ('connection' in navigator) {
       const connection = navigator.connection;
@@ -274,7 +335,6 @@ const AuthHandler = () => {
         rtt: connection.rtt
       });
 
-      // Clear session on significant connection changes
       clearSession();
       toast.warning("Network connection changed - redirecting to authentication...");
       setTimeout(() => {
@@ -285,7 +345,6 @@ const AuthHandler = () => {
 
   // Set up periodic token validation
   const setupTokenValidation = () => {
-    // Clear any existing interval
     cleanup();
 
     intervalRef.current = setInterval(async () => {
@@ -304,6 +363,9 @@ const AuthHandler = () => {
   };
 
   useEffect(() => {
+    // Setup axios interceptor
+    const cleanupInterceptor = setupAxiosInterceptor();
+
     const initialize = async () => {
       if (isProcessing) return;
 
@@ -314,13 +376,11 @@ const AuthHandler = () => {
         const sessionId = queryParams.get('sessionId');
         const userId = queryParams.get('userId');
 
-        // Store session info if provided
         if (sessionId && userId) {
           localStorage.setItem('sessionId', sessionId);
           localStorage.setItem('userId', userId);
         }
 
-        // Validate existing token first
         const tokenValidation = await validateToken();
 
         if (tokenValidation.isValid) {
@@ -332,20 +392,22 @@ const AuthHandler = () => {
           safeSetState(() => navigate('/dashboard'));
           setupTokenValidation();
         } else if (sessionId && userId) {
-          // No valid token but we have session info
           await authenticateWithSession(sessionId, userId);
           setupTokenValidation();
         } else {
-          // No valid token and no session info
           clearSession();
           redirectToAuth("Invalid session");
         }
       } catch (error) {
         console.error('Initialization error:', error);
-        clearSession();
-        safeSetState(() => {
-          redirectToAuth("Authentication error occurred");
-        });
+
+        // Use centralized error handler
+        if (!handleApiError(error, 'Initialization')) {
+          clearSession();
+          safeSetState(() => {
+            redirectToAuth("Authentication error occurred");
+          });
+        }
       } finally {
         safeSetState(() => setIsProcessing(false));
       }
@@ -359,7 +421,6 @@ const AuthHandler = () => {
     window.addEventListener('online', handleNetworkChange);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Network connection change detection (if supported)
     if ('connection' in navigator) {
       navigator.connection.addEventListener('change', handleConnectionChange);
     }
@@ -368,6 +429,7 @@ const AuthHandler = () => {
     return () => {
       isMountedRef.current = false;
       cleanup();
+      cleanupInterceptor(); // Clean up axios interceptor
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('offline', handleNetworkChange);
       window.removeEventListener('online', handleNetworkChange);
@@ -377,9 +439,8 @@ const AuthHandler = () => {
         navigator.connection.removeEventListener('change', handleConnectionChange);
       }
     };
-  }, [dispatch, location, navigate]); // Dependencies
+  }, [dispatch, location, navigate]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       isMountedRef.current = false;

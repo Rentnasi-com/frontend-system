@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { FaArrowRight } from "react-icons/fa";
 import ImageUploading from 'react-images-uploading';
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod"
 
 const Add_Personal_Info = () => {
@@ -15,6 +15,9 @@ const Add_Personal_Info = () => {
   const maxNumber = 1
   const token = localStorage.getItem("token")
   const baseUrl = import.meta.env.VITE_BASE_URL;
+
+  const [showAssignUnit, setShowAssignUnit] = useState(false);
+  const [tenantId, setTenantId] = useState('');
 
   const onChange = (imageList, addUpdateIndex) => {
     // data for submit
@@ -25,7 +28,7 @@ const Add_Personal_Info = () => {
   const schema = z.object({
     name: z.coerce.string().min(3, "Username must be at least 3 characters long"),
     email: z.string().email("Invalid email").optional().or(z.literal("")),
-    phone: z.string().min(5, "Invalid phone number"),
+    phone: z.string().min(10, "Invalid phone number"),
     id_or_passport_number: z.string().min(4, "Invalid ID or passport number"),
     next_of_kin_name: z.coerce.string().min(3, "Kin name must be at least 3 characters long").optional().or(z.literal("")),
     next_of_kin_relationship: z.coerce.string().min(2, "Kin relationship must be at least 2 characters long").optional().or(z.literal("")),
@@ -40,7 +43,6 @@ const Add_Personal_Info = () => {
   } = useForm({
     resolver: zodResolver(schema),
   })
-
 
   const onSubmit = async (values) => {
     try {
@@ -79,11 +81,11 @@ const Add_Personal_Info = () => {
         }
       )
       if (response.data.success) {
-        const tenant_id = response.data.tenant_id
-        localStorage.setItem('tenant_id', tenant_id)
+        setTenantId(response.data.tenant_id)
+        const id = response.data.tenant_id
         toast.success(response.data.message)
-        navigate("/tenants/add-tenant-unit")
-        console.log("Step 1 success", response.data)
+        navigate(`/tenants/view-tenant-units?tenant_id=${id}`)
+        setShowAssignUnit(true)
       } else {
         toast.error(response.data.error.email || response.data.error.passport || response.data.error.phone)
         // console.log("Step 1 error", response.data)
@@ -368,6 +370,14 @@ const Add_Personal_Info = () => {
               </div>
             </div>
             <div className="flex flex-row-reverse mt-4">
+              {showAssignUnit && (
+                <Link
+                  to={`/tenants/add-tenant-unit?tenant_id=${tenantId}`}
+                  className="ml-3 flex focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded text-sm px-5 py-2.5"
+                >
+                  Assign Unit
+                </Link>
+              )}
               <button
                 disabled={isSubmitting}
                 type="submit"
@@ -378,10 +388,11 @@ const Add_Personal_Info = () => {
                   </div>
                 ) : (
                   <div className="flex justify-center items-center space-x-2">
-                    <p>Next</p> <FaArrowRight />
+                    <p>Save</p>
                   </div>
                 )}
               </button>
+
             </div>
           </form>
         </div>

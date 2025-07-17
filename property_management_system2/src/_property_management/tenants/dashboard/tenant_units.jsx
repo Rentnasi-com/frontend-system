@@ -5,6 +5,7 @@ import toast from "react-hot-toast"
 import axios from "axios"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { Button } from "../../../shared"
+import { set } from "date-fns"
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -44,7 +45,9 @@ const TenantUnits = () => {
     const [openDropdownId, setOpenDropdownId] = useState(null);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isVacateModalOpen, setIsVacateModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [itemToVacate, setItemToVacate] = useState(null);
 
     const navigate = useNavigate()
 
@@ -92,12 +95,12 @@ const TenantUnits = () => {
             setOpenDropdownId(null);
             toast.success("Tenant vacated successfully!");
             fetchTenantDetails()
+            setIsVacateModalOpen(false)
         } catch (error) {
             console.error("Vacate error:", error);
             toast.error("Failed to vacate tenant.");
         }
     };
-
 
     const toggleDropdown = (tenantId) => {
         setOpenDropdownId(openDropdownId === tenantId ? null : tenantId);
@@ -109,7 +112,6 @@ const TenantUnits = () => {
     };
 
     const handleSingleDelete = async () => {
-        console.log("Deleting tenant:", itemToDelete);
         if (!itemToDelete?.id) return;
 
         try {
@@ -140,7 +142,11 @@ const TenantUnits = () => {
         }
     };
 
-
+    const handleVacateModalOpen = (item) => {
+        setItemToVacate(item);
+        setIsVacateModalOpen(true);
+        setOpenDropdownId(false);
+    };
 
     return (
         <>
@@ -153,7 +159,7 @@ const TenantUnits = () => {
                 hideLink={false}
             />
 
-            <div className="rounded-lg border border-gray-200 bg-white p-6 mb-8 mx-4">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 mb-8 mx-4">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center space-x-3">
                         <div className="bg-blue-100 p-3 rounded-full">
@@ -206,8 +212,6 @@ const TenantUnits = () => {
                             </div>
                         </div>
                     </div>
-
-
                     <div className="space-y-4">
                         <h3 className="font-semibold text-gray-900 mb-3">Next of Kin</h3>
                         {tenant.next_of_kin_name == "" ? (
@@ -235,7 +239,7 @@ const TenantUnits = () => {
                 </div>
             </div>
 
-            <div className="relative max-h-[590px] overflow-auto mx-4 rounded-lg border border-gray-200">
+            <div className="relative mx-4 rounded-lg border border-gray-200">
                 <table className="min-w-full table-auto">
                     <thead className="bg-gray-100 text-left text-xs border-b sticky top-0 z-20">
                         <tr className="px-4 py-2">
@@ -268,12 +272,15 @@ const TenantUnits = () => {
                                     </td>
 
                                     <td className="text-gray-500 text-xs px-4 py-2">
-                                        Rent amount:
-                                        <span className="text-red-700 pl-2">KES {(unit.rent_amount || 0).toLocaleString()}</span>
-                                        <br />
                                         Arrears:
+                                        <span className="text-red-700 pl-2">KES {(unit.arrears || 0).toLocaleString()}</span>
+                                        <br />
+                                        Expected amount:
+                                        <span className="text-red-700 pl-2">KES {(unit.expected_amount || 0).toLocaleString()}</span>
+                                        <br />
+                                        Amount received:
                                         <span className="text-red-700 pl-2"
-                                        >KES {(unit.arrears || 0).toLocaleString()}</span>
+                                        >KES {(unit.amount_received || 0).toLocaleString()}</span>
                                     </td>
                                     <td className="text-gray-500 text-xs px-4 py-2">
                                         Fines:
@@ -299,30 +306,33 @@ const TenantUnits = () => {
                                             </svg>
                                         </button>
 
-
                                         {openDropdownId === unit.unit_id && (
-                                            <div className="absolute right-0 z-10 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                                                <div className="py-1">
+                                            <div className="absolute right-0 z-50 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 overflow-visible">
+                                                <div className="py-1 overflow-visible">
                                                     <Link
                                                         to={`/property/single-unit/unit_id:${unit.unit_id}`}
-                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 whitespace-nowrap"
                                                     >
                                                         View Unit
                                                     </Link>
                                                     <Link
                                                         to={`tenants/add-tenant-unit?tenant_id:${tenantId}&unit_id:${unit.unit_id}`}
-                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 whitespace-nowrap"
                                                     >
                                                         Edit Unit
                                                     </Link>
-
                                                     <button
-                                                        onClick={() => handleVacate(tenantId, unit.unit_id)}
-                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                        onClick={() =>
+                                                            handleVacateModalOpen({
+                                                                id: tenantId,
+                                                                unit_id: unit.unit_id,
+                                                                name: unit.unit_number
+                                                            })
+                                                        }
+                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 whitespace-nowrap"
                                                     >
                                                         Vacate Tenant
                                                     </button>
-
                                                 </div>
                                             </div>
                                         )}
@@ -357,6 +367,31 @@ const TenantUnits = () => {
                 </div>
             )}
 
+            {isVacateModalOpen && (
+                <div className="fixed z-50 inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-lg p-6 w-1/3">
+                        <h2 className="text-xl text-center font-semibold text-gray-800">
+                            Confirm Vacation
+                        </h2>
+                        <p className="text-gray-600 mt-2 text-center">
+                            Are you sure you want to vacate {tenant.name} from{" "}
+                            <span className="font-bold">{itemToVacate?.name}</span> permanently? This action
+                            cannot be undone.
+                        </p>
+                        <div className="mt-4 flex justify-center gap-2">
+                            <Button onClick={() => setIsVacateModalOpen(false)}>Cancel</Button>
+                            <Button
+                                onClick={() =>
+                                    handleVacate(itemToVacate?.id, itemToVacate?.unit_id)
+                                }
+                                className="bg-red-500 hover:bg-red-600"
+                            >
+                                Vacate
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     )
 }
