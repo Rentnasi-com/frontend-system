@@ -21,6 +21,8 @@ const Unit = () => {
     const [tenantsPaymentHistory, setTenantsPaymentHistory] = useState([])
     const [payment_details, setPaymentDetails] = useState({})
     const [waterBills, setWaterBills] = useState([])
+    const [billItems, setBillItems] = useState([])
+    const [addBillItems, setAddBillItems] = useState([])
 
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const { unit_id } = useParams();
@@ -29,10 +31,18 @@ const Unit = () => {
     const [showModal, setShowModal] = useState(false)
     const [selectedPayments, setSelectedPayments] = useState([]);
     const [selectedDate, setSelectedDate] = useState(null);
-
+    const [tenantId, setTenantId] = useState(null);
     const [openDropdownId, setOpenDropdownId] = useState(null);
 
     const [showWaterBillModal, setShowWaterBillModal] = useState(false)
+
+    const [showAddBillModal, setShowAddBillModal] = useState(false);
+
+    const [showBillItemDeleteModal, setShowBillItemDeleteModal] = useState(false);
+    const [billItemToDelete, setBillItemToDelete] = useState(null);
+
+    const [editItemId, setEditItemId] = useState(null);
+    const [editedAmount, setEditedAmount] = useState("");
 
     const handleClose = () => {
         setShowModal(false)
@@ -73,8 +83,6 @@ const Unit = () => {
         }, 0); // Formats number with commas
     };
 
-
-
     const schema = z
         .object({
             payment_method: z.enum(["cash", "mpesa", "mpesa_express", "bank"], {
@@ -110,31 +118,41 @@ const Unit = () => {
             }
         });
 
-    const waterBillSchema = z.object({
-        meter_reading: z
-            .string()
-            .min(1, "Current meter reading is required")
-            .refine(val => !isNaN(Number(val)) && Number(val) >= 0, {
-                message: "Meter reading must be a valid number",
-            }),
+    const createWaterBillSchema = (previousReading) =>
+        z.object({
+            meter_reading: z
+                .string()
+                .min(1, "Current meter reading is required")
+                .refine(val => {
+                    const current = Number(val);
+                    return !isNaN(current) && current >= previousReading;
+                }, {
+                    message: `Current meter reading must be ≥ ${previousReading}`,
+                }),
 
-        water_charge: z
-            .string()
-            .optional()
-            .refine(
-                val => !val || (!isNaN(Number(val)) && Number(val) >= 0),
-                { message: "Water charge must be a valid number" }
-            ),
-    });
+            water_charge: z
+                .string()
+                .optional()
+                .refine(
+                    val => !val || (!isNaN(Number(val)) && Number(val) >= 0),
+                    { message: "Water charge must be a valid number" }
+                ),
+        });
+
+
+    const previousReading = Number(waterBills[0]?.meter_reading || 0);
 
     const {
         register: registerWater,
         handleSubmit: handleWaterSubmit,
+        watch: watchWater,
         formState: { errors: waterErrors },
     } = useForm({
-        resolver: zodResolver(waterBillSchema),
-        mode: "onTouched",
+        resolver: zodResolver(createWaterBillSchema(previousReading)),
+        mode: "onChange",
     });
+
+    const currentReading = watchWater("meter_reading");
 
     const {
         register,
@@ -160,9 +178,11 @@ const Unit = () => {
                     Authorization: `Bearer ${token}`,
                 },
             });
+            const tenantDetails = response.data.tenant_details || {};
             setPropertyDetails(response.data.property_details || {})
             setUnitsDetails(response.data.unit_details || {})
-            setTenantsDetails(response.data.tenant_details || {})
+            setTenantsDetails(tenantDetails)
+            setTenantId(tenantDetails.tenant_id);
             setTenantsNetOfKinDetails(response.data.tenant_details.next_of_kin || {})
             setTenantsHistory(response.data.tenancy_history || [])
             setPaymentDetails(response.data.payment_details)
@@ -192,6 +212,21 @@ const Unit = () => {
                 },
             })
             setWaterBills(response.data.results || [])
+
+        } catch (error) {
+            console.error("Tenant payment details not found");
+        }
+    }
+
+    const fetchBillItems = async () => {
+        try {
+            const response = await axios.get(`${baseUrl}/manage-tenant/bills?tenant_id=${tenantId}&unit_id=${extractedUnitId}&active`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            setBillItems(response.data.result || [])
+            setAddBillItems(response.data.bill_types || [])
         } catch (error) {
             console.error("Tenant payment details not found");
         }
@@ -250,7 +285,7 @@ const Unit = () => {
                 )
                 if (response.status === 200) {
                     setShowModal(false)
-
+                    fetchUnitsDetails()
                 }
             } else {
                 const response = await toast.promise(
@@ -271,7 +306,7 @@ const Unit = () => {
                 )
                 if (response.status === 200) {
                     setShowModal(false)
-                    // await handleUnitChange({ target: { value: selectedUnit } });
+                    fetchUnitsDetails()
                 }
             }
 
@@ -312,12 +347,14 @@ const Unit = () => {
         }
     };
 
-
     useEffect(() => {
         fetchUnitsDetails()
         fetchTenantsPaymentHistory()
         fetchWaterBill()
-    }, [token, extractedUnitId, baseUrl])
+        if (tenantId) {
+            fetchBillItems();
+        }
+    }, [token, extractedUnitId, baseUrl, tenantId])
 
     const toggleDropdown = (id) => {
         setOpenDropdownId(prev => (prev === id ? null : id));
@@ -326,6 +363,114 @@ const Unit = () => {
     const openWaterBillModal = () => {
         setShowWaterBillModal(true);
     };
+
+    const openAddBillModal = () => {
+        setShowAddBillModal(true);
+    }
+
+    const billSchema = z.object({
+        bill_type: z.string().min(1, "Bill type is required"),
+        amount: z
+            .string()
+            .min(1, "Amount is required")
+            .refine(val => !isNaN(Number(val)) && Number(val) >= 0, {
+                message: "Amount must be a valid number ≥ 0",
+            }),
+    });
+
+
+    const {
+        register: registerBill,
+        handleSubmit: handleBillSubmit,
+        formState: { errors: billErrors },
+    } = useForm({
+        resolver: zodResolver(billSchema),
+        mode: "onTouched",
+    });
+
+
+    const onBillSubmit = async (data) => {
+        try {
+            const payload = {
+                unit_id: extractedUnitId,
+                tenant_id: tenantsDetails.tenant_id,
+                bill_type: data.bill_type,
+                amount: Number(data.amount),
+            };
+
+            const response = await toast.promise(
+                axios.post(`${baseUrl}/manage-tenant/bills`, payload, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }),
+                {
+                    loading: "Submitting bill...",
+                    success: "Bill submitted successfully",
+                    error: "Failed to submit bill",
+                }
+            );
+
+            if (response.status === 200) {
+                setShowAddBillModal(false);
+                fetchBillItems();
+            }
+        } catch (error) {
+            console.error("Bill submit error:", error);
+            toast.error("Something went wrong while submitting bill.");
+        }
+    };
+
+    const handleBillItemDelete = async () => {
+        toast.promise(
+            axios.delete(`${baseUrl}/manage-tenant/bills`, {
+                data: billItemToDelete,
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+                .then(() => {
+                    setShowBillItemDeleteModal(false);
+                    fetchBillItems();
+                })
+                .catch((error) => {
+                    console.error("Error deleting bill item:", error);
+                    throw error; // rethrow to trigger toast error
+                }),
+            {
+                loading: 'Deleting bill item...',
+                success: 'Bill item deleted successfully.',
+                error: 'Failed to delete bill item.',
+            }
+        );
+    };
+
+    const handleBillItemPatch = async (billItem) => {
+        const payload = {
+            unit_id: extractedUnitId,
+            tenant_id: tenantId,
+            bill_item_id: billItem.bill_item_id,
+            bill_type: billItem.bill_type,
+            amount: Number(editedAmount),
+        };
+
+        toast.promise(
+            axios.patch(`${baseUrl}/manage-tenant/bills`, payload, {
+                headers: { Authorization: `Bearer ${token}` },
+            }),
+            {
+                loading: "Updating bill item...",
+                success: () => {
+                    fetchBillItems(); // refresh data
+                    setEditItemId(null);
+                    setOpenDropdownId(false)
+                    return "Bill item updated successfully.";
+                },
+                error: "Failed to update bill item.",
+            }
+        );
+    };
+
 
     return (
         <>
@@ -337,6 +482,7 @@ const Unit = () => {
                 hideSelect={false}
                 hideLink={false}
             />
+            {/* Tenant Details */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4">
                 <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white border border-gray-200 rounded mb-8 p-3 ">
                     <div className="space-y-3">
@@ -477,13 +623,176 @@ const Unit = () => {
                             </tbody>
                         </table>
 
-                        <div className="w-36">
+                        <div className="w-36 m-2">
                             <button onClick={handleOpen}>
-                                <div className="flex space-x-3 focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-xs px-2 py-2.5">
+                                <div className="flex space-x-3 focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-xl text-xs px-2 py-1">
                                     <p>Receive Payment</p>
                                     <img width={15} height={15} src="../../../assets/icons/png/plus.png" alt="" />
                                 </div>
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {/* Active Bills */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4 mt-5">
+                <div className="col-span-3 rounded-lg border border-gray-200 bg-white">
+                    <div className="flex justify-between my-2 px-2">
+                        <h4 className="text-md text-gray-600 ">Active Bills History</h4>
+                        <button onClick={openAddBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Add bill item</button>
+                    </div>
+                    <div className="w-full">
+                        <div className="">
+                            <table className="min-w-full table-auto">
+                                <thead className="bg-gray-100 text-left text-xs">
+                                    <tr>
+                                        <th className="px-4 py-2">Date</th>
+                                        <th className="px-4 py-2">Tenant</th>
+                                        <th className="px-4 py-2">Amounts</th>
+                                        <th className="px-4 py-2">Bill Items</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {billItems.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="7" className="text-center text-sm my-3">No data found.</td>
+                                        </tr>
+                                    ) : (
+                                        billItems.map((item, index) => (
+                                            <tr key={index} className="border-b text-xs">
+                                                <td className="px-4 py-2">{item.date}</td>
+                                                <td className="px-4 py-2">{(item.tenant_name)}</td>
+                                                <td className="px-4 py-2 text-sm text-gray-700 space-y-1">
+                                                    <div>Arrears - {Number(item.arrears).toLocaleString()}</div>
+                                                    <div>Rent - {Number(item.rent).toLocaleString()}</div>
+                                                    <div>Paid - {Number(item.paid).toLocaleString()}</div>
+                                                    <div>Fines - {Number(item.fines).toLocaleString()}</div>
+                                                    <div className="font-semibold text-blue-800">
+                                                        Total - {Number(item.total_balance).toLocaleString()}
+                                                    </div>
+                                                </td>
+
+                                                {item.bill_items.length > 0 ? (
+                                                    <td className="px-4 py-2">
+                                                        <table className="w-full text-xs border border-gray-300">
+                                                            <thead>
+                                                                <tr className="bg-gray-100">
+                                                                    <th className="px-2 py-1 text-left">Type</th>
+                                                                    <th className="px-2 py-1 text-left">Expected</th>
+                                                                    <th className="px-2 py-1 text-left">Paid</th>
+                                                                    <th className="px-2 py-1 text-left">Balance</th>
+                                                                    <th className="px-2 py-1 text-left">Status</th>
+                                                                    <th className="px-2 py-1 text-left">Action</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {item.bill_items.map((billItem, index) => (
+                                                                    <tr key={index} className="border-t border-gray-200">
+                                                                        <td className="px-2 py-1 capitalize">{billItem.bill_type}</td>
+                                                                        <td className="px-2 py-1">
+                                                                            {editItemId === billItem.bill_item_id ? (
+                                                                                <input
+                                                                                    type="number"
+                                                                                    value={editedAmount}
+                                                                                    onChange={(e) => setEditedAmount(e.target.value)}
+                                                                                    className="border px-1 py-0.5 rounded w-24 text-xs"
+                                                                                />
+                                                                            ) : (
+                                                                                (billItem.amount_expected).toLocaleString()
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="px-2 py-1">{(billItem.amount_paid).toLocaleString()}</td>
+                                                                        <td className="px-2 py-1">{(billItem.amount_due).toLocaleString()}</td>
+                                                                        <td className="px-2 py-1">
+                                                                            <span
+                                                                                className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                                                ${billItem.status === "Unpaid"
+                                                                                        ? "bg-red-100 text-red-800"
+                                                                                        : billItem.status === "Partial"
+                                                                                            ? "bg-blue-100 text-blue-800"
+                                                                                            : "bg-green-100 text-green-800"
+                                                                                    }`}
+                                                                            >
+                                                                                {billItem.status}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="relative px-2 py-1 text-xs">
+                                                                            <button
+                                                                                onClick={() => toggleDropdown(billItem.bill_item_id)}
+                                                                                className="inline-flex justify-center w-full px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 focus:outline-none"
+                                                                            >
+                                                                                Actions
+                                                                                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                                    <path
+                                                                                        fillRule="evenodd"
+                                                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                                                        clipRule="evenodd"
+                                                                                    />
+                                                                                </svg>
+                                                                            </button>
+
+                                                                            {openDropdownId === billItem.bill_item_id && (
+                                                                                <div className="absolute right-0 z-50 w-36 mt-1 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                                                    <div className="py-1">
+                                                                                        {editItemId === billItem.bill_item_id ? (
+                                                                                            <>
+                                                                                                <button
+                                                                                                    onClick={() => handleBillItemPatch(billItem)}
+                                                                                                    className="block w-full px-3 py-1 text-xs text-left text-green-600 hover:bg-green-100"
+                                                                                                >
+                                                                                                    Save
+                                                                                                </button>
+                                                                                                <button
+                                                                                                    onClick={() => setEditItemId(null)}
+                                                                                                    className="block w-full px-3 py-1 text-xs text-left text-gray-600 hover:bg-gray-100"
+                                                                                                >
+                                                                                                    Cancel
+                                                                                                </button>
+                                                                                            </>
+                                                                                        ) : (
+                                                                                            <button
+                                                                                                onClick={() => {
+                                                                                                    setEditItemId(billItem.bill_item_id);
+                                                                                                    setEditedAmount(billItem.amount_expected);
+                                                                                                }}
+                                                                                                className="block w-full px-3 py-1 text-xs text-left text-gray-700 hover:bg-gray-100"
+                                                                                            >
+                                                                                                Edit
+                                                                                            </button>
+                                                                                        )}
+
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                setBillItemToDelete({
+                                                                                                    unit_id: extractedUnitId,
+                                                                                                    tenant_id: tenantId,
+                                                                                                    bill_item_id: billItem.bill_item_id
+                                                                                                });
+                                                                                                setShowBillItemDeleteModal(true);
+                                                                                            }}
+                                                                                            className="block w-full px-3 py-1 text-xs text-left text-red-600 hover:bg-red-100"
+                                                                                        >
+                                                                                            Delete
+                                                                                        </button>
+
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </td>
+
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                ) : (
+                                                    <td className="px-4 py-2">No data found.</td>
+                                                )}
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -582,7 +891,7 @@ const Unit = () => {
                 <div className="col-span-2 rounded-lg border border-gray-200 bg-white">
                     <div className="flex justify-between my-2 px-2">
                         <h4 className="text-md text-gray-600 ">Water Meter History</h4>
-                        <button onClick={openWaterBillModal} className="text-xs bg-red-700 text-white p-2 rounded">Record water bill</button>
+                        <button onClick={openWaterBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Record water bill</button>
                     </div>
                     <div className="w-full">
                         <div className="">
@@ -593,6 +902,7 @@ const Unit = () => {
                                         <th className="px-4 py-2">Tenant</th>
                                         <th className="px-4 py-2">Previous Reading</th>
                                         <th className="px-4 py-2">Units Consumed</th>
+                                        <th className="px-4 py-2">Bill</th>
                                         <th className="px-4 py-2">Actions</th>
                                     </tr>
                                 </thead>
@@ -613,6 +923,7 @@ const Unit = () => {
                                                 <td className="px-4 py-2">{(item.tenant_name)}</td>
                                                 <td className="px-4 py-2">{(item.meter_reading)}</td>
                                                 <td className="px-4 py-2">{(item.meter_units)}</td>
+                                                <td className="px-4 py-2">{(item.amount_due).toLocaleString()}</td>
 
                                                 <td className="relative px-4 py-2 text-sm">
                                                     <button
@@ -823,6 +1134,13 @@ const Unit = () => {
                         <h2 className="text-xl text-center font-semibold text-gray-800">
                             Meter Reading
                         </h2>
+                        {waterBills.length > 0 && (
+                            <div>
+                                <p className="py-2 text-sm text-gray-600">
+                                    Previous Reading: <span className="font-medium">{waterBills[0].meter_reading}</span>
+                                </p>
+                            </div>
+                        )}
                         <form onSubmit={handleWaterSubmit(onWaterBillSubmit)}>
                             <Input
                                 label="Enter current meter reading"
@@ -833,6 +1151,7 @@ const Unit = () => {
                                 error={waterErrors.meter_reading}
                             />
                             <p className="py-2"></p>
+
                             <Input
                                 label="Enter water charge per unit (optional)"
                                 name="water_charge"
@@ -862,6 +1181,93 @@ const Unit = () => {
                     </div>
                 </div >
             )}
+
+            {showAddBillModal && (
+                <div className="fixed z-50 inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-lg p-6 w-1/3">
+
+                        <h2 className="text-xl text-center font-semibold text-gray-800">
+                            Add Bill Item
+                        </h2>
+                        <form onSubmit={handleBillSubmit(onBillSubmit)}>
+                            {addBillItems.length > 0 && (
+                                <>
+                                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                                        Select a bill item
+                                    </label>
+                                    <select
+                                        {...registerBill("bill_type")}
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                                    >
+                                        <option value="">Select a bill type</option>
+                                        {addBillItems.map((item) => (
+                                            <option key={item} value={item}>
+                                                {item
+                                                    .split("_")
+                                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                                    .join(" ")}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {billErrors.bill_type && (
+                                        <p className="text-red-500 text-sm mt-1">{billErrors.bill_type.message}</p>
+                                    )}
+                                </>
+                            )}
+                            <p className="py-2"></p>
+                            <Input
+                                label="Enter amount"
+                                name="amount"
+                                placeholder="Enter charge"
+                                type="text"
+                                register={registerBill}
+                                error={billErrors.amount}
+                            />
+                            <div className="flex items-center mt-6 space-x-4 rtl:space-x-reverse">
+                                <button
+                                    type="submit"
+                                    className="w-full rounded border border-green-700 bg-green-700 p-2.5 text-white transition hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Submit
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddBillModal(false)}
+                                    className="text-white bg-red-700 hover:bg-red-700 p-2.5 rounded"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div >
+            )}
+
+            {showBillItemDeleteModal && (
+                <div className="fixed z-50 inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-lg p-6 w-1/3">
+                        <h2 className="text-xl text-center font-semibold text-gray-800">
+                            Confirm Deletion
+                        </h2>
+                        <h2 className="text-gray-600 mt-2 text-center">Are you sure you want to delete this bill item?</h2>
+                        <div className="mt-4 flex justify-center gap-2">
+                            <button
+                                onClick={() => setShowBillItemDeleteModal(false)}
+                                className="px-3 py-2 text-xs rounded bg-gray-100 hover:bg-gray-200"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleBillItemDelete}
+                                className="px-3 py-2 text-xs rounded bg-red-600 text-white hover:bg-red-700"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </>
     )
 }

@@ -316,10 +316,10 @@ const TenantUnits = () => {
                                                         View Unit
                                                     </Link>
                                                     <Link
-                                                        to={`tenants/add-tenant-unit?tenant_id:${tenantId}&unit_id:${unit.unit_id}`}
+                                                        to={`/tenants/edit-tenant-unit?tenant_id=${tenantId}&unit_id=${unit.unit_id}`}
                                                         className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 whitespace-nowrap"
                                                     >
-                                                        Edit Unit
+                                                        Edit Unit Assigned
                                                     </Link>
                                                     <button
                                                         onClick={() =>
