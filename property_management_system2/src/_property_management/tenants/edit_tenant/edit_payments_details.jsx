@@ -31,31 +31,14 @@ const EditTenantProperty = () => {
     is_meter_read: z.enum(["1", "0"], {
       errorMap: () => ({ message: "You must select either 'Yes' or 'No'" })
     }),
-    tax_percentage: z.string().optional(),
-    initial_meter_reading: z.string().optional(),
-    first_time_billing: z.string().optional(),
+    tax_percentage: z.string().optional().nullable().transform(val => val === null ? undefined : val),
+    initial_meter_reading: z.string().optional().nullable().transform(val => val === null ? undefined : val),
 
     rent_amount: z.string().min(1, "Rent amount is required"),
     rent_deposit: z.string().min(1, "Deposit must be a positive number"),
     water: z.string().min(1, "Water deposit must be a positive number"),
     garbage: z.string().min(1, "Garbage deposit must be a positive number"),
     electricity: z.string().min(1, "Electricity deposit must be a positive number"),
-
-    is_the_tenant_have_previous_arrears: z.enum(["1", "0"], {
-      errorMap: () => ({ message: "You must select either 'Yes' or 'No'" })
-    }),
-
-    is_arrears_cumulative: z.enum(["1", "0"], {
-      errorMap: () => ({ message: "You must select either 'Yes' or 'No'" })
-    }).optional(),
-
-    arrears_rent_amount: z.string().optional(),
-    arrears_rent_deposit: z.string().optional(),
-    arrears_water: z.string().optional(),
-    arrears_garbage: z.string().optional(),
-    arrears_electricity: z.string().optional(),
-
-    arrears_total: z.string().optional(),
 
     rent_due_date: z.string().min(1, "Select a valid date"),
     due_rent_reminder_date: z.string().min(1, "Select a valid date"),
@@ -134,169 +117,7 @@ const EditTenantProperty = () => {
         }
       }
 
-      // Arrears validation logic
-      if (data.is_the_tenant_have_previous_arrears === "0") {
-        // If tenant has no previous arrears, clear is_arrears_cumulative and all arrears fields
-        if (data.is_arrears_cumulative) {
-          data.is_arrears_cumulative = undefined;
-        }
-
-        // Clear all arrears-related fields when tenant has no previous arrears
-        const arrearsFieldsToCheck = [
-          { field: data.arrears_total, name: "arrears_total" },
-          { field: data.arrears_rent_amount, name: "arrears_rent_amount" },
-          { field: data.arrears_rent_deposit, name: "arrears_rent_deposit" },
-          { field: data.arrears_water, name: "arrears_water" },
-          { field: data.arrears_garbage, name: "arrears_garbage" },
-          { field: data.arrears_electricity, name: "arrears_electricity" }
-        ];
-
-        arrearsFieldsToCheck.forEach(({ field, name }) => {
-          if (field && (typeof field === 'string' ? field.trim() !== "" : field !== undefined)) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "This field should be empty when tenant has no previous arrears",
-              path: [name],
-            });
-          }
-        });
-
-      } else if (data.is_the_tenant_have_previous_arrears === "1") {
-        // Tenant has previous arrears - require is_arrears_cumulative
-        if (!data.is_arrears_cumulative) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "You must specify if arrears are cumulative when tenant has previous arrears",
-            path: ["is_arrears_cumulative"],
-          });
-        } else if (data.is_arrears_cumulative === "1") {
-          // If arrears are cumulative, require arrears_total
-          if (!data.arrears_total || data.arrears_total.trim() === "") {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "Cumulative arrears total is required when arrears are cumulative",
-              path: ["arrears_total"],
-            });
-          }
-          // Validate arrears_total is a positive number
-          if (data.arrears_total && data.arrears_total.trim() !== "") {
-            const arrearsTotal = parseFloat(data.arrears_total);
-            if (isNaN(arrearsTotal) || arrearsTotal <= 0) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Cumulative arrears must be a positive number",
-                path: ["arrears_total"],
-              });
-            }
-          }
-
-          // Clear individual arrears fields when cumulative
-          const individualArrearsFields = [
-            { field: data.arrears_rent_amount, name: "arrears_rent_amount" },
-            { field: data.arrears_rent_deposit, name: "arrears_rent_deposit" },
-            { field: data.arrears_water, name: "arrears_water" },
-            { field: data.arrears_garbage, name: "arrears_garbage" },
-            { field: data.arrears_electricity, name: "arrears_electricity" }
-          ];
-
-          individualArrearsFields.forEach(({ field, name }) => {
-            if (field && field.trim() !== "") {
-              data[name] = undefined;
-            }
-          });
-
-        } else if (data.is_arrears_cumulative === "0") {
-          // If arrears are not cumulative, validate individual arrears fields and calculate total
-          const arrearsFields = [
-            { field: data.arrears_rent_amount, name: "arrears_rent_amount", label: "rent amount" },
-            { field: data.arrears_rent_deposit, name: "arrears_rent_deposit", label: "rent deposit" },
-            { field: data.arrears_water, name: "arrears_water", label: "water" },
-            { field: data.arrears_garbage, name: "arrears_garbage", label: "garbage" },
-            { field: data.arrears_electricity, name: "arrears_electricity", label: "electricity" }
-          ];
-
-          const hasAtLeastOneArrears = arrearsFields.some(
-            ({ field }) => field && field.trim() !== ""
-          );
-
-          if (!hasAtLeastOneArrears) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: "At least one arrears field (rent amount, rent deposit, water, garbage, or electricity) is required when arrears are not cumulative",
-              path: ["arrears_rent_amount"],
-            });
-          }
-
-          // Validate each provided arrears field is a positive number
-          arrearsFields.forEach(({ field, name, label }) => {
-            if (field && field.trim() !== "") {
-              const value = parseFloat(field);
-              if (isNaN(value) || value <= 0) {
-                ctx.addIssue({
-                  code: z.ZodIssueCode.custom,
-                  message: `${label.charAt(0).toUpperCase() + label.slice(1)} arrears must be a positive number`,
-                  path: [name],
-                });
-              }
-            }
-          });
-
-          // Calculate and set arrears_total automatically
-          const calculatedTotal = arrearsFields.reduce((total, { field }) => {
-            if (field && field.trim() !== "") {
-              const value = parseFloat(field);
-              if (!isNaN(value) && value > 0) {
-                return total + value;
-              }
-            }
-            return total;
-          }, 0);
-
-          // Update arrears_total in the data object
-          if (calculatedTotal > 0) {
-            data.arrears_total = calculatedTotal.toString();
-          }
-        }
-      }
     })
-    .transform((data) => {
-      // Remove is_the_tenant_have_previous_arrears from final data since you don't want to send it
-      const { is_the_tenant_have_previous_arrears, ...finalData } = data;
-
-      // Additional transformation to ensure arrears_total calculation for non-cumulative arrears
-      if (finalData.is_arrears_cumulative === "0") {
-        const arrearsFields = [
-          finalData.arrears_rent_amount,
-          finalData.arrears_rent_deposit,
-          finalData.arrears_water,
-          finalData.arrears_garbage,
-          finalData.arrears_electricity
-        ];
-
-        const calculatedTotal = arrearsFields.reduce((total, field) => {
-          if (field && field.trim() !== "") {
-            const value = parseFloat(field);
-            if (!isNaN(value) && value > 0) {
-              return total + value;
-            }
-          }
-          return total;
-        }, 0);
-
-        if (calculatedTotal > 0) {
-          finalData.arrears_total = calculatedTotal.toString();
-        }
-      }
-
-      return finalData;
-    });
-
-  const defaultValues = {
-    is_rent_agreed: "0",
-    is_meter_read: "0",
-    is_taxable: "0",
-    mode_for_late_payment: "",
-  }
 
   const {
     register,
@@ -307,14 +128,11 @@ const EditTenantProperty = () => {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues,
   })
 
   const mode_for_late_payment = watch("mode_for_late_payment");
   const is_taxable = watch("is_taxable");
   const is_meter_read = watch("is_meter_read");
-  const is_arrears_cumulative = watch("is_arrears_cumulative");
-  const is_the_tenant_have_previous_arrears = watch("is_the_tenant_have_previous_arrears");
   const is_rent_agreed = watch("is_rent_agreed");
 
 
@@ -348,84 +166,76 @@ const EditTenantProperty = () => {
             Authorization: `Bearer ${token}`
           }
         }
-      )
-      const data = tenantResponse.data.result
+      );
 
-      if (tenantResponse.data.success) {
-        const formData = {
-          ...data,
-          is_rent_agreed: data.is_rent_agreed,
-          is_taxable: data.is_taxable,
-          is_meter_read: data.is_meter_read,
-          tax_percentage: data.tax_percentage,
-          initial_meter_reading: data.initial_meter_reading,
+      const data = tenantResponse.data.result;
+      if (!tenantResponse.data.success || !data) {
+        toast.error("Failed to load tenant details");
+        return;
+      }
 
-          rent_amount: data.rent_amount,
-          rent_deposit: data.rent_deposit,
-          water: data.water,
-          garbage: data.garbage,
-          electricity: data.electricity,
+      // Pre-fill form with tenant info
+      reset({
+        ...data,
+        is_rent_agreed: String(data.is_rent_agreed),
+        is_taxable: String(data.is_taxable),
+        is_meter_read: String(data.is_meter_read),
+        tax_percentage: String(data.tax_percentage),
+        initial_meter_reading: data.initial_meter_reading,
 
-          rent_due_date: data.rent_due_date,
-          due_rent_reminder_date: data.due_rent_reminder_date,
-          due_rent_fine_start_date: data.due_rent_fine_start_date,
-          mode_for_late_payment: data.mode_for_late_payment,
-          amount_criteria: data.amount_criteria,
-          criteria_percentage: data.criteria_percentage,
-          late_payment_fixed_amount: data.late_payment_fixed_amount
-        }
+        rent_amount: data.rent_amount,
+        rent_deposit: data.rent_deposit,
+        water: data.water,
+        garbage: data.garbage,
+        electricity: data.electricity,
 
-        reset(formData)
+        rent_due_date: data.rent_due_date,
+        due_rent_reminder_date: data.due_rent_reminder_date,
+        due_rent_fine_start_date: data.due_rent_fine_start_date,
+        mode_for_late_payment: data.mode_for_late_payment,
+        amount_criteria: data.amount_criteria,
+        criteria_percentage: data.criteria_percentage,
+        late_payment_fixed_amount: data.late_payment_fixed_amount
+      });
 
-        if (data.unit_id) {
-          try {
-            const unitDetailsResponse = await axios.get(
-              `${baseUrl}/manage-tenant/required-data/selected-unit?unit_id=${data.unit_id}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`
-                }
+      // Proceed to fetch unit, property, and units under the selected property
+      if (data.unit_id) {
+        const [unitDetailsRes, propertyRes] = await Promise.all([
+          axios.get(`${baseUrl}/manage-tenant/required-data/selected-unit?unit_id=${data.unit_id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get(`${baseUrl}/manage-tenant/required-data/available-properties`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+
+        const unitDetails = unitDetailsRes.data.result;
+        const propertyList = propertyRes.data.result;
+
+        setUnitDetails(unitDetails);
+        setSelectedUnit(data.unit_id);
+        setProperties(propertyList);
+
+        const propertyForUnit = propertyList.find(prop => prop.id === unitDetails.property_id);
+        if (propertyForUnit) {
+          setSelectedProperty(propertyForUnit.id);
+
+          const unitsResponse = await axios.get(
+            `${baseUrl}/manage-tenant/required-data/available-units?property_id=${propertyForUnit.id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`
               }
-            )
-            setUnitDetails(unitDetailsResponse.data.result)
-            setSelectedUnit(data.unit_id)
-
-            const propertyResponse = await axios.get(
-              `${baseUrl}/manage-tenant/required-data/available-properties`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`
-                }
-              }
-            )
-            setProperties(propertyResponse.data.result)
-
-            const propertyForUnit = propertyResponse.data.result.find(prop =>
-              prop.id === unitDetailsResponse.data.result.property_id
-            )
-            if (propertyForUnit) {
-              setSelectedProperty(propertyForUnit.id)
-
-              const unitsResponse = await axios.get(
-                `${baseUrl}/manage-tenant/required-data/available-units?property_id=${propertyForUnit.id}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`
-                  }
-                }
-              )
-              setPropertyUnits(unitsResponse.data.result)
             }
-          } catch (error) {
-            console.error("Error fetching unit details:", error)
-          }
+          );
+          setPropertyUnits(unitsResponse.data.result);
         }
       }
     } catch (error) {
-      console.error("Error fetching tenant details:", error)
-      toast.error("Unable to fetch tenant details")
+      console.error("Unable to fetch tenant details:", error);
+      toast.error("Unable to fetch tenant details");
     }
-  }
+  };
 
   const handlePropertyChange = async (event) => {
     const propertyId = event.target.value
@@ -453,7 +263,6 @@ const EditTenantProperty = () => {
     localStorage.setItem("unit_id", unitId)
 
     try {
-      const token = localStorage.getItem('token')
 
       const unitDetailsResponse = await axios.get(`${baseUrl}/manage-tenant/required-data/selected-unit?unit_id=${unitId}`, {
         headers: {
@@ -529,6 +338,17 @@ const EditTenantProperty = () => {
     }
   }
 
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log("🚨 Form Errors:", errors);
+
+      // Log specific error messages
+      Object.entries(errors).forEach(([field, error]) => {
+        console.log(`${field}: ${error.message}`);
+      });
+    }
+  }, [errors]);
+
   return (
     <>
       <div className="p-4 flex justify-between mx-4">
@@ -580,88 +400,90 @@ const EditTenantProperty = () => {
               </div>
             </div>
 
-            {unitDetails && (
-              <>
-                <table className="w-full text-sm text-left text-gray-500">
-                  <thead className="text-xs text-white uppercase bg-red-700 py-4">
-                    <tr>
-                      <th scope="col" className="px-5 py-3">property name</th>
-                      <th scope="col" className="px-5 py-3">Unit number</th>
-                      <th scope="col" className="px-5 py-3">Floor</th>
-                      <th scope="col" className="px-5 py-3">Unit type</th>
-                      <th scope="col" className="px-5 py-3">Rent amount</th>
-                      <th scope="col" className="px-5 py-3">Rent deposit</th>
-                      <th scope="col" className="px-5 py-3">Water</th>
-                      <th scope="col" className="px-5 py-3">Electricity</th>
-                      <th scope="col" className="px-5 py-3">Garbage</th>
-                      <th scope="col" className="px-5 py-3">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border border-gray-200 py-3">
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                        {unitDetails.property_name}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                        {unitDetails.unit_number}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                        {unitDetails.floor}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                        {unitDetails.unit_type}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                        {unitDetails.rent_amount}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                        {unitDetails.rent_deposit}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                        {unitDetails.water}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                        {unitDetails.electricity}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                        {unitDetails.garbage}
-                      </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                        {unitDetails.total}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+            <table className="w-full text-sm text-left text-gray-500">
+              <thead className="text-xs text-white uppercase bg-red-700 py-4">
+                <tr>
+                  <th scope="col" className="px-5 py-3">property name</th>
+                  <th scope="col" className="px-5 py-3">Unit number</th>
+                  <th scope="col" className="px-5 py-3">Floor</th>
+                  <th scope="col" className="px-5 py-3">Unit type</th>
+                  <th scope="col" className="px-5 py-3">Rent amount</th>
+                  <th scope="col" className="px-5 py-3">Rent deposit</th>
+                  <th scope="col" className="px-5 py-3">Water</th>
+                  <th scope="col" className="px-5 py-3">Electricity</th>
+                  <th scope="col" className="px-5 py-3">Garbage</th>
+                  <th scope="col" className="px-5 py-3">Total</th>
+                </tr>
+              </thead>
 
-                <div className="flex space-x-6">
-                  <h6 className="text-sm font-medium text-gray-900">Is the rent and deposit agreed as above</h6>
-                  <label>
-                    <input
-                      className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
-                      type="radio"
-                      value="1"
-                      {...register("is_rent_agreed")}
-                    />
-                    Yes
-                  </label>
-                  <label>
-                    <input
-                      className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
-                      type="radio"
-                      value="0"
-                      {...register("is_rent_agreed")}
-                    />
-                    No
-                  </label>
-                </div>
-                {errors.is_rent_agreed && (
-                  <p className="text-xs text-red-500">
-                    {errors.is_rent_agreed.message}
-                  </p>
+              <tbody>
+                {unitDetails && (
+                  <tr className="border border-gray-200 py-3">
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
+                      {unitDetails.property_name}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                      {unitDetails.unit_number}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
+                      {unitDetails.floor}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                      {unitDetails.unit_type}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
+                      {unitDetails.rent_amount}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                      {unitDetails.rent_deposit}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
+                      {unitDetails.water}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                      {unitDetails.electricity}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
+                      {unitDetails.garbage}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
+                      {unitDetails.total}
+                    </td>
+                  </tr>
                 )}
+              </tbody>
+            </table>
+            <div className="flex space-x-6">
+              <h6 className="text-sm font-medium text-gray-900">Is the rent and deposit agreed as above</h6>
+              <label>
+                <input
+                  className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                  type="radio"
+                  value="1"
+                  {...register("is_rent_agreed")}
+                />
+                Yes
+              </label>
+              <label>
+                <input
+                  className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                  type="radio"
+                  value="0"
+                  {...register("is_rent_agreed")}
+                />
+                No
+              </label>
+            </div>
+            {errors.is_rent_agreed && (
+              <p className="text-xs text-red-500">
+                {errors.is_rent_agreed.message}
+              </p>
+            )}
 
-                {is_rent_agreed === "0" && (
-                  <>
+            {is_rent_agreed === "0" && (
+              <>
+                {unitDetails && (
+                  <div>
                     <div className="flex justify-between space-x-4">
                       <div className="w-full">
                         <label
@@ -763,187 +585,12 @@ const EditTenantProperty = () => {
                         )}
                       </div>
                     </div>
-                  </>
-                )}
-              </>
-            )}
-
-            <h3 className="font-bold text-gray-600 mt-2">(d) Tenant previous balances</h3>
-            <div className="flex space-x-6">
-              <h6 className="text-sm font-medium text-gray-900">Does the tenant have any arrears</h6>
-              <label>
-                <input
-                  className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
-                  type="radio"
-                  value="1"
-                  {...register("is_the_tenant_have_previous_arrears")}
-                />
-                Yes
-              </label>
-              <label>
-                <input
-                  className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
-                  type="radio"
-                  value="0"
-                  {...register("is_the_tenant_have_previous_arrears")}
-                />
-                No
-              </label>
-            </div>
-
-            {is_the_tenant_have_previous_arrears === "1" && (
-              <>
-                <div className="flex space-x-6">
-                  <h6 className="text-sm font-medium text-gray-900">Is the tenant arrears cumulative?</h6>
-                  <label>
-                    <input
-                      className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
-                      type="radio"
-                      value="1"
-                      {...register("is_arrears_cumulative")}
-                    />
-                    Yes
-                  </label>
-                  <label>
-                    <input
-                      className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
-                      type="radio"
-                      value="0"
-                      {...register("is_arrears_cumulative")}
-                    />
-                    No
-                  </label>
-                </div>
-                {is_arrears_cumulative === "0" && (
-                  <div>
-                    <div className="flex justify-between space-x-4">
-                      <div className="w-full">
-                        <label
-                          htmlFor="property-name"
-                          className="block my-2 text-sm font-medium text-gray-900">
-                          Enter rent arrears
-                        </label>
-                        <input
-                          aria-label="arrears_rent_amount"
-                          {...register("arrears_rent_amount")}
-                          type="number"
-                          placeholder="Enter monthly rent arrears"
-                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                        />
-                        {errors.arrears_rent_amount && (
-                          <p className="text-xs text-red-500">
-                            {errors.arrears_rent_amount.message}
-                          </p>
-                        )}
-                      </div>
-                      <div className="w-full">
-                        <label
-                          htmlFor="property-name"
-                          className="block my-2 text-sm font-medium text-gray-900"
-                        >
-                          Enter rent deposit arrears
-                        </label>
-                        <input
-                          aria-label="rent_deposit"
-                          {...register("arrears_rent_deposit")}
-                          type="number"
-                          placeholder="Enter deposit arrears"
-                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                        />
-                        {errors.arrears_rent_deposit && (
-                          <p className="text-xs text-red-500">
-                            {errors.arrears_rent_deposit.message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex justify-between space-x-4">
-                      <div className="w-full">
-                        <label
-                          htmlFor="property-name"
-                          className="block my-2 text-sm font-medium text-gray-900">
-                          Enter tenant water arrears
-                        </label>
-                        <input
-                          aria-label="water"
-                          {...register("arrears_water")}
-                          type="number"
-                          placeholder="Enter arrears_water arrears"
-                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                        />
-                        {errors.arrears_water && (
-                          <p className="text-xs text-red-500">
-                            {errors.arrears_water.message}
-                          </p>
-                        )}
-                      </div>
-                      <div className="w-full">
-                        <label
-                          htmlFor="property-name"
-                          className="block my-2 text-sm font-medium text-gray-900">
-                          Enter tenant garbage arrears
-                        </label>
-                        <input
-                          aria-label="garbage"
-                          {...register("arrears_garbage")}
-                          type="number"
-                          placeholder="Enter water arrears"
-                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                        />
-                        {errors.arrears_garbage && (
-                          <p className="text-xs text-red-500">
-                            {errors.arrears_garbage.message}
-                          </p>
-                        )}
-                      </div>
-                      <div className="w-full">
-                        <label
-                          htmlFor="property-name"
-                          className="block my-2 text-sm font-medium text-gray-900"
-                        >
-                          Enter tenant electricity arrears
-                        </label>
-                        <input
-                          aria-label="electricity"
-                          {...register("arrears_electricity")}
-                          type="number"
-                          placeholder="Enter electricity arrears"
-                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                        />
-                        {errors.arrears_electricity && (
-                          <p className="text-xs text-red-500">
-                            {errors.arrears_electricity.message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {is_arrears_cumulative === "1" && (
-                  <div className="w-full">
-                    <label
-                      htmlFor="property-name"
-                      className="block my-2 text-sm font-medium text-gray-900">
-                      Enter the cumulative arrears
-                    </label>
-                    <input
-                      aria-label="arrears_total"
-                      {...register("arrears_total")}
-                      type="number"
-                      placeholder="Enter cumulative arrears"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                    />
-                    {errors.arrears_total && (
-                      <p className="text-xs text-red-500">
-                        {errors.arrears_total.message}
-                      </p>
-                    )}
                   </div>
                 )}
               </>
             )}
 
-            <h3 className="font-bold text-gray-600 mt-2">(e) Other unit settings</h3>
+            <h3 className="font-bold text-gray-600 mt-2">(d) Other unit settings</h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="">
                 <div className="flex space-x-6">
@@ -1024,7 +671,7 @@ const EditTenantProperty = () => {
                       <input
                         {...register('initial_meter_reading')}
                         aria-label="initial_meter_reading"
-                        type="number"
+                        type="string"
                         placeholder="e.g 1000"
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
                       />
@@ -1037,35 +684,9 @@ const EditTenantProperty = () => {
                   </div>
                 )}
               </div>
-              <div className="flex space-x-6">
-                <h6 className="text-sm font-medium text-gray-900">Make initial billings (Deposits)</h6>
-                <label>
-                  <input
-                    className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
-                    type="radio"
-                    value="1"
-                    {...register("first_time_billing")}
-                  />
-                  Yes
-                </label>
-                <label>
-                  <input
-                    className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
-                    type="radio"
-                    value="0"
-                    {...register("first_time_billing")}
-                  />
-                  No
-                </label>
-                {errors.first_time_billing && (
-                  <p className="text-xs text-red-500">
-                    {errors.first_time_billing.message}
-                  </p>
-                )}
-              </div>
             </div>
+            <h3 className="font-bold text-gray-600 mt-2">(e) Fines payment settings</h3>
 
-            <h3 className="font-bold text-gray-600 mt-2">(f) Fines payment settings</h3>
             <div className="flex justify-between space-x-4">
               <div className="w-full">
                 <label
@@ -1255,7 +876,7 @@ const EditTenantProperty = () => {
                   </div>
                 ) : (
                   <div className="flex justify-center items-center space-x-2">
-                    <p>Save</p> <FaArrowRight />
+                    <p>Submit</p>
                   </div>
                 )}
               </button>

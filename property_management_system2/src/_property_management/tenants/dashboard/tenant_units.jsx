@@ -1,5 +1,5 @@
 import { Mail, Phone, User } from "lucide-react"
-import { DashboardHeader } from "../../_dashboard/pages/page_components"
+import { DashboardHeader } from "../../properties/dashboard/page_components"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import axios from "axios"

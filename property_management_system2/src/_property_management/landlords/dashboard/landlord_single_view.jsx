@@ -1,10 +1,10 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { DashboardHeader, PropertyCard } from "../../_dashboard/pages/page_components"
 import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Button } from "../../../shared";
+import { DashboardHeader, PropertyCard } from "../../properties/dashboard/page_components";
 
 const LandlordSingleView = () => {
   const [properties, setProperties] = useState([]);
@@ -191,13 +191,13 @@ const LandlordSingleView = () => {
                 </div>
               </Link>
             </div>
-            
+
           </div>
         </div>
       </div>
       <div className="w-full grid grid-cols-12 gap-4 py-1 px-4">
         {stats.map((stat, index) => (
-          <div key={index} className= "bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 col-span-3">
+          <div key={index} className="bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 col-span-3">
             <PropertyCard
               redirectUrl={stat.redirectUrl}
               iconSrc={stat.iconSrc}

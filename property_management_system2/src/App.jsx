@@ -1,22 +1,18 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AddMultiSingleUnit, Amenities, General_information, ManageImages, Property_floors, Property_summary, Property_types, Single_Unit, } from './_property_management/_add_property/pages';
-import { Account, HelpCenter, Home2, Inquiries, Maintenance, PropertyDashboard, Recycle, Reports, Settings } from './_property_management/_dashboard';
-import ChatRoom from './_property_management/_dashboard/pages/chat_room';
-import { DueRent, MaintenanceChatRoom, MarketUnit, PaymentHistory, Property, PropertyListing, ReceivePayment, RevenueBreakdown, TenantHistory, Unit, UnitListing } from './_property_management/_dashboard/pages';
 import DashboardLayout from './_dashboardLayout';
 import AuthHandler from './AuthHandler';
 import ProtectedRoute from './ProtectedRoute';
-import { MonthlyRevenueBreakdown } from './_property_management/_dashboard/reportsPages';
-import Chat from './chat';
-import { EditAmenities, EditGeneralInformation, EditManageImages, EditMultiUnit, EditMultiUnitSingleUnit, EditPropertyTypes, EditSingleUnit } from './_property_management/_edit_property';
-import { AddLandlordPaymentsDetails, AddLandlordPersonalInfo } from './_property_management/landlords/add_landlord';
-import { LandlordSingleView, ViewLandlord } from './_property_management/landlords/dashboard';
-import { EditLandlordPaymentsDetails, EditLandlordPersonalInfo } from './_property_management/landlords/edit_landlord';
-import { Add_Personal_Info, AddTenantProperty } from './_property_management/tenants/add_tenant';
-import { EditPersonalInfo, EditTenantProperty } from './_property_management/tenants/edit_tenant';
-import { Tenants, TenantUnits } from './_property_management/tenants/dashboard';
-import PaymentsDetails from './_property_management/_dashboard/pages/settings/payments_details';
+
+import { BulkWaterBill, ReceivePayment } from './_property_management/billings'
+import { PaymentsDetails, Settings } from './_property_management/settings'
+import { AddLandlordPaymentsDetails, AddLandlordPersonalInfo, EditLandlordPaymentsDetails, EditLandlordPersonalInfo, LandlordSingleView, ViewLandlord } from './_property_management/landlords'
+import { AddMultiSingleUnit, Amenities, DueRent, EditAmenities, EditGeneralInformation, EditManageImages, EditMultiUnit, EditMultiUnitSingleUnit, EditPropertyTypes, EditSingleUnit, General_information, Home2, ManageImages, MarketUnit, PaymentHistory, Property, Property_floors, Property_summary, Property_types, PropertyListing, Single_Unit, Unit, UnitListing } from './_property_management/properties'
+import { Add_Personal_Info, AddTenantProperty, EditPersonalInfo, EditTenantProperty, TenantHistory, Tenants, TenantUnits } from './_property_management/tenants'
+import { ChatRoom, Inquiries } from './_property_management/inquiries'
+import { Recycle } from './_property_management/recycleBin'
+import { HelpCenter } from './_property_management/helpCenter'
+import { MonthlyRevenueBreakdown, Reports, RevenueBreakdown } from './_property_management/reports'
 
 const App = () => {
   return (
@@ -31,10 +27,6 @@ const App = () => {
             <Route
               path="/dashboard"
               element={<ProtectedRoute element={<Home2 />} />}
-            />
-            <Route
-              path="/properties"
-              element={<ProtectedRoute element={<PropertyDashboard />} />}
             />
 
             <Route
@@ -134,22 +126,13 @@ const App = () => {
               path="/property/unit/tenant-history/:unit_id"
               element={<ProtectedRoute element={<TenantHistory />} />}
             />
-            <Route
-              path="/account"
-              element={<ProtectedRoute element={<Account />} />}
-            />
+
             <Route
               path="/help-center"
               element={<ProtectedRoute element={<HelpCenter />} />}
             />
-            <Route
-              path="/maintenance"
-              element={<ProtectedRoute element={<Maintenance />} />}
-            />
-            <Route
-              path="/dashboard/maintenance/chatroom"
-              element={<ProtectedRoute element={<MaintenanceChatRoom />} />}
-            />
+
+
             <Route
               path="/dashboard/reports"
               element={<ProtectedRoute element={<Reports />} />}
@@ -166,10 +149,7 @@ const App = () => {
               path="/settings"
               element={<ProtectedRoute element={<Settings />} />}
             />
-            <Route
-              path="/chat"
-              element={<ProtectedRoute element={<Chat />} />}
-            />
+
             <Route
               path="/recycle"
               element={<ProtectedRoute element={<Recycle />} />}
@@ -225,6 +205,10 @@ const App = () => {
             <Route
               path="/property/receive-payment"
               element={<ProtectedRoute element={<ReceivePayment />} />}
+            />
+            <Route
+              path="/property/receive-water"
+              element={<ProtectedRoute element={<BulkWaterBill />} />}
             />
             <Route
               path="/property/market-unit"

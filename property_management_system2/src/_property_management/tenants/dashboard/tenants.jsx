@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { DashboardHeader, PropertyCard } from "../../_dashboard/pages/page_components";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { DashboardHeader, PropertyCard } from "../../properties/dashboard/page_components";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div

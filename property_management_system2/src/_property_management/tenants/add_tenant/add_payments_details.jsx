@@ -665,42 +665,6 @@ const AddTenantProperty = () => {
               </>
             )}
 
-            {/* <div className="flex space-x-2">
-              <img width={20} height={20} src="/assets/icons/svg/plus.svg" alt="" />
-              <p className="text-sm font-medium text-gray-900">Add other charges if any</p>
-            </div>
-
-            <div className="flex justify-between space-x-4">
-              <div className="w-full">
-                <label
-                  htmlFor="property-name"
-                  className="block my-2 text-sm font-medium text-gray-900">
-                  Enter item name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Item 1"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                />
-              </div>
-              <div className="w-full">
-                <label
-                  htmlFor="property-name"
-                  className="block my-2 text-sm font-medium text-gray-900"
-                >
-                  Enter amount
-                </label>
-                <input
-                  type="text"
-                  placeholder="500"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                />
-              </div>
-              <div className="flex justify-center items-center w-1/6 mt-8">
-                <img width={24} height={24} src="/assets/icons/svg/delete.svg" alt="" />
-              </div>
-            </div> */}
-
             <h3 className="font-bold text-gray-600 mt-2">(d) Tenant previous balances</h3>
             <div className="flex space-x-6">
               <h6 className="text-sm font-medium text-gray-900">Does the tenant have any arrears</h6>

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { DashboardHeader } from "../../_dashboard/pages/page_components"
 import { Link, useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
+import { DashboardHeader } from "../../properties/dashboard/page_components";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -230,150 +230,152 @@ const ViewLandlord = () => {
                     )}
                 </div>
 
-                <div className="relative max-h-[590px] overflow-auto">
-                    <table className="min-w-full table-auto">
-                        <thead className="bg-gray-100 text-left text-xs border-b sticky top-0 z-20">
-                            <tr className="px-4 py-2">
-                                {showCheckboxes && (
-                                    <th className="px-4 py-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={allChecked}
-                                            onChange={toggleSelectAll}
-                                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                                        />
-                                    </th>
-                                )}
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Landlord Details</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Properties Details</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Expected Revenue</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Outstanding Revenue</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Pending Balances</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Fines</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {loading ? (
-                                Array(5).fill(0).map((_, index) => (
-                                    <TableRowSkeleton key={index} />
-                                ))
-                            ) : (
-                                landlords.map((landlord, index) => (
-                                    <tr key={index} className="bg-white divide-y divide-gray-200">
-                                        {showCheckboxes && (
-                                            <td className="px-4 py-2">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={landlord.checked}
-                                                    onChange={() => toggleCheckbox(landlord.landlord_info.landlord_id)}
-                                                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                                                />
-                                            </td>
-                                        )}
-                                        <td className="text-xs px-4 py-4">
-                                            <div className="font-semibold text-black">
-                                                {landlord.landlord_info.name}
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                                {landlord.landlord_info.email}
-                                            </div>
-                                            <div className="flex space-x-10 text-xs">
-                                                <div className="mt-1">
-                                                    <p>Phone</p>
-                                                    <p className="font-semibold text-gray-700">
-                                                        {landlord.landlord_info.phone}
-                                                    </p>
+                <div className="relative">
+                    <div className="min-w-full">
+                        <table className="w-full table-auto">
+                            <thead className="bg-gray-100 text-left text-xs border-b sticky top-0 z-20">
+                                <tr className="px-4 py-2">
+                                    {showCheckboxes && (
+                                        <th className="px-4 py-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={allChecked}
+                                                onChange={toggleSelectAll}
+                                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                            />
+                                        </th>
+                                    )}
+                                    <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Landlord Details</th>
+                                    <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Properties Details</th>
+                                    <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Expected Revenue</th>
+                                    <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Outstanding Revenue</th>
+                                    <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Pending Balances</th>
+                                    <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Fines</th>
+                                    <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {loading ? (
+                                    Array(5).fill(0).map((_, index) => (
+                                        <TableRowSkeleton key={index} />
+                                    ))
+                                ) : (
+                                    landlords.map((landlord, index) => (
+                                        <tr key={index} className="bg-white divide-y divide-gray-200">
+                                            {showCheckboxes && (
+                                                <td className="px-4 py-2">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={landlord.checked}
+                                                        onChange={() => toggleCheckbox(landlord.landlord_info.landlord_id)}
+                                                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                                    />
+                                                </td>
+                                            )}
+                                            <td className="text-xs px-4 py-4">
+                                                <div className="font-semibold text-black">
+                                                    {landlord.landlord_info.name}
                                                 </div>
-                                                <div className="mt-1">
-                                                    <p>Id No</p>
-                                                    <p className="font-semibold text-gray-700">
-                                                        {landlord.landlord_info.id_or_passport_number}
-                                                    </p>
+                                                <div className="text-xs text-gray-500">
+                                                    {landlord.landlord_info.email}
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <span className="text-sm">Total Properties: {landlord.properties}</span>
-                                            {landlord.landlord_details?.map((property, index) => (
-                                                <div className="text-xs text-gray-800" key={index}>
-                                                    {property.property_name}
-                                                </div>
-                                            ))}
-
-                                            <div className="flex space-x-10 text-xs">
-                                                <div className="mt-1">
-                                                    <p>Vacant</p>
-                                                    <p className="font-semibold text-gray-700">
-                                                        {landlord.vacant_units}
-                                                    </p>
-                                                </div>
-                                                <div className="mt-1">
-                                                    <p>Occupied</p>
-                                                    <p className="font-semibold text-gray-700">
-                                                        {landlord.occupied_units}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-
-
-                                        <td className="py-4 px-4 text-sm text-gray-700">
-                                            <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">KES {(landlord.expected_revenue.toLocaleString() || 0)}</span>
-                                        </td>
-                                        <td className="py-4 px-4 text-sm text-gray-700">
-                                            <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded">KES {(landlord.outstanding_revenue.toLocaleString() || 0)}</span>
-                                        </td>
-                                        <td className="py-4 px-4 text-sm text-gray-700">
-                                            <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">KES {(landlord.pending_balance.toLocaleString() || 0)}</span>
-                                        </td>
-                                        <td className="py-4 px-4 text-sm text-gray-700">
-                                            <span className="bg-blue-100 border border-blue-400 text-blue-600 px-2 py-1 rounded">KES {landlord.fines.toLocaleString() || 0}</span>
-                                        </td>
-                                        <td className="relative px-4 py-2 text-sm">
-                                            {/* Dropdown button - only in Actions column */}
-                                            <button
-                                                onClick={() => toggleDropdown(landlord.landlord_info.landlord_id)}
-                                                className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
-                                            >
-                                                Actions
-                                                <svg className="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                </svg>
-                                            </button>
-
-
-                                            {openDropdownId === landlord.landlord_info.landlord_id && (
-                                                <div className="absolute right-0 z-10 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                                                    <div className="py-1">
-                                                        <button
-                                                            onClick={() => navigate(`/landlords/view-landlord/${landlord.landlord_info.landlord_id}`)}
-                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                        >
-                                                            View landlord
-                                                        </button>
-                                                        <button
-                                                            onClick={() => navigate(`/edit-landlord/personal-information?landlord_id=${landlord.landlord_info.landlord_id}`)}
-                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                        >
-                                                            Edit Profile
-                                                        </button>
-
-                                                        <button
-                                                            onClick={() => handleAction(landlord.landlord_info.landlord_id, 'delete')}
-                                                            className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"
-                                                        >
-                                                            Delete landlord
-                                                        </button>
+                                                <div className="flex space-x-10 text-xs">
+                                                    <div className="mt-1">
+                                                        <p>Phone</p>
+                                                        <p className="font-semibold text-gray-700">
+                                                            {landlord.landlord_info.phone}
+                                                        </p>
+                                                    </div>
+                                                    <div className="mt-1">
+                                                        <p>Id No</p>
+                                                        <p className="font-semibold text-gray-700">
+                                                            {landlord.landlord_info.id_or_passport_number}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <span className="text-sm">Total Properties: {landlord.properties}</span>
+                                                {landlord.landlord_details?.map((property, index) => (
+                                                    <div className="text-xs text-gray-800 italic" key={index}>
+                                                        {String.fromCharCode(97 + index)}. {property.property_name}
+                                                    </div>
+                                                ))}
+
+                                                <div className="flex space-x-10 text-xs">
+                                                    <div className="mt-1">
+                                                        <p>Vacant</p>
+                                                        <p className="font-semibold text-gray-700">
+                                                            {landlord.vacant_units}
+                                                        </p>
+                                                    </div>
+                                                    <div className="mt-1">
+                                                        <p>Occupied</p>
+                                                        <p className="font-semibold text-gray-700">
+                                                            {landlord.occupied_units}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+
+                                            <td className="py-4 px-4 text-sm text-gray-700">
+                                                <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">KES {(landlord.expected_revenue.toLocaleString() || 0)}</span>
+                                            </td>
+                                            <td className="py-4 px-4 text-sm text-gray-700">
+                                                <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded">KES {(landlord.outstanding_revenue.toLocaleString() || 0)}</span>
+                                            </td>
+                                            <td className="py-4 px-4 text-sm text-gray-700">
+                                                <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">KES {(landlord.pending_balance.toLocaleString() || 0)}</span>
+                                            </td>
+                                            <td className="py-4 px-4 text-sm text-gray-700">
+                                                <span className="bg-blue-100 border border-blue-400 text-blue-600 px-2 py-1 rounded">KES {landlord.fines.toLocaleString() || 0}</span>
+                                            </td>
+                                            <td className="relative px-4 py-2 text-sm">
+                                                {/* Dropdown button - only in Actions column */}
+                                                <button
+                                                    onClick={() => toggleDropdown(landlord.landlord_info.landlord_id)}
+                                                    className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                                                >
+                                                    Actions
+                                                    <svg className="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                    </svg>
+                                                </button>
+
+
+                                                {openDropdownId === landlord.landlord_info.landlord_id && (
+                                                    <div className="absolute right-0 z-30 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                        <div className="py-1">
+                                                            <button
+                                                                onClick={() => navigate(`/landlords/view-landlord/${landlord.landlord_info.landlord_id}`)}
+                                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                            >
+                                                                View landlord
+                                                            </button>
+                                                            <button
+                                                                onClick={() => navigate(`/edit-landlord/personal-information?landlord_id=${landlord.landlord_info.landlord_id}`)}
+                                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                            >
+                                                                Edit Profile
+                                                            </button>
+
+                                                            <button
+                                                                onClick={() => handleAction(landlord.landlord_info.landlord_id, 'delete')}
+                                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"
+                                                            >
+                                                                Delete landlord
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             {showDeleteConfirm && (

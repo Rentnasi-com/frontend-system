@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 const ProtectedRoute = ({ element }) => {
   const token = useSelector((state) => state.auth.token);
-  return token ? element : window.location.href="http://localhost:5173";
+  return token ? element : window.location.href = "https://auth.rentalpay.africa/sign-in";
 };
 
 ProtectedRoute.propTypes = {

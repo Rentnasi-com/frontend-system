@@ -31,20 +31,10 @@ const Header = () => {
     userId: localStorage.getItem("userId"),
   }
 
-  const handleLogout = async () => {
-    try {
-      const response = await axios.post(`${BASE_URL}/v2/logout-api`, dataToSend)
-      if (response.data.success) {
-        toast.success(response.data.message)
-        localStorage.clear()
-        // window.location.href = "http://localhost:5173"
-        window.location.href = `${AUTH_URL}`
-      } else {
-        console.error("Failed to log out:", response.data.message)
-      }
-    } catch (error) {
-      console.error("Error clearing local storage:", error)
-    }
+  const handleLogout = () => {
+    toast.success("Redirecting to auth")
+    localStorage.clear()
+    window.location.href = `${AUTH_URL}`
   }
 
   const menuItems = [
