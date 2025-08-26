@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { Button } from "../../../../shared";
 import { useNavigate } from "react-router-dom";
+import { DashboardHeader } from "../../dashboard/page_components";
 
 const AddMultiSingleUnit = () => {
     const schema = z.object({
@@ -123,12 +124,10 @@ const AddMultiSingleUnit = () => {
 
 
         <section className="bg-white">
-            <div className="p-4 flex justify-between">
-                <div>
-                    <h1 className="text-xl font-bold text-gray-700">Add Property</h1>
-                    <p className="text-sm text-gray-500">Properties / Add property / Single unit</p>
-                </div>
-            </div>
+            <DashboardHeader
+                title="Add Property"
+                description="Properties / Add property / Single unit"
+            />
             <div className="my-1 px-4">
                 <div className="border rounded p-2">
                     <p className="mt-1 text-sm font-normal text-gray-500">

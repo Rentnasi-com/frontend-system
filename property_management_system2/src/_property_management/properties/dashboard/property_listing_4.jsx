@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
 import { Button } from "../../../shared";
 import toast from "react-hot-toast";
@@ -14,21 +14,17 @@ const SkeletonLoader = ({ className, rounded = false }) => (
 
 const TableRowSkeleton = () => (
     <tr className="border-b">
-        <td className="px-4 py-3"><SkeletonLoader className="w-12 h-12" rounded /></td>
+        {/* <td className="px-4 py-3"><SkeletonLoader className="w-12 h-12" rounded /></td> */}
         <td className="px-4 py-3">
             <SkeletonLoader className="h-4 w-32 mb-1" />
             <SkeletonLoader className="h-3 w-24" />
         </td>
-        {[...Array(7)].map((_, i) => (
+        {[...Array(8)].map((_, i) => (
             <td key={i} className="px-4 py-3">
-                <SkeletonLoader className="h-6 w-12 mx-auto" />
+                <SkeletonLoader className="h-6 w-20 mx-auto" />
             </td>
         ))}
-        <td className="px-4 py-3 flex space-x-4">
-            <SkeletonLoader className="h-5 w-5 rounded" />
-            <SkeletonLoader className="h-5 w-5 rounded" />
-            <SkeletonLoader className="h-5 w-5 rounded" />
-        </td>
+
     </tr>
 );
 
@@ -181,22 +177,22 @@ const PropertyListing = () => {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: "../../../assets/icons/png/expected_income.png",
             progress: 20,
-            label: "Expected Income",
-            value: `KES ${(revenue.expected_amount?.count || 0).toLocaleString()}`,
+            label: "Rent Payable",
+            value: `KES ${(revenue.total_rent?.count || 0).toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: "../../../assets/icons/png/expected_income.png",
             progress: 80,
-            label: "Amount Payed",
-            value: `KES ${(revenue.amount_paid?.count || 0).toLocaleString()}`,
+            label: "Previous Arrears",
+            value: `KES ${(revenue.arrears?.count || 0).toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: "../../../assets/icons/png/outstanding_balance.png",
             progress: 3.4,
-            label: "Outstanding Balance",
-            value: `KES ${(revenue.outstanding_balance?.count || 0).toLocaleString()}`,
+            label: "Total Bills",
+            value: `KES ${(revenue.total_bills?.count || 0).toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
@@ -204,6 +200,27 @@ const PropertyListing = () => {
             progress: 5,
             label: "Total fines",
             value: `KES ${(revenue.total_fines?.count || 0).toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: "../../../assets/icons/png/total_fines.png",
+            progress: 5,
+            label: "Total Payable",
+            value: `KES ${(revenue.expected_amount?.count || 0).toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: "../../../assets/icons/png/total_fines.png",
+            progress: 5,
+            label: "Amount Paid",
+            value: `KES ${(revenue.amount_paid?.count || 0).toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: "../../../assets/icons/png/total_fines.png",
+            progress: 5,
+            label: "Total Balance",
+            value: `KES ${(revenue.outstanding_balance?.count || 0).toLocaleString()}`,
         },
     ];
 
@@ -243,12 +260,41 @@ const PropertyListing = () => {
     };
 
     const handleSearch = (event) => {
-        setSearchQuery(event.target.value); // Update the search input state
+        setSearchQuery(event.target.value);
     };
 
     const handleSubmitSearch = (event) => {
         event.preventDefault();
-        setConfirmedSearch(searchQuery); // Only confirm search upon submission
+        setConfirmedSearch(searchQuery);
+    };
+
+    const [openDropdownId, setOpenDropdownId] = useState(null);
+
+    const toggleDropdown = (tenantId) => {
+        setOpenDropdownId(openDropdownId === tenantId ? null : tenantId);
+    };
+
+    const setWhoToRecievePayment = async (propertyId, toLandlord) => {
+        try {
+            const response = await axios.patch(`${baseUrl}/settings/payment/details`, {
+                property_id: propertyId,
+                payments_to_landlord: toLandlord,
+            },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                }
+            );
+            if (response.status === 200) {
+                toast.success("Payment details updated successfully.");
+                fetchProperties()
+                setOpenDropdownId(null);
+            }
+        } catch (error) {
+            setOpenDropdownId(null);
+        }
     };
 
     return (
@@ -268,7 +314,7 @@ const PropertyListing = () => {
                     ))
                 ) : (
                     stats.map((stat, index) => (
-                        <div key={index} className="bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2">
+                        <div key={index}>
                             <PropertyCard
                                 redirectUrl={stat.redirectUrl}
                                 iconSrc={stat.iconSrc}
@@ -300,21 +346,21 @@ const PropertyListing = () => {
                         </div>
                     </form>
                 </div>
-                <div className="w-full">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full table-auto">
+                <div>
+                    <div className="">
+                        <table className="min-w-full">
                             <thead className="bg-gray-100 text-left text-xs border-y ">
                                 <tr className="py-2">
-                                    <th className="px-4 py-2">Photo</th>
-                                    <th className="px-4 py-2">Property Name</th>
-                                    <th className="px-4 py-2">Total</th>
-                                    <th className="px-4 py-2">Vacant</th>
-                                    <th className="px-4 py-2">Occupied</th>
-                                    <th className="px-4 py-2">Open Issues</th>
-                                    <th className="px-4 py-2">Expected Revenue</th>
-                                    <th className="px-4 py-2">Outstanding Revenue</th>
-                                    <th className="px-4 py-2">Pending Balances</th>
-                                    <th className="px-4 py-2">Actions</th>
+                                    {/* <th className="px-4 py-2">Photo</th> */}
+                                    <th className="px-4 py-2">Property</th>
+                                    <th className="text-end">Exp Rent</th>
+                                    <th className="text-end">Pre Arrears</th>
+                                    <th className="text-end">Fines</th>
+                                    <th className="text-end">Bills</th>
+                                    <th className="text-end">Total Payable</th>
+                                    <th className="text-end">Paid</th>
+                                    <th className="text-end">Balances</th>
+                                    <th className="px-6 py-2"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -324,36 +370,123 @@ const PropertyListing = () => {
                                     ))
                                 ) : (
                                     properties.map((property, index) => (
-                                        <tr key={index} className="border-b text-sm">
-                                            <td className="px-4 py-2">
-                                                <img src={property.cover_image} alt={property.property_name} className="w-12 h-12 rounded-full" />
-                                            </td>
+                                        <tr key={index} className="border-b text-sm overflow-x-auto">
+
                                             <td className="px-4 py-2">
                                                 {property.property_name}
                                                 <br />
                                                 <span className="text-gray-500 text-xs">
-                                                    {property.property_location}
+                                                    Occupied: {property.occupied_units}
+                                                </span>
+                                                <br />
+                                                <span className="text-gray-500 text-xs">
+                                                    Vacant: {property.vacant_units}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-2">{property.total_units}</td>
-                                            <td className="px-4 py-2">{property.vacant_units}</td>
-                                            <td className="px-4 py-2">{property.occupied_units}</td>
-                                            <td className="px-4 py-2">
-                                                <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded">{property.open_issues}</span>
+
+                                            <td className=" text-gray-700 text-end">
+                                                <span className="text-yellow-600 ">
+                                                    {property.rent.toLocaleString()}
+                                                </span>
+
                                             </td>
-                                            <td className="px-4 py-2">
-                                                <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">{property.expected_revenue.toLocaleString()}</span>
+
+
+
+                                            <td className=" text-gray-700 text-end">
+                                                <span className="text-orange-600">
+                                                    {property.arrears.toLocaleString()}
+                                                </span>
+
                                             </td>
-                                            <td className="px-4 py-2">
-                                                <span className="bg-blue-100 border border-blue-400 text-blue-600 px-2 py-1 rounded">{property.outstanding_revenue.toLocaleString()}</span>
+                                            <td className=" text-gray-700 text-end">
+                                                <span className="text-yellow-600">
+                                                    {property.bills.toLocaleString()}
+                                                </span>
                                             </td>
-                                            <td className="px-4 py-2">
-                                                <span className="bg-blue-100 border border-blue-400 text-blue-600 px-2 py-1 rounded">{property.pending_balance.toLocaleString()}</span>
+                                            <td className=" text-gray-700 text-end">
+                                                <span className="text-yellow-600">
+                                                    {property.fines.toLocaleString()}
+                                                </span>
+
                                             </td>
-                                            <td className="flex py-5 px-2 space-x-4">
-                                                <FaEye onClick={() => navigate(`/property/view-property/${property.id}`)} className="text-gray-500 hover:text-gray-700 cursor-pointer" />
-                                                <FaEdit onClick={() => navigate(`/edit-property/general-information?property_id=${property.id}`)} className="text-purple-500 hover:text-purple-700 cursor-pointer" />
-                                                <FaTrash onClick={() => openDeleteModal(property)} className="text-red-500 hover:text-red-700 cursor-pointer" />
+
+                                            <td className=" text-gray-700 text-end">
+
+                                                {property.expected.toLocaleString()}
+
+                                            </td>
+
+
+                                            <td className=" text-gray-700 text-end">
+                                                <span className="text-green-600 ">
+                                                    {property.received.toLocaleString()}
+                                                </span>
+
+                                            </td>
+
+                                            <td className=" text-gray-700 text-end">
+                                                <span className="text-teal-600 ">
+                                                    {property.balance.toLocaleString()}
+                                                </span>
+                                            </td>
+
+
+                                            <td className="relative px-4 py-2 text-sm">
+                                                <button
+                                                    onClick={() => toggleDropdown(property.id)}
+                                                    className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                                                >
+                                                    Actions
+                                                    <svg className="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                    </svg>
+                                                </button>
+
+
+                                                {openDropdownId === property.id && (
+                                                    <div className="absolute right-0 z-50 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                        <div className="py-1">
+                                                            <Link
+                                                                to={`/property/view-property/${property.id}`}
+                                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                            >
+                                                                View Property
+                                                            </Link>
+
+                                                            <Link
+                                                                to={`/edit-property/general-information?property_id=${property.id}`}
+                                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                            >
+                                                                Edit Property
+                                                            </Link>
+                                                            {property.payments_to_landlord === false ? (
+                                                                <button
+                                                                    onClick={() => setWhoToRecievePayment(property.id, true)}
+                                                                    className="block w-full px-4 py-2 text-sm text-left text-blue-600 hover:bg-gray-100"
+                                                                >
+                                                                    Rent To Landlord
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => setWhoToRecievePayment(property.id, false)}
+                                                                    className="block w-full px-4 py-2 text-sm text-left text-green-600 hover:bg-gray-100"
+                                                                >
+                                                                    Rent To Rentalpay
+                                                                </button>
+                                                            )}
+
+                                                            <hr />
+
+                                                            <button
+                                                                onClick={() => openDeleteModal(property)}
+                                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"
+                                                            >
+                                                                Delete Property
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </td>
                                         </tr>
                                     ))

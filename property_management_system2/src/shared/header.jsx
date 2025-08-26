@@ -46,16 +46,15 @@ const Header = () => {
 
   return (
     <>
-      <header className="shadow sticky top-0 z-30 bg-white px-16">
+      {/* <header className="shadow sticky top-0 z-30 bg-white px-16">
         <nav className="mx-auto container py-2 flex justify-between">
-          <Link to="/landlord_management_systemdashboard">
+          <a href="https://rentalpay.africa" target="_blank">
             <img
-              className="w-[72px] h-[34px]"
-              src="/assets/images/rentnasi.png"
+              className="w-[72px] h-[40px]"
+              src="/assets/images/rentalpay.jpg"
               alt="logo"
             />
-          </Link>
-
+          </a>
 
 
           <div className="flex space-x-3">
@@ -114,7 +113,7 @@ const Header = () => {
 
           </div>
         </nav>
-      </header>
+      </header> */}
     </>
   );
 };

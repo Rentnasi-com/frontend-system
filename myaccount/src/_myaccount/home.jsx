@@ -1,9 +1,65 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { FaBell } from "react-icons/fa";
 
 const Home = () => {
   const currentHour = new Date().getHours();
   const BASE_URL = import.meta.env.VITE_BASE_URL;
+  const AUTH_URL = import.meta.env.VITE_AUTH_URL;
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const dataToSend = {
+    sessionId: localStorage.getItem("sessionId"),
+    userId: localStorage.getItem("userId"),
+  }
+
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/v2/logout-api`,
+        dataToSend,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Accept: "application/json",
+          },
+        }
+      )
+
+      if (response.data.success) {
+        toast.success(response.data.message)
+        localStorage.clear()
+        window.location.href = `${AUTH_URL}` // redirect to login page or base
+      } else {
+        console.error("Failed to log out:", response.data.message)
+      }
+    } catch (error) {
+      console.error("Error during logout:", error)
+      toast.error("Logout failed. Please try again.")
+    }
+  }
+
+
+  const menuItems = [
+    { label: 'Dashboard', action: () => console.log('Dashboard clicked') },
+    { label: 'Settings', action: () => console.log('Settings clicked') },
+    { label: 'Earnings', action: () => console.log('Earnings clicked') },
+    { label: 'Logout', action: handleLogout }
+  ];
   let greeting;
 
   if (currentHour >= 5 && currentHour < 12) {
@@ -81,6 +137,68 @@ const Home = () => {
   }, [userResponseData, BASE_URL]);
   return (
     <>
+      <div className="flex justify-between m-4">
+        <div>
+          <h1 className="text-lg font-semibold text-gray-600">Dashboard</h1>
+          <p className="text-sm text-gray-500">Welcome to Rentalpay My Account</p>
+        </div>
+        <div className="flex justify-end space-x-3 ">
+
+
+          <div className="relative inline-block" ref={dropdownRef}>
+            {/* Trigger Button */}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="flex items-center justify-center rounded-xl bg-gray-100 p-2 hover:bg-gray-200 transition-colors"
+              aria-expanded={isOpen}
+              aria-haspopup="true"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-red-700"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            {/* Dropdown Panel */}
+            {isOpen && (
+              <div
+                className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                role="menu"
+              >
+                <div className="py-1">
+                  {menuItems.map((item, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        item.action();
+                        setIsOpen(false);
+                      }}
+                      className={`block w-full px-4 py-2 text-left text-sm ${item.label === 'Logout'
+                        ? 'text-red-600 hover:bg-red-50'
+                        : 'text-gray-700 hover:bg-gray-100'
+                        } transition-colors`}
+                      role="menuitem"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+
+
       <section className="">
         <div className="mt-6">
           <div className="flex flex-col justify-center items-center space-y-3">

@@ -67,6 +67,13 @@ const AddTenantProperty = () => {
       errorMap: () => ({ message: "Please select a valid mode" })
     }),
 
+    is_electricity_meter_read: z.enum(['1', '0'], {
+      errorMap: () => ({ message: "You must select either 'Yes' or 'No'" })
+    }),
+
+    electricity_unit_price: z.coerce.string().optional(),
+    initial_electricity_reading: z.coerce.string().optional(),
+
     amount_criteria: z.enum([
       "current_full_month_rent",
       "current_full_month_rent_balance",
@@ -95,6 +102,68 @@ const AddTenantProperty = () => {
         });
       }
 
+      // Electricity meter reading validation
+      if (data.is_electricity_meter_read === "1") {
+        // Validate electricity_unit_price is required
+        if (!data.electricity_unit_price || data.electricity_unit_price.trim() === "") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Electricity unit price is required when electricity meter read is enabled",
+            path: ["electricity_unit_price"],
+          });
+        } else {
+          // Validate electricity_unit_price is a positive number
+          const unitPrice = parseFloat(data.electricity_unit_price);
+          if (isNaN(unitPrice) || unitPrice <= 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Electricity unit price must be a positive number",
+              path: ["electricity_unit_price"],
+            });
+          }
+        }
+
+        // Validate initial_electricity_reading is required
+        if (!data.initial_electricity_reading || data.initial_electricity_reading.trim() === "") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Initial electricity reading is required when electricity meter read is enabled",
+            path: ["initial_electricity_reading"],
+          });
+        } else {
+          // Validate initial_electricity_reading is a non-negative number
+          const reading = parseFloat(data.initial_electricity_reading);
+          if (isNaN(reading) || reading < 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Initial electricity reading must be a non-negative number",
+              path: ["initial_electricity_reading"],
+            });
+          }
+        }
+      }
+
+      // Clear electricity fields if meter read is disabled
+      if (data.is_electricity_meter_read === "0") {
+        // Optional: Clear the fields when electricity meter is disabled
+        // You can remove this validation if you want to allow values to persist
+        if (data.electricity_unit_price && data.electricity_unit_price.trim() !== "") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Electricity unit price should be empty when electricity meter read is disabled",
+            path: ["electricity_unit_price"],
+          });
+        }
+        if (data.initial_electricity_reading && data.initial_electricity_reading.trim() !== "") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Initial electricity reading should be empty when electricity meter read is disabled",
+            path: ["initial_electricity_reading"],
+          });
+        }
+      }
+
+      // Late payment mode validation
       if (data.mode_for_late_payment === "percentage") {
         if (!data.amount_criteria) {
           ctx.addIssue({
@@ -304,7 +373,8 @@ const AddTenantProperty = () => {
     mode_for_late_payment: "percentage",
     criteria_percentage: "10",
     rent_due_date: "10",
-    due_rent_fine_start_date: "11"
+    due_rent_fine_start_date: "11",
+    is_electricity_meter_read: "0"
   }
 
   const {
@@ -324,6 +394,7 @@ const AddTenantProperty = () => {
   const is_arrears_cumulative = watch("is_arrears_cumulative");
   const is_the_tenant_have_previous_arrears = watch("is_the_tenant_have_previous_arrears");
   const is_rent_agreed = watch("is_rent_agreed");
+  const is_electricity_meter_read = watch("is_electricity_meter_read");
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -841,6 +912,7 @@ const AddTenantProperty = () => {
             )}
 
             <h3 className="font-bold text-gray-600 mt-2">(e) Other unit settings</h3>
+
             <div className="grid grid-cols-3 gap-4">
               <div className="">
                 <div className="flex space-x-6">
@@ -890,7 +962,7 @@ const AddTenantProperty = () => {
               </div>
               <div className="">
                 <div className="flex space-x-6">
-                  <h6 className="text-sm font-medium text-gray-900">Does the unit have a meter</h6>
+                  <h6 className="text-sm font-medium text-gray-900">Does the unit have a water meter</h6>
                   <label>
                     <input
                       className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
@@ -960,7 +1032,82 @@ const AddTenantProperty = () => {
                   </p>
                 )}
               </div>
+              <div className="col-span-3">
+                <div className="flex space-x-6">
+                  <h6 className="text-sm font-medium text-gray-900">Do you charge electricity by meter reading</h6>
+                  <label>
+                    <input
+                      className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                      type="radio"
+                      value="1"
+                      {...register("is_electricity_meter_read")}
+                    />
+                    Yes
+                  </label>
+                  <label>
+                    <input
+                      className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                      type="radio"
+                      value="0"
+                      {...register("is_electricity_meter_read")}
+                    />
+                    No
+                  </label>
+                  {errors.is_electricity_meter_read && (
+                    <p className="text-xs text-red-500">
+                      {errors.is_electricity_meter_read.message}
+                    </p>
+                  )}
+                </div>
+                {is_electricity_meter_read === "1" && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex justify-between space-x-4">
+                      <div className="w-full">
+                        <label
+                          htmlFor="property-name"
+                          className="block my-2 text-sm font-medium text-gray-900">
+                          Enter electricity unit price
+                        </label>
+                        <input
+                          {...register('electricity_unit_price')}
+                          aria-label="electricity_unit_price"
+                          type="number"
+                          placeholder="e.g 1000"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+                        />
+                        {errors.electricity_unit_price && (
+                          <p className="text-xs text-red-500">
+                            {errors.electricity_unit_price.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between space-x-4">
+                      <div className="w-full">
+                        <label
+                          htmlFor="property-name"
+                          className="block my-2 text-sm font-medium text-gray-900">
+                          Enter initial electricity meter reading
+                        </label>
+                        <input
+                          {...register('initial_electricity_reading')}
+                          aria-label="initial_electricity_reading"
+                          type="text"
+                          placeholder="e.g 1000"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+                        />
+                        {errors.initial_electricity_reading && (
+                          <p className="text-xs text-red-500">
+                            {errors.initial_electricity_reading.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+
             <h3 className="font-bold text-gray-600 mt-2">(f) Fines payment settings</h3>
 
             <div className="flex justify-between space-x-4">

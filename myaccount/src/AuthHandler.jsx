@@ -124,31 +124,45 @@ const AuthHandler = () => {
     }
   };
 
-  // Parse package expiry date from the API format
+  // Parse package expiry date from the API format - FIXED VERSION
   const parsePackageExpiryDate = (packageExpiryString) => {
     if (!packageExpiryString || typeof packageExpiryString !== 'string') {
+      console.log('No package expiry string provided:', packageExpiryString);
       return null;
     }
 
-    // Handle the timestamp format: YYYYMMDDHHMMSSSSSSSS
-    if (packageExpiryString.length === 20) {
-      const year = parseInt(packageExpiryString.substring(0, 4));
-      const month = parseInt(packageExpiryString.substring(4, 6)) - 1; // Month is 0-indexed
-      const day = parseInt(packageExpiryString.substring(6, 8));
-      const hour = parseInt(packageExpiryString.substring(8, 10));
-      const minute = parseInt(packageExpiryString.substring(10, 12));
-      const second = parseInt(packageExpiryString.substring(12, 14));
-      return new Date(year, month, day, hour, minute, second);
-    }
+    try {
+      // Handle the timestamp format: YYYYMMDDHHMMSSSSSSSS
+      if (packageExpiryString.length === 20) {
+        const year = parseInt(packageExpiryString.substring(0, 4));
+        const month = parseInt(packageExpiryString.substring(4, 6)) - 1; // Month is 0-indexed
+        const day = parseInt(packageExpiryString.substring(6, 8));
+        const hour = parseInt(packageExpiryString.substring(8, 10));
+        const minute = parseInt(packageExpiryString.substring(10, 12));
+        const second = parseInt(packageExpiryString.substring(12, 14));
 
-    // Fallback to regular date parsing
-    return new Date(packageExpiryString);
+        const parsedDate = new Date(year, month, day, hour, minute, second);
+        console.log('Parsed package expiry date:', parsedDate.toISOString());
+        return parsedDate;
+      }
+
+      // Fallback to regular date parsing
+      const fallbackDate = new Date(packageExpiryString);
+      console.log('Fallback parsed package expiry date:', fallbackDate.toISOString());
+      return fallbackDate;
+    } catch (error) {
+      console.error('Error parsing package expiry date:', error, 'Input:', packageExpiryString);
+      return null;
+    }
   };
 
-  // Check package expiry with better error handling
+  // IMPROVED: Check package expiry with better error handling and debugging
   const checkPackageExpiry = (packageData) => {
+    console.log('=== PACKAGE EXPIRY CHECK START ===');
+    console.log('Package data received:', packageData);
+
     if (!packageData) {
-      console.warn('No package data provided');
+      console.warn('No package data provided - allowing access');
       return true; // Allow access if no package data
     }
 
@@ -165,8 +179,10 @@ const AuthHandler = () => {
     }
 
     const packageExpiryString = packageData.package_expires_at;
+    console.log('Package expires at string:', packageExpiryString);
+
     if (!packageExpiryString) {
-      console.warn('No package expiry date provided');
+      console.warn('No package expiry date provided - allowing access');
       return true; // Allow access if no expiry date
     }
 
@@ -176,22 +192,28 @@ const AuthHandler = () => {
 
       if (!packageExpiry || isNaN(packageExpiry.getTime())) {
         console.error('Invalid package expiry date:', packageExpiryString);
+        console.warn('Cannot parse expiry date - allowing access for safety');
         return true; // Allow access if we can't parse the date
       }
 
-      // Add some buffer (1 minute) to handle timezone/sync issues
-      const bufferTime = 60 * 1000; // 1 minute in milliseconds
+      // INCREASED buffer time to handle timezone/sync issues
+      const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
       const effectiveExpiry = new Date(packageExpiry.getTime() + bufferTime);
 
-      console.log('Package expiry check:', {
+      const logData = {
         now: now.toISOString(),
         packageExpiry: packageExpiry.toISOString(),
         effectiveExpiry: effectiveExpiry.toISOString(),
         isExpired: effectiveExpiry <= now,
+        timeDifference: effectiveExpiry.getTime() - now.getTime(),
+        timeDifferenceHours: (effectiveExpiry.getTime() - now.getTime()) / (1000 * 60 * 60),
         packageData
-      });
+      };
+
+      console.log('Package expiry check details:', logData);
 
       if (effectiveExpiry <= now) {
+        console.log('PACKAGE EXPIRED - Redirecting to billing');
         const sessionId = localStorage.getItem('sessionId');
         const userId = localStorage.getItem('userId');
         toast.error("Your package has expired. Redirecting to billing...");
@@ -200,18 +222,27 @@ const AuthHandler = () => {
         }, 1000);
         return false;
       }
+
+      console.log('PACKAGE IS VALID - Allowing access');
+      console.log('=== PACKAGE EXPIRY CHECK END ===');
       return true;
     } catch (error) {
       console.error('Error checking package expiry:', error);
+      console.warn('Error occurred - allowing access for safety');
       // If we can't parse the date, allow access but log the error
       return true;
     }
   };
 
-  // Authenticate with session
+  // IMPROVED: Authenticate with session - added better debugging
   const authenticateWithSession = async (sessionId, userId) => {
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const appUrl = "https://property.rentnasi.com";
+
+    console.log('=== AUTHENTICATION START ===');
+    console.log('Session ID:', sessionId);
+    console.log('User ID:', userId);
+    console.log('Base URL:', baseUrl);
 
     try {
       const response = await axios.post(
@@ -220,7 +251,8 @@ const AuthHandler = () => {
         { timeout: 15000 } // 15 second timeout
       );
 
-      console.log('Authentication response:', response);
+      console.log('Full authentication response:', response);
+      console.log('Response data:', response.data);
 
       // Updated to handle new response structure
       const responseData = response.data?.data;
@@ -228,6 +260,13 @@ const AuthHandler = () => {
       const expiry = responseData?.authorization?.expires_at;
       const packageData = responseData?.packages;
       const userDetails = responseData?.user_details;
+
+      console.log('Extracted data:', {
+        token: token ? 'Present' : 'Missing',
+        expiry: expiry ? 'Present' : 'Missing',
+        packageData,
+        userDetails: userDetails ? 'Present' : 'Missing'
+      });
 
       if (!token || !expiry) {
         throw new Error('Invalid authentication response - missing token or expiry');
@@ -247,14 +286,19 @@ const AuthHandler = () => {
       if (packageData) {
         localStorage.setItem('packageInfo', JSON.stringify(packageData));
         localStorage.setItem('packageExpiry', packageData.package_expires_at || '');
-        console.log('Package info from auth:', packageData);
+        console.log('Package info stored:', packageData);
       }
 
-      // Check package expiry
-      if (!checkPackageExpiry(packageData)) {
-        return;
+      console.log('=== STARTING PACKAGE EXPIRY CHECK ===');
+      // Check package expiry - THIS IS WHERE THE ISSUE MIGHT BE
+      const packageIsValid = checkPackageExpiry(packageData);
+
+      if (!packageIsValid) {
+        console.log('Package check failed - stopping authentication flow');
+        return; // This will cause immediate redirect to billing
       }
 
+      console.log('Package check passed - proceeding to dashboard');
       safeSetState(() => {
         toast.success("Authentication successful");
         navigate('/dashboard');
@@ -262,6 +306,7 @@ const AuthHandler = () => {
 
     } catch (error) {
       console.error('Error during authentication:', error);
+      console.log('Error response:', error.response);
 
       // Handle specific 403 errors
       if (error.response?.status === 403) {
@@ -344,14 +389,20 @@ const AuthHandler = () => {
         const sessionId = queryParams.get('sessionId');
         const userId = queryParams.get('userId');
 
+        console.log('=== INITIALIZATION START ===');
+        console.log('URL params - sessionId:', sessionId, 'userId:', userId);
+
         // Store session info if provided
         if (sessionId && userId) {
           localStorage.setItem('sessionId', sessionId);
           localStorage.setItem('userId', userId);
+          console.log('Session info stored in localStorage');
         }
 
         // Validate existing token first
+        console.log('Validating existing token...');
         const tokenValidation = await validateToken();
+        console.log('Token validation result:', tokenValidation);
 
         if (tokenValidation.isValid) {
           if (tokenValidation.refreshed) {
@@ -359,14 +410,17 @@ const AuthHandler = () => {
           } else {
             toast.success("Welcome back!");
           }
+          console.log('Valid token found - navigating to dashboard');
           safeSetState(() => navigate('/dashboard'));
           setupTokenValidation();
         } else if (sessionId && userId) {
           // No valid token but we have session info
+          console.log('No valid token - authenticating with session');
           await authenticateWithSession(sessionId, userId);
           setupTokenValidation();
         } else {
           // No valid token and no session info
+          console.log('No valid token or session info - clearing session');
           clearSession();
           redirectToAuth("Invalid session");
         }

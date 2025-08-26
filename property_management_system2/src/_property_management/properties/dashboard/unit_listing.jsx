@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { DashboardHeader, PropertyCard, TableRow } from "./page_components";
 import axios from "axios";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
@@ -12,21 +12,13 @@ const SkeletonLoader = ({ className, rounded = false }) => (
 
 const TableRowSkeleton = () => (
     <tr className="border-b">
-        <td className="px-4 py-3"><SkeletonLoader className="w-12 h-12" rounded /></td>
-        <td className="px-4 py-3">
-            <SkeletonLoader className="h-4 w-32 mb-1" />
-            <SkeletonLoader className="h-3 w-24" />
-        </td>
-        {[...Array(4)].map((_, i) => (
+
+        {[...Array(7)].map((_, i) => (
             <td key={i} className="px-4 py-3">
-                <SkeletonLoader className="h-6 w-12 mx-auto" />
+                <SkeletonLoader className="h-6 w-32 mx-auto" />
             </td>
         ))}
-        <td className="px-4 py-3 flex space-x-4">
-            <SkeletonLoader className="h-5 w-5 rounded" />
-            <SkeletonLoader className="h-5 w-5 rounded" />
-            <SkeletonLoader className="h-5 w-5 rounded" />
-        </td>
+
     </tr>
 );
 const StatCardSkeleton = () => (
@@ -68,7 +60,7 @@ const UnitListing = () => {
                 })
             if (response.data.success) {
                 setPropertiesBreakdown(response.data.details.breakdown)
-                setPropertiesRevenue(response.data.details.revenue.amounts)
+                setPropertiesRevenue(response.data.details)
                 setPropertiesUnits(response.data.result.data)
                 setCurrentPage(response.data.result.current_page);
                 setPagination(response.data.result)
@@ -164,7 +156,55 @@ const UnitListing = () => {
             label: "Vacant units",
             value: propertiesBreakdown.vacant_units?.count,
         },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: propertiesRevenue.revenue?.amounts?.expected_income?.images || "",
+            label: "Total Payable",
+            value: `KES ${(propertiesRevenue.revenue?.amounts?.expected_income?.count || "0").toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: propertiesRevenue.revenue?.amounts?.expected_income?.images || "",
+            label: "Total Rent",
+            value: `KES ${(propertiesRevenue.revenue?.amounts?.total_rent?.count || "0").toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: propertiesRevenue.revenue?.amounts?.amount_paid?.images || "",
+            label: "Amount Paid",
+            value: `KES ${(propertiesRevenue.revenue?.amounts?.amount_paid?.count || "0").toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: propertiesRevenue.revenue?.amounts?.outstanding_balance?.images || "",
+            label: "Total Arrears",
+            value: `KES ${Number(propertiesRevenue.revenue?.amounts?.total_arrears?.count ?? 0).toLocaleString()}`
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: propertiesRevenue.revenue?.amounts?.total_fines?.images || "",
+            label: "Total Fines",
+            value: `KES ${(propertiesRevenue.revenue?.amounts?.total_fines?.count || "0").toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: propertiesRevenue.revenue?.amounts?.total_fines?.images || "",
+            label: "Total Bills",
+            value: `KES ${(propertiesRevenue.revenue?.amounts?.total_bills?.count || "0").toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: propertiesRevenue.revenue?.amounts?.total_fines?.images || "",
+            label: "Total Balance",
+            value: `KES ${(propertiesRevenue.revenue?.amounts?.total_balance?.count || "0").toLocaleString()}`,
+        },
     ];
+
+    const [openDropdownId, setOpenDropdownId] = useState(null);
+
+    const toggleDropdown = (tenantId) => {
+        setOpenDropdownId(openDropdownId === tenantId ? null : tenantId);
+    };
 
     return (
         <>
@@ -186,7 +226,7 @@ const UnitListing = () => {
                     ))
                 ) : (
                     stats.map((stat, index) => (
-                        <div key={index} className={` bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2`}>
+                        <div key={index}>
                             <PropertyCard
                                 redirectUrl={stat.redirectUrl}
                                 iconSrc={stat.iconSrc}
@@ -204,13 +244,19 @@ const UnitListing = () => {
                         <table className="min-w-full table-auto">
                             <thead className="bg-gray-100 text-left text-xs">
                                 <tr>
-                                    <th className="px-4 py-2">Property Name</th>
-                                    <th className="px-4 py-2">Unit Name</th>
-                                    <th className="px-4 py-2">Unit Type</th>
-                                    <th className="px-4 py-2">Floor</th>
-                                    <th className="px-4 py-2">Amount</th>
+                                    <th className="px-4 py-2">Property</th>
+                                    <th className="px-4 py-2">Unit</th>
+                                    <th className="px-4 py-2">Tenant</th>
+
+                                    <th className="text-end px-1">Exp Rent</th>
+                                    <th className="text-end px-1">Prev Arrears</th>
+                                    <th className="text-end px-1">Bills</th>
+                                    <th className="text-end px-1">Fines</th>
+                                    <th className="text-end px-1">Paid</th>
+                                    <th className="text-end px-1">Rent</th>
+                                    <th className="text-end px-1">Balances</th>
                                     <th className="px-4 py-2">Status</th>
-                                    <th className="px-4 py-2">Actions</th>
+                                    <th className="px-4 py-2"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -219,25 +265,176 @@ const UnitListing = () => {
                                         <TableRowSkeleton key={index} />
                                     ))
                                 ) : (
-                                    propertiesUnits.map((property, index) => (
-                                        <TableRow
-                                            key={index}
-                                            title={property.property_name}
-                                            unit={property.unit_number}
-                                            type={property.unit_type}
-                                            floor={property.floor_number}
-                                            monthly_rent={Number(property?.rent_amount || 0).toLocaleString()}
-                                            status={property.availability_status}
-                                            eyeLink={`/property/single-unit/unit_id:${property.unit_id}`}
-                                            eyeEdit={`/edit-property/single-unit/property_id:${property.property_id}/unit_id:${property.unit_id}`}
-                                            isShowing={true}
-                                            isShowingButtons={property.availability_status === "available"}
-                                            isInMarket={property.in_market == true}
-                                            addTenantLink={`/tenants/add-personal-details/`}
-                                            addMarketUnitLink={`/property/market-unit?property_id=${property.property_id}&unit_id=${property.unit_id}`}
-                                        />
+                                    propertiesUnits.map((unit, index) => (
+                                        <tr key={index} className="border-b text-sm">
+                                            {/* Property Name */}
+                                            <td className="px-4 py-2">{unit.property_name}</td>
+
+                                            {/* Unit Details */}
+                                            <td className="px-4 py-2">
+                                                {unit.unit_number}
+                                                <br />
+                                                <span className="text-gray-500 text-xs">{unit.unit_type}</span>
+                                                <br />
+                                                <span className="text-gray-500 text-xs">Floor: {unit.floor_number}</span>
+                                            </td>
+
+                                            {/* Tenant */}
+                                            <td className="px-4 py-2 text-xs">
+                                                {unit.tenant
+                                                    ?.split(" ")
+                                                    ?.map((word, index) => (index === 0 ? word : word[0] + "."))
+                                                    ?.join(" ") || "No tenant"
+                                                }
+
+                                                <span className="text-gray-700 text-xs">
+                                                    <br />{unit.tenant_phone}
+                                                </span>
+
+                                                {unit.availability_status === 'available' ? (
+                                                    <>
+
+                                                    </>
+
+                                                ) : (
+                                                    <>
+                                                        <br />
+                                                        <span className="bg-red-100 border border-red-400 text-red-600 px-2 text-xs rounded">
+                                                            Occupied
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </td>
+
+                                            {/* Rent Info */}
+                                            <td className="text-gray-700 text-end">
+                                                <span className="text-blue-600">
+                                                    {(unit.expected).toLocaleString()}
+                                                </span>
+                                            </td>
+
+                                            <td className="text-gray-700 text-end">
+                                                <span className="text-orange-600">
+                                                    {unit.arrears.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="text-gray-700 text-end">
+                                                <span className="text-yellow-600">
+                                                    {unit.fines.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="text-gray-700 text-end">
+                                                <span className="text-yellow-600">
+                                                    {unit.bills.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="text-gray-700 text-end">
+                                                <span className="text-green-600">
+                                                    {unit.received.toLocaleString()}
+                                                </span>
+                                            </td>
+
+                                            <td className="text-gray-700 text-end">
+                                                <span className="text-blue-600">
+                                                    {(unit.rent_amount).toLocaleString()}
+                                                </span>
+                                            </td>
+
+                                            <td className="text-gray-700 text-end">
+                                                <span className="text-indigo-600">
+                                                    {unit.pending_balances.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 text-xs">
+                                                {unit.availability_status === 'available' ? (
+                                                    <>
+                                                        <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">
+                                                            Vacant
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <br />
+                                                        {unit.pending_balances === 0 ? (
+                                                            <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">
+                                                                No Balance
+                                                            </span>
+                                                        ) : (
+                                                            <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded">
+                                                                With Balance
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </td>
+
+
+                                            {/* Actions Dropdown */}
+                                            <td className="relative px-4 py-2 text-sm">
+                                                <button
+                                                    onClick={() => toggleDropdown(unit.unit_id)}
+                                                    className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                                                >
+                                                    Actions
+                                                    <svg
+                                                        className="w-5 h-5 ml-2 -mr-1"
+                                                        fill="currentColor"
+                                                        viewBox="0 0 20 20"
+                                                    >
+                                                        <path
+                                                            fillRule="evenodd"
+                                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                    </svg>
+                                                </button>
+
+                                                {openDropdownId === unit.unit_id && (
+                                                    <div className="absolute right-0 z-50 w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                        <div className="py-1">
+                                                            {/* View Unit */}
+                                                            <Link
+                                                                to={`/property/single-unit/unit_id:${unit.unit_id}`}
+                                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                            >
+                                                                View Unit
+                                                            </Link>
+
+                                                            {/* Add Tenant - Only if Available */}
+                                                            {unit.availability_status === 'available' && (
+                                                                <Link
+                                                                    to={`/tenants/add-personal-details/?property_id=${unit.property_id}&unit_id=${unit.unit_id}`}
+                                                                    className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
+                                                                >
+                                                                    Add Tenant
+                                                                </Link>
+                                                            )}
+
+                                                            {/* Market Unit - Only if in market */}
+                                                            {unit.availability_status === 'available' && (
+                                                                <Link
+                                                                    to={`/property/market-unit?property_id=${unit.property_id}&unit_id=${unit.unit_id}`}
+                                                                    className="block w-full px-4 py-2 text-sm text-left text-yellow-700 hover:bg-yellow-50"
+                                                                >
+                                                                    Market Unit
+                                                                </Link>
+                                                            )}
+                                                            <Link
+                                                                to={`/tenants/edit-tenant-unit?tenant_id=${unit.tenant_id}&unit_id=${unit.unit_id}`}
+                                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                            >
+                                                                Edit Assign Unit
+                                                            </Link>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </td>
+
+                                        </tr>
+
                                     ))
                                 )}
+
                             </tbody>
                         </table>
                     </div>

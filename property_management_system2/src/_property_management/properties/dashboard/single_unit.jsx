@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom"
 import { useEffect, useState } from "react";
-import { SelectField, Input } from "../../../shared";
+import { SelectField, Input, Button } from "../../../shared";
 import TextArea from "../../../shared/textArea";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -21,6 +21,7 @@ const Unit = () => {
     const [tenantsPaymentHistory, setTenantsPaymentHistory] = useState([])
     const [payment_details, setPaymentDetails] = useState({})
     const [waterBills, setWaterBills] = useState([])
+
     const [billItems, setBillItems] = useState([])
     const [addBillItems, setAddBillItems] = useState([])
 
@@ -35,14 +36,21 @@ const Unit = () => {
     const [openDropdownId, setOpenDropdownId] = useState(null);
 
     const [showWaterBillModal, setShowWaterBillModal] = useState(false)
-
     const [showAddBillModal, setShowAddBillModal] = useState(false);
+
+    const [electricityBills, setElectricityBills] = useState([]);
+    const [showElectricityBillModal, setShowElectricityBillModal] = useState(false)
 
     const [showBillItemDeleteModal, setShowBillItemDeleteModal] = useState(false);
     const [billItemToDelete, setBillItemToDelete] = useState(null);
 
     const [editItemId, setEditItemId] = useState(null);
     const [editedAmount, setEditedAmount] = useState("");
+
+    const [isVacateModalOpen, setIsVacateModalOpen] = useState(false);
+    const [itemToVacate, setItemToVacate] = useState(null);
+
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const handleClose = () => {
         setShowModal(false)
@@ -130,7 +138,7 @@ const Unit = () => {
                     message: `Current meter reading must be ≥ ${previousReading}`,
                 }),
 
-            water_charge: z
+            unit_price: z
                 .string()
                 .optional()
                 .refine(
@@ -157,6 +165,7 @@ const Unit = () => {
     const {
         register,
         handleSubmit,
+        reset,
         watch,
         formState: { errors, isSubmitting }
     } = useForm({
@@ -217,6 +226,20 @@ const Unit = () => {
             console.error("Tenant payment details not found");
         }
     }
+    const fetchElectricityBill = async () => {
+        try {
+            const response = await axios.get(`${baseUrl}/manage-tenant/electricity-billing?unit_id=${extractedUnitId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            setElectricityBills(response.data.results || [])
+            console.log(response.data.results)
+
+        } catch (error) {
+            console.error("Tenant payment details not found");
+        }
+    }
 
     const fetchBillItems = async () => {
         try {
@@ -266,60 +289,71 @@ const Unit = () => {
         };
 
         try {
+            setIsProcessing(true);
+
             if (submissionData.payment_method === "mpesa_express") {
-                const response = await toast.promise(
-                    axios.post(
-                        `${baseUrl}/mpesa/init`, submissionData,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            }
-                        }
-                    ),
+                const response = await axios.post(
+                    `${baseUrl}/mpesa/init`,
+                    submissionData,
                     {
-                        loading: "Sending your message ...",
-                        success: "Payment sent successfully",
-                        error: "Failed to send message. Please try again later.",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
                     }
-                )
+                );
+
                 if (response.status === 200) {
-                    setShowModal(false)
-                    fetchUnitsDetails()
+                    setShowModal(false);
+                    fetchUnitsDetails();
+                    fetchBillItems()
+                    setSelectedPayments([]);
+                    reset();
+                    setIsProcessing(false);
+                    toast.success("M-Pesa payment processed successfully!");
+                    fetchTenantsPaymentHistory()
                 }
             } else {
-                const response = await toast.promise(
-                    axios.post(
-                        `${baseUrl}/payment`, submissionData,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            }
-                        }
-                    ),
+                const response = await axios.post(
+                    `${baseUrl}/payment`,
+                    submissionData,
                     {
-                        loading: "Sending your message ...",
-                        success: "Payment sent successfully",
-                        error: "Failed to send message. Please try again later.",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
                     }
-                )
+                );
+
                 if (response.status === 200) {
-                    setShowModal(false)
-                    fetchUnitsDetails()
+                    setShowModal(false);
+                    fetchUnitsDetails();
+                    fetchBillItems()
+                    setSelectedPayments([]);
+                    reset();
+                    setIsProcessing(false);
+                    toast.success("Payment processed successfully!");
+                    fetchTenantsPaymentHistory()
                 }
             }
-
         } catch (error) {
             toast.error("Failed to send payment. Please try again later.");
+            setSelectedPayments([]);
+            reset();
+            setShowModal(false);
+            setIsProcessing(false);
+            fetchUnitsDetails();
+            fetchBillItems()
+            fetchTenantsPaymentHistory()
         }
+
     };
 
     const onWaterBillSubmit = async (data) => {
         try {
             const payload = {
                 meter_reading: Number(data.meter_reading),
-                water_charge: data.water_charge ? Number(data.water_charge) : null,
+                unit_price: data.unit_price ? Number(data.unit_price) : null,
                 tenant_id: tenantsDetails.tenant_id,
                 unit_id: extractedUnitId,
             };
@@ -351,6 +385,7 @@ const Unit = () => {
         fetchUnitsDetails()
         fetchTenantsPaymentHistory()
         fetchWaterBill()
+        fetchElectricityBill()
         if (tenantId) {
             fetchBillItems();
         }
@@ -362,6 +397,9 @@ const Unit = () => {
 
     const openWaterBillModal = () => {
         setShowWaterBillModal(true);
+    };
+    const openElectricityBillModal = () => {
+        setShowElectricityBillModal(true);
     };
 
     const openAddBillModal = () => {
@@ -471,6 +509,100 @@ const Unit = () => {
         );
     };
 
+    const handleVacate = async (tenantId, unitId) => {
+        try {
+            await axios.post(`${baseUrl}/manage-tenant/vacate-tenant`, {
+                tenant_id: tenantId,
+                unit_id: unitId
+            },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            toast.success("Tenant vacated successfully!");
+            setIsVacateModalOpen(false)
+        } catch (error) {
+            console.error("Vacate error:", error);
+            toast.error("Failed to vacate tenant.");
+        }
+    };
+
+    const handleVacateModalOpen = (item) => {
+        setItemToVacate(item);
+        setIsVacateModalOpen(true);
+    };
+
+    const onElectricityBillSubmit = async (data) => {
+        try {
+            const payload = {
+                meter_reading: Number(data.meter_reading),
+                unit_price: data.unit_price ? Number(data.unit_price) : null,
+                tenant_id: tenantsDetails.tenant_id,
+                unit_id: extractedUnitId,
+            };
+
+            const response = await toast.promise(
+                axios.post(`${baseUrl}/manage-tenant/electricity-billing`, payload, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }),
+                {
+                    loading: "Submitting meter reading...",
+                    success: "Meter reading submitted successfully",
+                    error: "Failed to submit meter reading",
+                }
+            );
+
+            if (response.status === 200) {
+                setShowElectricityBillModal(false);
+                fetchElectricityBill()
+            }
+        } catch (error) {
+            setShowElectricityBillModal(false);
+            fetchElectricityBill()
+            toast.error("Something went wrong while submitting electricity bill.");
+        }
+    };
+
+    const createElectricityBillSchema = (previousElectricityReading) =>
+        z.object({
+            meter_reading: z
+                .string()
+                .min(1, "Current meter reading is required")
+                .refine(val => {
+                    const current = Number(val);
+                    return !isNaN(current) && current >= previousElectricityReading;
+                }, {
+                    message: `Current meter reading must be ≥ ${previousElectricityReading}`,
+                }),
+
+            unit_price: z
+                .string()
+                .optional()
+                .refine(
+                    val => !val || (!isNaN(Number(val)) && Number(val) >= 0),
+                    { message: "Electricity charge must be a valid number" }
+                ),
+        });
+
+
+    const previousElectricityReading = Number(electricityBills[0]?.meter_reading || 0);
+
+    const {
+        register: registerElectricity,
+        handleSubmit: handleElectricitySubmit,
+        watch: watchElectricity,
+        formState: { errors: electricityErrors },
+    } = useForm({
+        resolver: zodResolver(createElectricityBillSchema(previousElectricityReading)),
+        mode: "onChange",
+    });
+
+    const currentElectricityReading = watchElectricity("meter_reading");
 
     return (
         <>
@@ -482,6 +614,20 @@ const Unit = () => {
                 hideSelect={false}
                 hideLink={false}
             />
+
+            {
+                isProcessing && (
+                    <div style={{ zIndex: 1100 }} className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                        <div className="bg-white p-8 rounded-lg max-w-md">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                                <p className="text-lg font-semibold">Processing payment...</p>
+                                <p className="text-sm text-gray-600">Please wait while we complete your transaction</p>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
             {/* Tenant Details */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4">
                 <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white border border-gray-200 rounded mb-8 p-3 ">
@@ -583,6 +729,34 @@ const Unit = () => {
                                     bgColor={quick.bgColor}
                                 />
                             ))}
+
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 ">
+                            <Link
+                                to={`/tenants/edit-personal-details?tenant_id=${tenantId}`}
+                                className="rounded w-full px-4 py-2 text-sm text-left text-white bg-green-700 hover:bg-green-800"
+                            >
+                                Edit Profile
+                            </Link>
+                            <Link
+                                to={`/tenants/edit-tenant-unit?tenant_id=${tenantId}&unit_id=${unitsDetails.unit_id}`}
+                                className="rounded text-white w-full px-4 py-2 text-sm text-left bg-purple-700 hover:bg-purple-800 whitespace-nowrap"
+                            >
+                                Edit Unit
+                            </Link>
+
+                            <button
+                                onClick={() =>
+                                    handleVacateModalOpen({
+                                        id: tenantId,
+                                        unit_id: unitsDetails.unit_id,
+                                        name: unitsDetails.unit_number
+                                    })
+                                }
+                                className="rounded w-full px-4 py-2 text-sm text-left text-white bg-yellow-700 hover:bg-yellow-800"
+                            >
+                                Vacate tenant
+                            </button>
                         </div>
                     </div>
                     <div className="bg-white border border-gray-200 rounded mb-2">
@@ -890,32 +1064,30 @@ const Unit = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4 mt-5">
-                <div className="col-span-2 rounded-lg border border-gray-200 bg-white">
-                    <div className="flex justify-between my-2 px-2">
-                        <h4 className="text-md text-gray-600 ">Water Meter History</h4>
-                        <button onClick={openWaterBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Record water bill</button>
-                    </div>
-                    <div className="w-full">
-                        <div className="">
-                            <table className="min-w-full table-auto">
-                                <thead className="bg-gray-100 text-left text-xs">
-                                    <tr>
-                                        <th className="px-4 py-2">Date</th>
-                                        <th className="px-4 py-2">Tenant</th>
-                                        <th className="px-4 py-2">Previous Reading</th>
-                                        <th className="px-4 py-2">Units Consumed</th>
-                                        <th className="px-4 py-2">Bill</th>
-                                        <th className="px-4 py-2">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {waterBills.length === 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mx-4 mt-5">
+                {waterBills.length === 0 ? (
+                    <></>
+                ) : (
+                    <div className="rounded-lg border border-gray-200 bg-white">
+                        <div className="flex justify-between my-2 px-2">
+                            <h4 className="text-md text-gray-600 ">Water Meter History</h4>
+                            <button onClick={openWaterBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Record water bill</button>
+                        </div>
+                        <div className="w-full">
+                            <div className="">
+                                <table className="min-w-full table-auto">
+                                    <thead className="bg-gray-100 text-left text-xs">
                                         <tr>
-                                            <td colSpan="7" className="text-center text-sm my-3">No data found.</td>
+                                            <th className="px-4 py-2">Date</th>
+                                            <th className="px-4 py-2">Tenant</th>
+                                            <th className="px-4 py-2">Previous Reading</th>
+                                            <th className="px-4 py-2">Units Consumed</th>
+                                            <th className="px-4 py-2">Bill</th>
+                                            <th className="px-4 py-2">Actions</th>
                                         </tr>
-                                    ) : (
-                                        waterBills.map((item, index) => (
+                                    </thead>
+                                    <tbody>
+                                        {waterBills.map((item, index) => (
                                             <tr key={index} className="border-b text-xs">
                                                 <td className="px-4 py-2">
                                                     {new Date(item.date_recorded).toLocaleString('en-US', {
@@ -962,13 +1134,91 @@ const Unit = () => {
                                                     )}
                                                 </td>
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
+
+                {electricityBills.length === 0 ? (
+                    <></>
+                ) : (
+                    <div className="rounded-lg border border-gray-200 bg-white">
+                        <div className="flex justify-between my-2 px-2">
+                            <h4 className="text-md text-gray-600 ">Electricity Meter History</h4>
+                            <button onClick={openElectricityBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Record electricity bill</button>
+                        </div>
+                        <div className="w-full">
+                            <div className="">
+                                <table className="min-w-full table-auto">
+                                    <thead className="bg-gray-100 text-left text-xs">
+                                        <tr>
+                                            <th className="px-4 py-2">Date</th>
+                                            <th className="px-4 py-2">Tenant</th>
+                                            <th className="px-4 py-2">Previous Reading</th>
+                                            <th className="px-4 py-2">Units Consumed</th>
+                                            <th className="px-4 py-2">Bill</th>
+                                            <th className="px-4 py-2">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+
+                                        {electricityBills.map((item, index) => (
+                                            <tr key={index} className="border-b text-xs">
+                                                <td className="px-4 py-2">
+                                                    {new Date(item.date_recorded).toLocaleString('en-US', {
+                                                        dateStyle: 'medium',
+                                                        timeStyle: 'short',
+                                                    })}
+                                                </td>
+                                                <td className="px-4 py-2">{(item.tenant_name)}</td>
+                                                <td className="px-4 py-2">{(item.meter_reading)}</td>
+                                                <td className="px-4 py-2">{(item.meter_units)}</td>
+                                                <td className="px-4 py-2">{(item.amount_due).toLocaleString()}</td>
+
+                                                <td className="relative px-4 py-2 text-sm">
+                                                    <button
+                                                        onClick={() => toggleDropdown(index)}
+                                                        className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                                                    >
+                                                        Actions
+                                                        <svg className="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                                clipRule="evenodd"
+                                                            />
+                                                        </svg>
+                                                    </button>
+
+                                                    {openDropdownId === index && (
+                                                        <div className="absolute right-0 z-50 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                            <div className="py-1">
+                                                                <Link
+                                                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                                >
+                                                                    View Tenant
+                                                                </Link>
+                                                                <button
+
+                                                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                                >
+                                                                    Vacate Tenant
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {showModal && (
@@ -1135,7 +1385,7 @@ const Unit = () => {
                     <div className="bg-white rounded-lg p-6 w-1/3">
 
                         <h2 className="text-xl text-center font-semibold text-gray-800">
-                            Meter Reading
+                            Water Meter Reading
                         </h2>
                         {waterBills.length > 0 && (
                             <div>
@@ -1157,11 +1407,11 @@ const Unit = () => {
 
                             <Input
                                 label="Enter water charge per unit (optional)"
-                                name="water_charge"
+                                name="unit_price"
                                 placeholder="Enter charge"
                                 type="string"
                                 register={registerWater}
-                                error={waterErrors.water_charge}
+                                error={waterErrors.unit_price}
                             />
 
                             <div className="flex items-center mt-6 space-x-4 rtl:space-x-reverse">
@@ -1174,6 +1424,61 @@ const Unit = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowWaterBillModal(false)}
+                                    className="text-white bg-red-700 hover:bg-red-700 p-2.5 rounded"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+
+                    </div>
+                </div >
+            )}
+
+            {showElectricityBillModal && (
+                <div className="fixed z-50 inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-lg p-6 w-1/3">
+
+                        <h2 className="text-xl text-center font-semibold text-gray-800">
+                            Electricity Meter Reading
+                        </h2>
+                        {electricityBills.length > 0 && (
+                            <div>
+                                <p className="py-2 text-sm text-gray-600">
+                                    Previous Reading: <span className="font-medium">{electricityBills[0].meter_reading}</span>
+                                </p>
+                            </div>
+                        )}
+                        <form onSubmit={handleElectricitySubmit(onElectricityBillSubmit)}>
+                            <Input
+                                label="Enter current meter reading"
+                                name="meter_reading"
+                                placeholder="Enter reading"
+                                type="string"
+                                register={registerElectricity}
+                                error={electricityErrors.meter_reading}
+                            />
+                            <p className="py-2"></p>
+
+                            <Input
+                                label="Enter electricity charge per unit (optional)"
+                                name="unit_price"
+                                placeholder="Enter charge"
+                                type="string"
+                                register={registerElectricity}
+                                error={electricityErrors.unit_price}
+                            />
+
+                            <div className="flex items-center mt-6 space-x-4 rtl:space-x-reverse">
+                                <button
+                                    type="submit"
+                                    className="w-full rounded border border-green-700 bg-green-700 p-2.5 text-white transition hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Submit
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowElectricityBillModal(false)}
                                     className="text-white bg-red-700 hover:bg-red-700 p-2.5 rounded"
                                 >
                                     Cancel
@@ -1266,6 +1571,32 @@ const Unit = () => {
                             >
                                 Delete
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isVacateModalOpen && (
+                <div className="fixed z-50 inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-lg p-6 w-1/3">
+                        <h2 className="text-xl text-center font-semibold text-gray-800">
+                            Confirm Vacation
+                        </h2>
+                        <p className="text-gray-600 mt-2 text-center">
+                            Are you sure you want to vacate {tenantsDetails.name} from{" "}
+                            <span className="font-bold">{itemToVacate?.name}</span> permanently? This action
+                            cannot be undone.
+                        </p>
+                        <div className="mt-4 flex justify-center gap-2">
+                            <Button onClick={() => setIsVacateModalOpen(false)}>Cancel</Button>
+                            <Button
+                                onClick={() =>
+                                    handleVacate(itemToVacate?.id, itemToVacate?.unit_id)
+                                }
+                                className="bg-red-500 hover:bg-red-600"
+                            >
+                                Vacate
+                            </Button>
                         </div>
                     </div>
                 </div>

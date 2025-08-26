@@ -2,7 +2,11 @@ import { SettingsBreadcrumbs } from "../../shared"
 
 const Settings = () => {
   return (
-    <SettingsBreadcrumbs />
+    <>
+
+      <SettingsBreadcrumbs />
+    </>
+
   )
 }
 

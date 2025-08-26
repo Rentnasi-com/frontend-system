@@ -167,6 +167,20 @@ const Tenants = () => {
             value: `KES ${(tenantsStats?.total_expected || 0).toLocaleString()}`,
         },
         {
+            redirectUrl: "/property/property-listing",
+            iconSrc: "../../../assets/icons/png/total_property.png",
+            progress: 2.2,
+            label: "Total Rent",
+            value: `KES ${(tenantsStats?.total_rent || 0).toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/all-property-units?status=",
+            iconSrc: "../../../assets/icons/png/total_units.png",
+            progress: 4.2,
+            label: "Total Bills",
+            value: `KES ${(tenantsStats?.total_bills || 0).toLocaleString()}`,
+        },
+        {
             redirectUrl: "/property/all-property-units?status=",
             iconSrc: "../../../assets/icons/png/total_units.png",
             progress: 4.2,
@@ -184,7 +198,7 @@ const Tenants = () => {
             redirectUrl: "/property/all-property-units?status=occupied",
             iconSrc: "../../../assets/icons/png/occupied_units.png",
             progress: 3.2,
-            label: "Total Received",
+            label: "Received Amount",
             value: `KES ${(tenantsStats?.total_received || 0).toLocaleString()}`,
         }
     ]
@@ -295,7 +309,7 @@ const Tenants = () => {
                 onSelectChange={handleSelectChange}
             />
 
-            <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 py-1 px-4">
+            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 py-1 px-4">
                 {loading ? (
                     Array(4).fill(0).map((_, index) => (
                         <StatCardSkeleton key={index} />
@@ -381,8 +395,7 @@ const Tenants = () => {
                                     </th>
                                 )}
                                 <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Tenant Name</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Tenant Next of Kin</th>
-                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">No of Unit Assigned</th>
+                                <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Units</th>
                                 <th className="px-4 py-3 bg-gray-100 font-medium text-gray-700">Actions</th>
                             </tr>
                         </thead>
@@ -419,25 +432,45 @@ const Tenants = () => {
                                                 Id No: {tenant.id_or_passport_number}
                                             </span>
                                         </td>
-                                        {tenant.next_of_kin_name == "" ? (
-                                            <td className="px-4 py-2">None</td>
-                                        ) :
-                                            < td className="px-4 py-2">
-                                                {tenant.next_of_kin_name}
-                                                <br />
-                                                <span className="text-gray-500 text-xs">
-                                                    {tenant.next_of_kin_phone}
-                                                </span>
-                                                <br />
-                                                <span className="text-gray-500 text-xs">
-                                                    Relationship: {tenant.next_of_kin_relationship}
-                                                </span>
-                                            </td>
-                                        }
 
-                                        < td className="px-4 py-2">
-                                            {tenant.number_of_units}
-                                        </td>
+                                        {tenant.tenant_units.length > 0 ? (
+                                            <td className="px-4 py-2">
+                                                <table className="w-full text-xs border rounded border-gray-300">
+                                                    <thead>
+                                                        <tr className="bg-gray-100">
+                                                            <th className="px-2 py-1 text-left">Property</th>
+                                                            <th className="px-2 py-1 text-left">Unit</th>
+                                                            <th className="px-2 py-1 text-left">Expected</th>
+                                                            <th className="px-2 py-1 text-left">Arrears</th>
+                                                            <th className="px-2 py-1 text-left">Rent</th>
+                                                            <th className="px-2 py-1 text-left">Bills</th>
+                                                            <th className="px-2 py-1 text-left">Fines</th>
+                                                            <th className="px-2 py-1 text-left">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {tenant.tenant_units.map((unit, index) => (
+                                                            <tr key={index} className="border-t border-gray-200">
+                                                                <td className="px-2 py-1 capitalize">{unit.property_name}</td>
+                                                                <td className="px-2 py-1 capitalize">{unit.unit_number}</td>
+                                                                <td className="px-2 py-1">{(unit.expected).toLocaleString()}</td>
+                                                                <td className="px-2 py-1">{(unit.arrears).toLocaleString()}</td>
+                                                                <td className="px-2 py-1">{(unit.rent).toLocaleString()}</td>
+                                                                <td className="px-2 py-1">{(unit.bills).toLocaleString()}</td>
+                                                                <td className="px-2 py-1">{(unit.fines).toLocaleString()}</td>
+
+                                                                <td className="relative px-2 py-1 text-xs">
+                                                                    <Link to={`/property/single-unit/unit_id:${unit.unit_id}`} className="text-blue-600">View</Link>
+                                                                </td>
+
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        ) : (
+                                            <td className="px-4 py-2">No data found.</td>
+                                        )}
 
                                         <td className="relative px-4 py-2 text-sm">
                                             {/* Dropdown button - only in Actions column */}
@@ -541,8 +574,7 @@ const Tenants = () => {
                         </button>
                     </div>
                 </div>
-            )
-            }
+            )}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">

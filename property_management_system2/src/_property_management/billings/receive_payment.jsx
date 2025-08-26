@@ -28,7 +28,12 @@ const ReceivePayment = () => {
     const baseUrl = import.meta.env.VITE_BASE_URL;
     const token = localStorage.getItem('token')
     const [showModal, setShowModal] = useState(false)
+
+    const [isProcessing, setIsProcessing] = useState(false);
+
     const handleClose = () => {
+        reset();
+        setSelectedDate(null);
         setShowModal(false)
     }
 
@@ -63,6 +68,7 @@ const ReceivePayment = () => {
             phone: z.string().optional(),
             reference: z.string().optional(),
             notes: z.string().optional(),
+            // money_to_landlord: z.string().optional(),
         })
         .superRefine((values, ctx) => {
             if (values.payment_method === "mpesa_express") {
@@ -166,7 +172,7 @@ const ReceivePayment = () => {
     const handleUnitChange = async (event) => {
         const unitId = event.target.value
         setSelectedUnit(unitId)
-
+        setSelectedPayments([])
         try {
             const unitDetailsResponse = await axios.get(`${baseUrl}/payment/data/unit?unit_id=${unitId}`,
                 {
@@ -178,6 +184,7 @@ const ReceivePayment = () => {
             setTenantDetails(unitDetailsResponse.data.tenant_details)
             setPropertyDetails(unitDetailsResponse.data.property_details)
             setPaymentDetails(unitDetailsResponse.data.payment_details)
+
         } catch (error) {
             toast.error("No unit details found")
         }
@@ -187,6 +194,7 @@ const ReceivePayment = () => {
         register,
         handleSubmit,
         watch,
+        reset,
         formState: { errors, isSubmitting }
     } = useForm({
         resolver: zodResolver(schema),
@@ -202,6 +210,7 @@ const ReceivePayment = () => {
     const paymentMethod = watch("payment_method");
 
     const onSubmit = async (data) => {
+
         if (!unitTenantDetails.tenant_id) {
             toast.error("Tenant information is missing");
             return;
@@ -235,54 +244,62 @@ const ReceivePayment = () => {
         };
 
         try {
+            setIsProcessing(true);
+
             if (submissionData.payment_method === "mpesa_express") {
-                const response = await toast.promise(
-                    axios.post(
-                        `${baseUrl}/mpesa/init`, submissionData,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            }
-                        }
-                    ),
+                const response = await axios.post(
+                    `${baseUrl}/mpesa/init`,
+                    submissionData,
                     {
-                        loading: "Sending your message ...",
-                        success: "Payment sent successfully",
-                        error: "Failed to send message. Please try again later.",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
                     }
-                )
+                );
+
                 if (response.status === 200) {
-                    setShowModal(false)
+                    reset();
+                    setSelectedDate(null);
+                    setSelectedPayments([]);
+                    setShowModal(false);
+                    setIsProcessing(false);
+                    toast.success("M-Pesa payment processed successfully!");
                     await handleUnitChange({ target: { value: selectedUnit } });
                 }
             } else {
-                const response = await toast.promise(
-                    axios.post(
-                        `${baseUrl}/payment`, submissionData,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            }
-                        }
-                    ),
+                const response = await axios.post(
+                    `${baseUrl}/payment`,
+                    submissionData,
                     {
-                        loading: "Sending your message ...",
-                        success: "Payment sent successfully",
-                        error: "Failed to send message. Please try again later.",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
                     }
-                )
+                );
+
                 if (response.status === 200) {
-                    setShowModal(false)
+                    reset();
+                    setSelectedDate(null);
+                    setSelectedPayments([]);
+                    setShowModal(false);
+                    setIsProcessing(false);
+                    toast.success("Payment processed successfully!");
                     await handleUnitChange({ target: { value: selectedUnit } });
                 }
             }
-
         } catch (error) {
-            toast.error("Failed to send payment. Please try again later.");
+            setSelectedDate(null);
+            setSelectedPayments([]);
+            setShowModal(false);
+            reset();
+            setIsProcessing(false);
+            toast.error("Payment failed. Please try again later.");
+            await handleUnitChange({ target: { value: selectedUnit } });
         }
     };
+
 
     return (
         <>
@@ -294,6 +311,20 @@ const ReceivePayment = () => {
                 hideSelect={false}
                 hideLink={true}
             />
+            {
+                isProcessing && (
+                    <div style={{ zIndex: 1000 }} className="fixed inset-0 bg-black bg-opacity-50  flex items-center justify-center">
+                        <div className="bg-white p-8 rounded-lg max-w-md">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                                <p className="text-lg font-semibold">Processing payment...</p>
+                                <p className="text-sm text-gray-600">Please wait while we complete your transaction</p>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
             <div className="grid grid-cols-2">
                 <div className="bg-white rounded-xl shadow col-span-2 p-4 mx-4 h-full">
 
@@ -328,14 +359,14 @@ const ReceivePayment = () => {
                                 >
                                     Select property floors
                                     {propertyFloors.length === 0 && (
-                                        <span className="text-red-500 text-xs"> (The selected property has no floors)</span>
+                                        <span className="text-yellow-500 text-xs"> (The selected property has no floors)</span>
                                     )}
                                 </label>
                                 <select
                                     value={selectedFloor}
                                     onChange={handleFloorChange}
                                     disabled={propertyFloors.length === 0}
-                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
+                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-yellow-500 focus:border-yellow-500 block w-full p-2.5">
                                     <option defaultValue>Select property floor</option>
                                     {
                                         propertyFloors.map((floor) => (
@@ -354,7 +385,7 @@ const ReceivePayment = () => {
                                 <select
                                     value={selectedUnit}
                                     onChange={handleUnitChange}
-                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
+                                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-yellow-500 focus:border-yellow-500 block w-full p-2.5">
                                     <option defaultValue>Select property unit</option>
                                     {
                                         propertyUnits.map((unit) => (
@@ -445,7 +476,7 @@ const ReceivePayment = () => {
                     </div>
                     <h3 className="font-bold text-gray-600 mt-2">Select Payments Descriptions</h3>
                     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 py-3">
-                        {Object.values(payment_details)
+                        {Object?.values(payment_details)
                             .flatMap(payment => Array.isArray(payment) ? payment : [payment])
                             .filter((payment, index, self) =>
                                 payment.applicable &&
@@ -479,7 +510,7 @@ const ReceivePayment = () => {
                 </div>
             </div>
             {showModal && (
-                <div style={{ zIndex: 1000 }} className="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 flex justify-center items-center w-full md:inset-0 bg-black/50 backdrop-blur-sm">
+                <div style={{ zIndex: 300 }} className="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 flex justify-center items-center w-full md:inset-0 bg-black/50 backdrop-blur-sm">
                     <div className="relative p-4 w-full max-w-lg max-h-full">
                         <div className="relative bg-white rounded-lg border border-gray-200">
 
@@ -510,7 +541,7 @@ const ReceivePayment = () => {
 
                                                         <span className="capitalize">{payment.description} - {(payment.amount || payment.monthly_rent_amount).toLocaleString()}</span>
                                                         <button
-                                                            className="inline-flex items-center p-1 ml-2 text-sm text-red-400 bg-transparent rounded-sm hover:bg-red-200 hover:text-red-900"
+                                                            className="inline-flex items-center p-1 ml-2 text-sm text-yellow-400 bg-transparent rounded-sm hover:bg-yellow-200 hover:text-yellow-900"
                                                             onClick={() => handleCheckboxChange(payment)}
                                                         >
                                                             <svg className="w-2 h-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
@@ -530,6 +561,34 @@ const ReceivePayment = () => {
                                                 KES {getTotalAmount()}
                                             </p>
                                         </div>
+
+                                        {/* <div className="flex space-x-6">
+                                            <h6 className="text-sm font-medium text-gray-900">Did you received payment</h6>
+                                            <label>
+                                                <input
+                                                    {...register("payment_method")}
+                                                    className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                                                    type="radio"
+                                                    value="true"
+                                                />
+                                                Yes
+                                            </label>
+                                            <label>
+                                                <input
+                                                    {...register("payment_method")}
+                                                    className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                                                    type="radio"
+                                                    value="false"
+                                                />
+                                                NO
+                                            </label>
+                                        </div> */}
+
+                                        {errors.payment_method && (
+                                            <p className="text-xs text-red-500">
+                                                {errors.payment_method.message}
+                                            </p>
+                                        )}
 
                                         <SelectField
                                             label="Select mode of payment"
@@ -580,7 +639,7 @@ const ReceivePayment = () => {
                                                     <DatePicker
                                                         selected={selectedDate}
                                                         onChange={(date) => setSelectedDate(date)}
-                                                        className="mt-2 w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400"
+                                                        className="mt-2 w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-yellow-400 focus:border-yellow-400"
                                                         placeholderText="Select a date"
                                                         name="datetime"
                                                         dateFormat="dd-MM-yyyy"
@@ -595,7 +654,7 @@ const ReceivePayment = () => {
                                                 <DatePicker
                                                     selected={selectedDate}
                                                     onChange={(date) => setSelectedDate(date)}
-                                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-red-400 focus:border-red-400"
+                                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-yellow-400 focus:border-yellow-400"
                                                     placeholderText="Select a date"
                                                     name="datetime"
                                                     dateFormat="dd-MM-yyyy"

@@ -193,45 +193,104 @@ const EditMultiUnit = () => {
 
   const handleFinalSubmit = async () => {
     try {
+      // Helper function to get field state - DEFINE FIRST
+      const getFieldState = (unit, field) => {
+        if (!propertyAmenities) return { disabled: false };
+
+        switch (field) {
+          case 'water':
+            return {
+              disabled: unit.isWaterDisabled || propertyAmenities.is_water_inclusive_of_rent === 1,
+            };
+          case 'garbage':
+            return {
+              disabled: unit.isGarbageDisabled || propertyAmenities.garbage_deposit === 1,
+            };
+          case 'deposit':
+            return {
+              disabled: unit.isDepositDisabled || propertyAmenities.rent_deposit !== 1,
+            };
+          default:
+            return { disabled: false };
+        }
+      };
+
       // Validate all units before submission
       const validationErrors = {};
       let hasErrors = false;
 
       floors.forEach((floor, floorIndex) => {
         floor.units.forEach((unit, unitIndex) => {
+          // Debug log for each unit
+          console.log(`Validating Floor ${floor.floor_no}, Unit ${unitIndex}:`, unit);
+
           // Validate unit number
-          if (!unit.unit_no?.trim()) {
-            validationErrors[`${floor.floor_no}_${unitIndex}_unit_no`] =
-              "Unit number is required";
+          if (!unit.unit_no || !unit.unit_no.toString().trim()) {
+            validationErrors[`${floor.floor_no}_${unitIndex}_unit_no`] = "Unit number is required";
             hasErrors = true;
           }
 
           // Validate unit type
-          if (!unit.unit_type) {
-            validationErrors[`${floor.floor_no}_${unitIndex}_unit_type`] =
-              "Unit type is required";
+          const unitType = unit.unit_type ? unit.unit_type.toString() : '';
+          if (!unitType || unitType === '' || unitType === '0') {
+            validationErrors[`${floor.floor_no}_${unitIndex}_unit_type`] = "Unit type is required";
             hasErrors = true;
           }
 
-          // Validate numeric fields (optional)
-          const numericFields = ['rent_amount', 'deposit', 'water', 'electricity', 'garbage'];
-          numericFields.forEach(field => {
-            if (unit[field] !== undefined && (isNaN(unit[field]) || unit[field] < 0)) {
+          // Validate numeric fields
+          const numericFields = [
+            { field: 'rent_amount', required: true },
+            { field: 'deposit', required: false },
+            { field: 'water', required: false },
+            { field: 'electricity', required: false },
+            { field: 'garbage', required: false }
+          ];
+
+          numericFields.forEach(({ field, required }) => {
+            const value = unit[field];
+            const fieldState = getFieldState(unit, field);
+
+            // Skip validation for disabled fields
+            if (fieldState.disabled) {
+              return;
+            }
+
+            // Check if required field is missing
+            if (required && (value === undefined || value === null || value === '')) {
               validationErrors[`${floor.floor_no}_${unitIndex}_${field}`] =
-                `${field.replace('_', ' ')} must be a non-negative number`;
+                `${field.replace('_', ' ')} is required`;
               hasErrors = true;
+              return;
+            }
+
+            // If value exists, validate it's a valid number
+            if (value !== undefined && value !== null && value !== '') {
+              const numValue = parseFloat(value);
+              if (isNaN(numValue) || numValue < 0) {
+                validationErrors[`${floor.floor_no}_${unitIndex}_${field}`] =
+                  `${field.replace('_', ' ')} must be a non-negative number`;
+                hasErrors = true;
+              }
             }
           });
         });
       });
 
+      // UNCOMMENT AND FIX ERROR HANDLING
       if (hasErrors) {
-        // Set the errors state if you have one, or handle them appropriately
-        // setErrors(validationErrors);
-        toast.error("Please fix all validation errors before submitting");
-        return;
+        console.log('Validation errors found:', validationErrors);
+        console.log('Current floors data:', floors);
+
+        // Show specific error messages
+        const errorMessages = Object.values(validationErrors);
+        const firstError = errorMessages[0];
+
+        toast.error(`Validation failed: ${firstError}`);
+        return; // STOP EXECUTION HERE
       }
-      const isEdit = Boolean(propertyUrlId); // Determine if editing
+
+      // Only proceed if no errors
+      const isEdit = Boolean(propertyUrlId);
       const url = isEdit
         ? `${baseUrl}/manage-property/edit-property/floors`
         : `${baseUrl}/manage-property/create-property/floors`;
@@ -245,14 +304,16 @@ const EditMultiUnit = () => {
             ...(isEdit && unit.unit_id ? { unit_id: unit.unit_id } : {}),
             unit_no: unit.unit_no,
             unit_type: parseInt(unit.unit_type, 10),
-            rent_deposit: unit.isDepositDisabled ? 0 : parseFloat(unit.deposit),
-            rent_amount: parseFloat(unit.rent_amount),
-            water: unit.isWaterDisabled ? 0 : parseFloat(unit.water),
-            electricity: parseFloat(unit.electricity),
-            garbage: unit.isGarbageDisabled ? 0 : parseFloat(unit.garbage),
+            rent_deposit: unit.isDepositDisabled ? 0 : parseFloat(unit.deposit || 0),
+            rent_amount: parseFloat(unit.rent_amount || 0),
+            water: unit.isWaterDisabled ? 0 : parseFloat(unit.water || 0),
+            electricity: parseFloat(unit.electricity || 0),
+            garbage: unit.isGarbageDisabled ? 0 : parseFloat(unit.garbage || 0),
           })),
         })),
       };
+
+      console.log('Sending data:', dataToSend);
 
       const response = await axios.post(url, dataToSend, {
         headers: {
@@ -268,6 +329,7 @@ const EditMultiUnit = () => {
         toast.error(response.data.message);
       }
     } catch (error) {
+      console.error('Submit error:', error);
       toast.error("Error submitting form");
     }
   };

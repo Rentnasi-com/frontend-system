@@ -8,6 +8,7 @@ import axios from "axios";
 import Units from "./floors/units";
 import FloorDetails from "./floors/floorDetails";
 import { Button } from "../../../../shared";
+import { DashboardHeader } from "../../dashboard/page_components";
 
 const floorSchema = z.object({
   nof: z.preprocess((val) => Number(val), z.number().min(0).max(40).nonnegative()),
@@ -331,10 +332,10 @@ const PropertyFloors = () => {
 
   return (
     <section className="mx-auto">
-      <div className="p-4">
-        <h1 className="text-xl font-bold text-gray-700">Add Property Floors</h1>
-        <p className="text-sm text-gray-500">Properties / Add Property / Floors</p>
-      </div>
+      <DashboardHeader
+        title="Add Property Floors"
+        description="Properties / Add Property / Floors"
+      />
       <form className="mx-4" onSubmit={handleSubmit(handleFinalSubmit)}>
         <div className="mb-4">
           <label className="mb-2 text-sm block">Number of Floors</label>

@@ -3,11 +3,12 @@ import axios from "axios"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Loader } from "lucide-react"
 import { FaArrowRight } from "react-icons/fa"
 import { Input, SelectField, SettingsBreadcrumbs } from "../../shared"
 import { useEffect, useState } from "react"
+import DashboardHeader from './../properties/dashboard/page_components/dashboard_header'
 
 const PaymentsDetails = () => {
     const navigate = useNavigate()
@@ -167,6 +168,7 @@ const PaymentsDetails = () => {
         register,
         handleSubmit,
         watch,
+        reset,
         formState: { errors, isSubmitting },
 
     } = useForm({
@@ -199,10 +201,8 @@ const PaymentsDetails = () => {
             if (response.data.success) {
                 setProperties(response.data.result)
                 setLoading(false)
-                console.log(response.data.result)
             }
         } catch (error) {
-            console.error(error.message)
             setLoading(false)
         }
     }
@@ -248,16 +248,20 @@ const PaymentsDetails = () => {
                 }
             )
             if (response.status === 200) {
-                console.log(response)
                 setShowModal(false)
                 await fetchProperties();
+                setOpenDropdownId(null);
+                reset();
             }
         } catch (error) {
             toast.error("An error occurred during payment setting.");
+            setOpenDropdownId(null);
+            reset();
         }
     }
     const handleClose = () => {
         setShowModal(false)
+        setOpenDropdownId(null);
     }
 
     const handleOpen = (property) => {
@@ -265,17 +269,23 @@ const PaymentsDetails = () => {
         setShowModal(true)
     }
 
+    const [openDropdownId, setOpenDropdownId] = useState(null);
+
+    const toggleDropdown = (propertyId) => {
+        setOpenDropdownId(openDropdownId === propertyId ? null : propertyId);
+    };
+
     return (
         <>
+            <DashboardHeader
+                title="Payments Details"
+                description="Add payments details to your preference"
+
+            />
             <SettingsBreadcrumbs />
-            <div className="p-4 flex justify-between mx-4">
-                <div>
-                    <h1 className="text-xl font-bold text-gray-700">Payments Details</h1>
-                    <p className="text-xs text-gray-500">Add payments details to your preference </p>
-                </div>
-            </div>
-            <div className="bg-white rounded-xl shadow col-span-2 p-4 mx-4 h-full">
-                <h4 className="text-lg font-medium text-gray-900 my-4">Properties List</h4>
+
+            <div className="bg-white border rounded border-gray-100 col-span-2 py-4 mx-4 h-full">
+                <h4 className="text-lg font-medium text-gray-900 m-4">Properties List</h4>
                 {loading ? (
                     <p className="text-center py-4">Loading<span className="animate-pulse">...</span></p>
                 ) : (
@@ -356,13 +366,30 @@ const PaymentsDetails = () => {
                                                     )}
                                                 </div>
                                             )}
-                                            <td className="px-4 py-2 space-x-4">
-                                                <button onClick={() => handleOpen(property)} className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-xs px-5 py-2.5">
-                                                    Set Payments
+                                            <td className="relative px-4 py-2 text-sm">
+                                                <button
+                                                    onClick={() => toggleDropdown(property.property_id)}
+                                                    className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                                                >
+                                                    Actions
+                                                    <svg className="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                    </svg>
                                                 </button>
-                                                <button className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-xs px-5 py-2.5">
-                                                    Edit Payments
-                                                </button>
+
+
+                                                {openDropdownId === property.property_id && (
+                                                    <div className="absolute right-0 z-50 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                        <div className="py-1">
+                                                            <button onClick={() => handleOpen(property)} className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100">
+                                                                Set Payments
+                                                            </button>
+                                                            <button className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100cd">
+                                                                Edit Payments
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -732,6 +759,71 @@ const PaymentsDetails = () => {
                     </div>
                 </div>
             )}
+            {/* {paymentNotToUsModal && (
+                <div style={{ zIndex: 1000 }} className="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 flex justify-center items-center w-full md:inset-0 bg-black/50 backdrop-blur-sm">
+                    <div className="relative p-4 w-full max-w-lg max-h-full">
+                        <div className="relative bg-white rounded-lg border border-gray-200">
+
+                            <div className="p-4 md:p-5">
+                                <button type="button" onClick={handleClose} className="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-xs w-8 h-8 ms-auto inline-flex justify-center items-center">
+                                    <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                                    </svg>
+                                    <span className="sr-only">Close modal</span>
+                                </button>
+
+
+                                <h2 className="text-lg font-semibold">Set Property Payment</h2>
+                                <hr />
+                                <form onSubmit={handleSubmit(onSubmit)}>
+
+                                    <div className="mt-3">
+                                        <h6 className="text-xs font-medium text-gray-700">1. Do you prefer Rentalpay as your primary payment method ?</h6>
+                                        <div className="py-2 space-x-2 text-gray-700">
+                                            <label>
+                                                <input
+                                                    {...register("rent_received_by_rentnasi")}
+
+                                                    className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                                                    type="radio"
+                                                    value="true"
+                                                />
+                                                Yes
+                                            </label>
+                                            <label>
+                                                <input
+                                                    {...register("rent_received_by_rentnasi")}
+
+                                                    className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                                                    type="radio"
+                                                    value="false"
+                                                />
+                                                No
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center mt-6 space-x-4 rtl:space-x-reverse">
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="w-full rounded border border-green-700 bg-green-700 p-2.5 text-white transition hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {isSubmitting ? "Processing..." : "Send Message"}
+                                        </button>
+                                        <button
+                                            onClick={handleClose}
+                                            type="button"
+                                            className="py-2.5 px-5 text-xs font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )} */}
         </>
     )
 }

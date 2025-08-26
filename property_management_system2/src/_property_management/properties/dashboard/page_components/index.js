@@ -8,5 +8,5 @@ export {
     PropertyCard,
     TableRow,
     StatCard,
-    QuickLinksCard
+    QuickLinksCard,
 }

@@ -69,7 +69,7 @@ const Header = () => {
     <>
       <header className="shadow sticky top-0 z-30 bg-white px-16">
         <nav className="mx-auto container py-2 flex justify-between">
-          <Link to="/landlord_management_systemdashboard">
+          <Link to="/landlord_management_system">
             <img
               className="w-[72px] h-[34px]"
               src="/assets/images/rentnasi.png"

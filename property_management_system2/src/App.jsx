@@ -4,8 +4,8 @@ import DashboardLayout from './_dashboardLayout';
 import AuthHandler from './AuthHandler';
 import ProtectedRoute from './ProtectedRoute';
 
-import { BulkWaterBill, ReceivePayment } from './_property_management/billings'
-import { PaymentsDetails, Settings } from './_property_management/settings'
+import { BulkWaterBill, ReceiveElectricityBilling, ReceivePayment } from './_property_management/billings'
+import { MakePaybillPdf, PaymentsDetails, Settings } from './_property_management/settings'
 import { AddLandlordPaymentsDetails, AddLandlordPersonalInfo, EditLandlordPaymentsDetails, EditLandlordPersonalInfo, LandlordSingleView, ViewLandlord } from './_property_management/landlords'
 import { AddMultiSingleUnit, Amenities, DueRent, EditAmenities, EditGeneralInformation, EditManageImages, EditMultiUnit, EditMultiUnitSingleUnit, EditPropertyTypes, EditSingleUnit, General_information, Home2, ManageImages, MarketUnit, PaymentHistory, Property, Property_floors, Property_summary, Property_types, PropertyListing, Single_Unit, Unit, UnitListing } from './_property_management/properties'
 import { Add_Personal_Info, AddTenantProperty, EditPersonalInfo, EditTenantProperty, TenantHistory, Tenants, TenantUnits } from './_property_management/tenants'
@@ -211,12 +211,20 @@ const App = () => {
               element={<ProtectedRoute element={<BulkWaterBill />} />}
             />
             <Route
+              path="/property/receive-bulk-electricity"
+              element={<ProtectedRoute element={<ReceiveElectricityBilling />} />}
+            />
+            <Route
               path="/property/market-unit"
               element={<ProtectedRoute element={<MarketUnit />} />}
             />
             <Route
               path="/settings/payment_details"
               element={<ProtectedRoute element={<PaymentsDetails />} />}
+            />
+            <Route
+              path="/settings/make-paybill-pdf"
+              element={<ProtectedRoute element={<MakePaybillPdf />} />}
             />
           </Route>
         </Routes>

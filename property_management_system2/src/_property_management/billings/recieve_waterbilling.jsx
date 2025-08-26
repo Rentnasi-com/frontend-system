@@ -228,6 +228,7 @@ const BulkWaterBill = () => {
     const handleSubmit = async (singleBill = null) => {
         const submitData = prepareSubmitData(singleBill);
         if (!submitData) return;
+        console.log(submitData)
 
         setIsSubmitting(true);
         try {
@@ -242,11 +243,11 @@ const BulkWaterBill = () => {
                 }
             );
 
-            if (response.data.success) {
+            if (response.status == 200) {
                 toast.success("Water readings submitted successfully!");
-                // Refresh the data
+
                 handleFloorChange({ target: { value: selectedFloor } });
-                // Close any open dropdown
+
                 setOpenDropdownId(null);
             } else {
                 toast.error(response.data.message || "Failed to submit readings");
@@ -342,8 +343,8 @@ const BulkWaterBill = () => {
                                                     />
                                                 </th>
                                                 <th className="px-4 py-2">Tenant</th>
-                                                <th className="px-4 py-2">Previous Reading</th>
                                                 <th className="px-4 py-2">Unit Price</th>
+                                                <th className="px-4 py-2">Previous Reading</th>
                                                 <th className="px-4 py-2">Current Reading</th>
                                                 <th className="px-4 py-2">Units Consumed</th>
                                                 <th className="px-4 py-2">Bill</th>
@@ -366,7 +367,19 @@ const BulkWaterBill = () => {
                                                                 onChange={() => toggleSelectBill(index)}
                                                             />
                                                         </td>
-                                                        <td className="px-4 py-2">{(item.tenant_name)}</td>
+                                                        <td className="px-4 py-2">{(item.tenant_name)}
+                                                            <br />
+                                                            <span className="text-xs">Unit No: {(item.unit_number)}</span>
+                                                        </td>
+
+                                                        <td className="px-4 py-2">
+                                                            <input
+                                                                type="number"
+                                                                value={item.editableUnitPrice}
+                                                                onChange={(e) => handleUnitPriceChange(index, e.target.value)}
+                                                                className="border px-1 py-2 rounded w-24 text-xs"
+                                                            />
+                                                        </td>
                                                         <td className="px-4 py-2">{(item?.meter_reading || "0")}
                                                             <br />
                                                             <span className="text-xs">
@@ -377,15 +390,7 @@ const BulkWaterBill = () => {
                                                         </td>
                                                         <td className="px-4 py-2">
                                                             <input
-                                                                type="number"
-                                                                value={item.editableUnitPrice}
-                                                                onChange={(e) => handleUnitPriceChange(index, e.target.value)}
-                                                                className="border px-1 py-2 rounded w-24 text-xs"
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            <input
-                                                                type="number"
+                                                                type="text"
                                                                 value={item.editableCurrentReading}
                                                                 onChange={(e) => handleCurrentReadingChange(index, e.target.value)}
                                                                 className={`border px-1 py-2 rounded w-24 text-xs ${item.editableCurrentReading > 0 && !item.hasValidReading
@@ -456,19 +461,6 @@ const BulkWaterBill = () => {
                                                                                 }`}
                                                                         >
                                                                             {isSubmitting ? 'Submitting...' : 'Submit Reading'}
-                                                                        </button>
-                                                                        <Link
-                                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                        >
-                                                                            View Tenant
-                                                                        </Link>
-                                                                        <button
-                                                                            type="button"
-                                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                        >
-                                                                            Vacate Tenant
                                                                         </button>
                                                                     </div>
                                                                 </div>

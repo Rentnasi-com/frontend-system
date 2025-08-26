@@ -20,7 +20,7 @@ const DueRent = () => {
     const fetchRentDues = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${baseUrl}/dashboard/due-rent?limit=2&`,
+            const response = await axios.get(`${baseUrl}/dashboard/due-rent?limit=200&`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -89,10 +89,10 @@ const DueRent = () => {
                                     {rentDues.map((rentDue, index) => (
                                         <tr key={index} className="border-b text-sm">
                                             <td className="px-4 py-2">
-                                                 {rentDue.floor} Floor - {rentDue.unit_number}, {rentDue.unit_type}
+                                                {rentDue.floor} Floor - {rentDue.unit_number}, {rentDue.unit_type}
                                                 <br />
                                                 <span className="text-gray-500 text-xs">
-                                                     {rentDue.property_name}
+                                                    {rentDue.property_name}
                                                 </span>
                                                 <br />
                                                 <span className="text-gray-500 text-xs">
