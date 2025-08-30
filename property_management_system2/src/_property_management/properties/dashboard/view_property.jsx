@@ -77,32 +77,14 @@ const Property = () => {
         {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: property?.revenue?.amounts?.expected_income?.images || "",
-            label: "Total Payable",
-            value: `KES ${(property?.revenue?.amounts?.expected_income?.count || "0").toLocaleString()}`,
-        },
-        {
-            redirectUrl: "/property/revenue-breakdown",
-            iconSrc: property?.revenue?.amounts?.expected_income?.images || "",
-            label: "Total Rent",
+            label: "Rent Payable",
             value: `KES ${(property?.revenue?.amounts?.total_rent?.count || "0").toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
-            iconSrc: property?.revenue?.amounts?.amount_paid?.images || "",
-            label: "Amount Paid",
-            value: `KES ${(property?.revenue?.amounts?.amount_paid?.count || "0").toLocaleString()}`,
-        },
-        {
-            redirectUrl: "/property/revenue-breakdown",
             iconSrc: property?.revenue?.amounts?.outstanding_balance?.images || "",
-            label: "Total Arrears",
+            label: "Previous Arrears",
             value: `KES ${Number(property?.revenue?.amounts?.total_arrears?.count ?? 0).toLocaleString()}`
-        },
-        {
-            redirectUrl: "/property/revenue-breakdown",
-            iconSrc: property?.revenue?.amounts?.total_fines?.images || "",
-            label: "Total Fines",
-            value: `KES ${(property?.revenue?.amounts?.total_fines?.count || "0").toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
@@ -110,6 +92,23 @@ const Property = () => {
             label: "Total Bills",
             value: `KES ${(property?.revenue?.amounts?.total_bills?.count || "0").toLocaleString()}`,
         },
+
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: property?.revenue?.amounts?.expected_income?.images || "",
+            label: "Total Payable",
+            value: `KES ${(property?.revenue?.amounts?.expected_income?.count || "0").toLocaleString()}`,
+        },
+
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: property?.revenue?.amounts?.amount_paid?.images || "",
+            label: "Amount Paid",
+            value: `KES ${(property?.revenue?.amounts?.amount_paid?.count || "0").toLocaleString()}`,
+        },
+
+
+
         {
             redirectUrl: "/property/revenue-breakdown",
             iconSrc: property?.revenue?.amounts?.total_fines?.images || "",
@@ -234,6 +233,10 @@ const Property = () => {
                         </div>
                         <div className="mt-2">
                             <p className="text-xs font-semibold">Property Type: <span className="font-normal">{property?.property_type}</span></p>
+                            <p className="text-xs font-semibold">Payment Status: <span className="font-normal">
+                                {property?.payments_to_landlord === true ? "Landlord Receiving Payment" : "Agency Receiving Payment"}
+                            </span>
+                            </p>
                         </div>
 
 
@@ -321,11 +324,7 @@ const Property = () => {
                                                 <span className="text-gray-500 text-xs">{unit.floor_number}</span>
                                             </td>
                                             <td className="px-4 py-2 text-xs">
-                                                {unit.tenant
-                                                    ?.split(" ")
-                                                    ?.map((word, index) => (index === 0 ? word : word[0] + "."))
-                                                    ?.join(" ") || "No tenant"
-                                                }
+                                                {unit.tenant}
 
                                                 <span className="text-gray-700 text-xs">
                                                     <br />{unit.tenant_phone}

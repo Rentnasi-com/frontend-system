@@ -62,7 +62,7 @@ const PropertyListing = () => {
     const fetchProperties = async (page = 1) => {
         try {
             setLoading(true);
-            console.log(`Fetching page ${page}`); // Debug log
+
 
             const response = await axios.get(
                 `${baseUrl}/manage-property/view-properties/saved?pagination=${page}&query=${confirmedSearch}`,
@@ -75,9 +75,7 @@ const PropertyListing = () => {
             );
 
             const result = response.data;
-            console.log('API Response:', result); // Debug log
 
-            // Check the structure of your API response and adjust accordingly
             setProperties(result.result?.data || result.data || []);
             setDetails(result.details?.breakdown || {});
             setRevenue(result.details?.revenue?.amounts || {});
@@ -86,7 +84,7 @@ const PropertyListing = () => {
             setPagination(response.data.result)
 
         } catch (err) {
-            console.error('Fetch error:', err); // Debug log
+
             toast.error("Failed to load properties");
         } finally {
             setLoading(false);
@@ -199,7 +197,7 @@ const PropertyListing = () => {
             iconSrc: "../../../assets/icons/png/total_fines.png",
             progress: 5,
             label: "Total fines",
-            value: `KES ${(revenue.total_fines?.count || 0).toLocaleString()}`,
+            value: `KES ${(revenue.fines?.count || 0).toLocaleString()}`,
         },
         {
             redirectUrl: "/property/revenue-breakdown",
@@ -399,16 +397,17 @@ const PropertyListing = () => {
                                                 </span>
 
                                             </td>
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-yellow-600">
-                                                    {property.bills.toLocaleString()}
-                                                </span>
-                                            </td>
+
                                             <td className=" text-gray-700 text-end">
                                                 <span className="text-yellow-600">
                                                     {property.fines.toLocaleString()}
                                                 </span>
 
+                                            </td>
+                                            <td className=" text-gray-700 text-end">
+                                                <span className="text-yellow-600">
+                                                    {property.bills.toLocaleString()}
+                                                </span>
                                             </td>
 
                                             <td className=" text-gray-700 text-end">

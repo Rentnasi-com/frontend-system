@@ -987,6 +987,7 @@ const Unit = () => {
                                 <thead className="bg-gray-100 text-left text-xs">
                                     <tr>
                                         <th className="px-4 py-2">Date</th>
+                                        <th className="px-4 py-2">Name</th>
                                         <th className="px-4 py-2">Arrears</th>
                                         <th className="px-4 py-2">Expected </th>
                                         <th className="px-4 py-2">Paid</th>
@@ -1007,6 +1008,7 @@ const Unit = () => {
                                         tenantsPaymentHistory.map((paymentHistory, index) => (
                                             <tr key={index} className="border-b text-xs">
                                                 <td className="px-4 py-2">{paymentHistory.date}</td>
+                                                <td className="px-4 py-2">{paymentHistory.tenant_name}</td>
                                                 <td className="px-4 py-2">{(paymentHistory.arrears).toLocaleString()}</td>
                                                 <td className="px-4 py-2">{(paymentHistory.rent).toLocaleString()}</td>
                                                 <td className="px-4 py-2">{(paymentHistory.paid).toLocaleString()}</td>

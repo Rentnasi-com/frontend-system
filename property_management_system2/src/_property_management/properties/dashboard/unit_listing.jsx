@@ -281,11 +281,7 @@ const UnitListing = () => {
 
                                             {/* Tenant */}
                                             <td className="px-4 py-2 text-xs">
-                                                {unit.tenant
-                                                    ?.split(" ")
-                                                    ?.map((word, index) => (index === 0 ? word : word[0] + "."))
-                                                    ?.join(" ") || "No tenant"
-                                                }
+                                                {unit.tenant}
 
                                                 <span className="text-gray-700 text-xs">
                                                     <br />{unit.tenant_phone}

@@ -316,7 +316,7 @@ const Tenants = () => {
                     ))
                 ) : (
                     stats.map((stat, index) => (
-                        <div key={index} className={` bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2`}>
+                        <div key={index} className={` `}>
                             <PropertyCard
                                 redirectUrl={stat.redirectUrl}
                                 iconSrc={stat.iconSrc}

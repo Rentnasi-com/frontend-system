@@ -202,7 +202,6 @@ const ReceivePayment = () => {
         reValidateMode: "onChange",
         defaultValues: {
             payment_method: "cash",
-            notes: "",
             reference: ""
         },
     });
@@ -210,6 +209,7 @@ const ReceivePayment = () => {
     const paymentMethod = watch("payment_method");
 
     const onSubmit = async (data) => {
+        console.log(data)
 
         if (!unitTenantDetails.tenant_id) {
             toast.error("Tenant information is missing");
@@ -240,8 +240,9 @@ const ReceivePayment = () => {
             datetime: selectedDate
                 ? selectedDate.toISOString().replace(/\.\d{3}Z$/, '')
                 : new Date().toISOString().replace(/\.\d{3}Z$/, ''),
-            notes: data.notes || null
+            notes: data.notes?.trim() === "" ? null : data.notes?.trim()
         };
+
 
         try {
             setIsProcessing(true);
