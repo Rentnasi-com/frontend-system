@@ -16,9 +16,7 @@ const TableRowSkeleton = () => (
         <td className="px-4 py-3">
             <SkeletonLoader className="h-4 w-32 mb-1" />
         </td>
-        <td className="px-4 py-3">
-            <SkeletonLoader className="h-4 w-32 mb-1" />
-        </td>
+
         {[...Array(1)].map((_, i) => (
             <td key={i} className="px-4 py-3">
                 <SkeletonLoader className="h-6 w-12" />
@@ -30,7 +28,7 @@ const TableRowSkeleton = () => (
 const StatCardSkeleton = () => (
     <div className="bg-white border border-gray-200 rounded-lg p-2">
         <div className="flex justify-between items-center">
-            <SkeletonLoader className="h-8 w-8 rounded" />
+            {/* <SkeletonLoader className="h-8 w-8 rounded" /> */}
             <SkeletonLoader className="h-6 w-6 rounded" />
         </div>
         <div className="mt-3">
@@ -311,7 +309,7 @@ const Tenants = () => {
 
             <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 py-1 px-4">
                 {loading ? (
-                    Array(4).fill(0).map((_, index) => (
+                    Array(3).fill(0).map((_, index) => (
                         <StatCardSkeleton key={index} />
                     ))
                 ) : (
@@ -450,14 +448,14 @@ const Tenants = () => {
                                                     </thead>
                                                     <tbody>
                                                         {tenant.tenant_units.map((unit, index) => (
-                                                            <tr key={index} className="border-t border-gray-200">
+                                                            <tr key={index} className="border-t border-gray-200 odd:bg-gray-50">
                                                                 <td className="px-2 py-1 capitalize">{unit.property_name}</td>
                                                                 <td className="px-2 py-1 capitalize">{unit.unit_number}</td>
-                                                                <td className="px-2 py-1">{(unit.expected).toLocaleString()}</td>
-                                                                <td className="px-2 py-1">{(unit.arrears).toLocaleString()}</td>
-                                                                <td className="px-2 py-1">{(unit.rent).toLocaleString()}</td>
-                                                                <td className="px-2 py-1">{(unit.bills).toLocaleString()}</td>
-                                                                <td className="px-2 py-1">{(unit.fines).toLocaleString()}</td>
+                                                                <td className="px-2 py-1 font-mono">{(unit.expected).toLocaleString()}</td>
+                                                                <td className="px-2 py-1 font-mono">{(unit.arrears).toLocaleString()}</td>
+                                                                <td className="px-2 py-1 font-mono">{(unit.rent).toLocaleString()}</td>
+                                                                <td className="px-2 py-1 font-mono">{(unit.bills).toLocaleString()}</td>
+                                                                <td className="px-2 py-1 font-mono">{(unit.fines).toLocaleString()}</td>
 
                                                                 <td className="relative px-2 py-1 text-xs">
                                                                     <Link to={`/property/single-unit/unit_id:${unit.unit_id}`} className="text-blue-600">View</Link>

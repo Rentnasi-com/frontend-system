@@ -789,7 +789,7 @@ const Unit = () => {
                                                 />
                                             </td>
                                             <td className="px-4 py-2 capitalize">{payment.description}</td>
-                                            <td className="px-4 py-2 font-semibold text-gray-800">
+                                            <td className="px-4 py-2 font-semibold text-gray-800 font-mono">
                                                 {(payment.amount || payment.monthly_rent_amount).toLocaleString()}
                                             </td>
                                         </tr>
@@ -836,10 +836,10 @@ const Unit = () => {
                                         </tr>
                                     ) : (
                                         billItems.map((item, index) => (
-                                            <tr key={index} className="border-b text-xs">
+                                            <tr key={index} className="border-b text-xs odd:bg-gray-50">
                                                 <td className="px-4 py-2">{item.date}</td>
                                                 <td className="px-4 py-2">{(item.tenant_name)}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-700 space-y-1">
+                                                <td className="px-4 py-2 text-sm text-gray-700 space-y-1 font-mono">
                                                     <div>Arrears - {Number(item.arrears).toLocaleString()}</div>
                                                     <div>Rent - {Number(item.rent).toLocaleString()}</div>
                                                     <div>Paid - {Number(item.paid).toLocaleString()}</div>
@@ -864,9 +864,9 @@ const Unit = () => {
                                                             </thead>
                                                             <tbody>
                                                                 {item.bill_items.map((billItem, index) => (
-                                                                    <tr key={index} className="border-t border-gray-200">
+                                                                    <tr key={index} className="border-t border-gray-200 odd:bg-gray-50">
                                                                         <td className="px-2 py-1 capitalize">{billItem.bill_type}</td>
-                                                                        <td className="px-2 py-1">
+                                                                        <td className="px-2 py-1 font-mono">
                                                                             {editItemId === billItem.bill_item_id ? (
                                                                                 <input
                                                                                     type="number"
@@ -878,8 +878,8 @@ const Unit = () => {
                                                                                 (billItem.amount_expected).toLocaleString()
                                                                             )}
                                                                         </td>
-                                                                        <td className="px-2 py-1">{(billItem.amount_paid).toLocaleString()}</td>
-                                                                        <td className="px-2 py-1">{(billItem.amount_due).toLocaleString()}</td>
+                                                                        <td className="px-2 py-1 font-mono">{(billItem.amount_paid).toLocaleString()}</td>
+                                                                        <td className="px-2 py-1 font-mono">{(billItem.amount_due).toLocaleString()}</td>
                                                                         <td className="px-2 py-1">
                                                                             <span
                                                                                 className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
@@ -1002,19 +1002,19 @@ const Unit = () => {
                                 <tbody>
                                     {tenantsPaymentHistory.length === 0 ? (
                                         <tr>
-                                            <td colSpan="7" className="text-center text-sm my-3">No data found.</td>
+                                            <td colSpan="8" className="text-center text-sm my-3">No data found.</td>
                                         </tr>
                                     ) : (
                                         tenantsPaymentHistory.map((paymentHistory, index) => (
-                                            <tr key={index} className="border-b text-xs">
+                                            <tr key={index} className="border-b text-xs odd:bg-gray-50 ">
                                                 <td className="px-4 py-2">{paymentHistory.date}</td>
                                                 <td className="px-4 py-2">{paymentHistory.tenant_name}</td>
-                                                <td className="px-4 py-2">{(paymentHistory.arrears).toLocaleString()}</td>
-                                                <td className="px-4 py-2">{(paymentHistory.rent).toLocaleString()}</td>
-                                                <td className="px-4 py-2">{(paymentHistory.paid).toLocaleString()}</td>
+                                                <td className="px-4 py-2 font-mono">{(paymentHistory.arrears).toLocaleString()}</td>
+                                                <td className="px-4 py-2 font-mono">{(paymentHistory.rent).toLocaleString()}</td>
+                                                <td className="px-4 py-2 font-mono">{(paymentHistory.paid).toLocaleString()}</td>
 
-                                                <td className="px-4 py-2">{(paymentHistory.total_balance).toLocaleString()}</td>
-                                                <td className="px-4 py-2">{(paymentHistory.fines).toLocaleString()}</td>
+                                                <td className="px-4 py-2 font-mono">{(paymentHistory.total_balance).toLocaleString()}</td>
+                                                <td className="px-4 py-2 font-mono">{(paymentHistory.fines).toLocaleString()}</td>
                                                 <td>
                                                     <span
                                                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full

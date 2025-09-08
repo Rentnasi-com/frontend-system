@@ -34,8 +34,9 @@ const Aside = () => {
       bg: "hover:bg-yellow-100",
       submenu: [
         { to: "/property/property-listing", label: "Properties" },
+        { to: "/property/all-property-units", label: "Units" },
         { to: "/add-property/general-information", label: "Add Property" },
-        { to: "/property/all-property-units", label: "Properties Units" }
+
       ]
     },
     {
@@ -64,6 +65,15 @@ const Aside = () => {
         { to: "/property/receive-water", label: "Water Billing" },
         { to: "/property/receive-bulk-electricity", label: "Electricity Billing" },
         { to: "/property/receive-payment", label: "Receive Payment" },
+      ]
+    },
+    {
+      label: "Staff",
+      iconPath: "Users",
+      bg: "hover:bg-yellow-100",
+      submenu: [
+        { to: "/staffs/staff-listings", label: "Users" },
+        { to: "/property/receive-bulk-electricity", label: "Add Users" },
       ]
     },
     {

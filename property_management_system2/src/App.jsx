@@ -13,6 +13,7 @@ import { ChatRoom, Inquiries } from './_property_management/inquiries'
 import { Recycle } from './_property_management/recycleBin'
 import { HelpCenter } from './_property_management/helpCenter'
 import { MonthlyRevenueBreakdown, Reports, RevenueBreakdown } from './_property_management/reports'
+import { SingleStaffPage, Users } from './_property_management/users';
 
 const App = () => {
   return (
@@ -225,6 +226,14 @@ const App = () => {
             <Route
               path="/settings/make-paybill-pdf"
               element={<ProtectedRoute element={<MakePaybillPdf />} />}
+            />
+            <Route
+              path="/staffs/staff-listings"
+              element={<ProtectedRoute element={<Users />} />}
+            />
+            <Route
+              path="/staffs/staff-001"
+              element={<ProtectedRoute element={<SingleStaffPage />} />}
             />
           </Route>
         </Routes>

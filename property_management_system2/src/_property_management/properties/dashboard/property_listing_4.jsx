@@ -287,7 +287,7 @@ const PropertyListing = () => {
             );
             if (response.status === 200) {
                 toast.success("Payment details updated successfully.");
-                fetchProperties()
+                await fetchProperties()
                 setOpenDropdownId(null);
             }
         } catch (error) {
@@ -346,92 +346,64 @@ const PropertyListing = () => {
                 </div>
                 <div>
                     <div className="">
-                        <table className="min-w-full">
-                            <thead className="bg-gray-100 text-left text-xs border-y ">
-                                <tr className="py-2">
-                                    {/* <th className="px-4 py-2">Photo</th> */}
-                                    <th className="px-4 py-2">Property</th>
-                                    <th className="text-end">Exp Rent</th>
-                                    <th className="text-end">Pre Arrears</th>
-                                    <th className="text-end">Fines</th>
-                                    <th className="text-end">Bills</th>
-                                    <th className="text-end">Total Payable</th>
-                                    <th className="text-end">Paid</th>
-                                    <th className="text-end">Balances</th>
-                                    <th className="px-6 py-2"></th>
+                        <table className="min-w-full border border-gray-200 rounded-lg">
+                            <thead className="bg-gray-100 text-xs uppercase text-gray-600">
+                                <tr>
+                                    <th className="px-6 py-3 text-left">Property</th>
+                                    <th className="px-6 py-3 text-right">Exp Rent</th>
+                                    <th className="px-6 py-3 text-right">Pre Arrears</th>
+                                    <th className="px-6 py-3 text-right">Bills</th>
+                                    <th className="px-6 py-3 text-right">Fines</th>
+                                    <th className="px-6 py-3 text-right">Total Payable</th>
+                                    <th className="px-6 py-3 text-right">Paid</th>
+                                    <th className="px-6 py-3 text-right">Balances</th>
+                                    <th className="px-6 py-3"></th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-gray-200 text-sm">
                                 {loading ? (
                                     Array(5).fill(0).map((_, index) => (
                                         <TableRowSkeleton key={index} />
                                     ))
                                 ) : (
                                     properties.map((property, index) => (
-                                        <tr key={index} className="border-b text-sm overflow-x-auto">
+                                        <tr key={index} className="odd:bg-gray-50">
+                                            {/* Property column */}
+                                            <td className="px-6 py-3">
+                                                <p className="font-medium">{property.property_name}</p>
+                                                <p className="text-gray-500 text-xs">Occupied: {property.occupied_units}</p>
+                                                <p className="text-gray-500 text-xs">Vacant: {property.vacant_units}</p>
+                                                {property.payments_to_landlord === false ? (
+                                                    <p className="text-green-600 text-xs">Payment to Managers</p>
 
-                                            <td className="px-4 py-2">
-                                                {property.property_name}
-                                                <br />
-                                                <span className="text-gray-500 text-xs">
-                                                    Occupied: {property.occupied_units}
-                                                </span>
-                                                <br />
-                                                <span className="text-gray-500 text-xs">
-                                                    Vacant: {property.vacant_units}
-                                                </span>
+                                                ) : (
+                                                    <p className="text-red-600 text-xs">Payment to Landlord</p>
+                                                )}
                                             </td>
 
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-yellow-600 ">
-                                                    {property.rent.toLocaleString()}
-                                                </span>
-
+                                            {/* Financial columns */}
+                                            <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                                {property.rent.toLocaleString()}
                                             </td>
-
-
-
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-orange-600">
-                                                    {property.arrears.toLocaleString()}
-                                                </span>
-
+                                            <td className="px-6 py-3 text-right font-mono text-orange-600">
+                                                {property.arrears.toLocaleString()}
                                             </td>
-
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-yellow-600">
-                                                    {property.fines.toLocaleString()}
-                                                </span>
-
+                                            <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                                {property.bills.toLocaleString()}
                                             </td>
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-yellow-600">
-                                                    {property.bills.toLocaleString()}
-                                                </span>
+                                            <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                                {property.fines.toLocaleString()}
                                             </td>
-
-                                            <td className=" text-gray-700 text-end">
-
+                                            <td className="px-6 py-3 text-right font-mono">
                                                 {property.expected.toLocaleString()}
-
                                             </td>
-
-
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-green-600 ">
-                                                    {property.received.toLocaleString()}
-                                                </span>
-
+                                            <td className="px-6 py-3 text-right font-mono text-green-600">
+                                                {property.received.toLocaleString()}
                                             </td>
-
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-teal-600 ">
-                                                    {property.balance.toLocaleString()}
-                                                </span>
+                                            <td className="px-6 py-3 text-right font-mono text-red-600">
+                                                {property.balance.toLocaleString()}
                                             </td>
-
-
-                                            <td className="relative px-4 py-2 text-sm">
+                                            <td className="px-6 py-3 relative text-sm">
                                                 <button
                                                     onClick={() => toggleDropdown(property.id)}
                                                     className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
@@ -471,7 +443,7 @@ const PropertyListing = () => {
                                                                     onClick={() => setWhoToRecievePayment(property.id, false)}
                                                                     className="block w-full px-4 py-2 text-sm text-left text-green-600 hover:bg-gray-100"
                                                                 >
-                                                                    Rent To Rentalpay
+                                                                    Rent To Us
                                                                 </button>
                                                             )}
 
@@ -491,6 +463,37 @@ const PropertyListing = () => {
                                     ))
                                 )}
                             </tbody>
+                            {properties.length > 0 && (
+                                <tfoot className="sticky bottom-0 bg-yellow-100 font-mono text-sm border-t-2 border-yellow-400 shadow-inner">
+                                    <tr>
+                                        <td className="px-4 py-2 text-center">Totals</td>
+                                        <td className="px-4 py-2 text-right text-blue-600">
+                                            {properties.reduce((sum, u) => sum + u.rent, 0).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-orange-600">
+                                            {properties.reduce((sum, u) => sum + u.arrears, 0).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-yellow-600">
+                                            {properties.reduce((sum, u) => sum + u.bills, 0).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-yellow-600">
+                                            {properties.reduce((sum, u) => sum + u.fines, 0).toLocaleString()}
+                                        </td>
+
+                                        <td className="px-4 py-2 text-right text-blue-600">
+                                            {properties.reduce((sum, u) => sum + u.expected, 0).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-green-600">
+                                            {properties.reduce((sum, u) => sum + u.received, 0).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-indigo-600">
+                                            {properties.reduce((sum, u) => sum + u.balance, 0).toLocaleString()}
+                                        </td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            )}
                         </table>
                     </div>
                 </div>

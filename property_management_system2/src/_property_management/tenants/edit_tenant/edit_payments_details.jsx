@@ -364,7 +364,7 @@ const EditTenantProperty = () => {
 
             if (response.data.success) {
                 toast.success(response.data.message)
-                navigate('/tenants')
+                navigate(-1)
             } else {
                 toast.error(response.data.message || "Failed to update tenant")
             }

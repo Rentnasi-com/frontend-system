@@ -368,14 +368,14 @@ const LandlordSingleView = () => {
                                 <thead className="bg-gray-100 text-left text-xs border-y ">
                                     <tr className="py-2">
                                         {/* <th className="px-4 py-2">Photo</th> */}
-                                        <th className="px-4 py-2">Property</th>
-                                        <th className="text-end">Exp Rent</th>
-                                        <th className="text-end">Pre Arrears</th>
-                                        <th className="text-end">Fines</th>
-                                        <th className="text-end">Bills</th>
-                                        <th className="text-end">Total Payable</th>
-                                        <th className="text-end">Paid</th>
-                                        <th className="text-end">Balances</th>
+                                        <th className="px-6 py-3 text-left">Property</th>
+                                        <th className="px-6 py-3 text-right">Exp Rent</th>
+                                        <th className="px-6 py-3 text-right">Pre Arrears</th>
+                                        <th className="px-6 py-3 text-right">Fines</th>
+                                        <th className="px-6 py-3 text-right">Bills</th>
+                                        <th className="px-6 py-3 text-right">Total Payable</th>
+                                        <th className="px-6 py-3 text-right">Paid</th>
+                                        <th className="px-6 py-3 text-right">Balances</th>
                                         <th className="py-2"></th>
                                     </tr>
                                 </thead>
@@ -399,55 +399,28 @@ const LandlordSingleView = () => {
                                                         Vacant: {property.vacant_units}
                                                     </span>
                                                 </td>
-
-                                                <td className=" text-gray-700 text-end">
-                                                    <span className="text-yellow-600 ">
-                                                        {property.rent.toLocaleString()}
-                                                    </span>
-
+                                                {/* Financial columns */}
+                                                <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                                    {property.rent.toLocaleString()}
                                                 </td>
-
-
-
-                                                <td className=" text-gray-700 text-end">
-                                                    <span className="text-orange-600">
-                                                        {property.arrears.toLocaleString()}
-                                                    </span>
-
+                                                <td className="px-6 py-3 text-right font-mono text-orange-600">
+                                                    {property.arrears.toLocaleString()}
                                                 </td>
-                                                <td className=" text-gray-700 text-end">
-                                                    <span className="text-yellow-600">
-                                                        {property.bills.toLocaleString()}
-                                                    </span>
+                                                <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                                    {property.bills.toLocaleString()}
                                                 </td>
-                                                <td className=" text-gray-700 text-end">
-                                                    <span className="text-yellow-600">
-                                                        {property.fines.toLocaleString()}
-                                                    </span>
-
+                                                <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                                    {property.fines.toLocaleString()}
                                                 </td>
-
-                                                <td className=" text-gray-700 text-end">
-
+                                                <td className="px-6 py-3 text-right font-mono">
                                                     {property.expected.toLocaleString()}
-
                                                 </td>
-
-
-                                                <td className=" text-gray-700 text-end">
-                                                    <span className="text-green-600 ">
-                                                        {property.received.toLocaleString()}
-                                                    </span>
-
+                                                <td className="px-6 py-3 text-right font-mono text-green-600">
+                                                    {property.received.toLocaleString()}
                                                 </td>
-
-                                                <td className=" text-gray-700 text-end">
-                                                    <span className="text-teal-600 ">
-                                                        {property.balance.toLocaleString()}
-                                                    </span>
+                                                <td className="px-6 py-3 text-right font-mono text-red-600">
+                                                    {property.balance.toLocaleString()}
                                                 </td>
-
-
                                                 <td className="relative px-4 py-2 text-sm">
                                                     {/* Dropdown button - only in Actions column */}
                                                     <button
@@ -491,6 +464,37 @@ const LandlordSingleView = () => {
                                         ))
                                     )}
                                 </tbody>
+                                {units.length > 0 && (
+                                    <tfoot className="sticky bottom-0 bg-yellow-100 font-mono text-sm border-t-2 border-yellow-400 shadow-inner">
+                                        <tr>
+                                            <td className="px-4 py-2 text-center">Totals</td>
+                                            <td className="px-4 py-2 text-right text-blue-600">
+                                                {units.reduce((sum, u) => sum + u.rent, 0).toLocaleString()}
+                                            </td>
+                                            <td className="px-4 py-2 text-right text-orange-600">
+                                                {units.reduce((sum, u) => sum + u.arrears, 0).toLocaleString()}
+                                            </td>
+                                            <td className="px-4 py-2 text-right text-yellow-600">
+                                                {units.reduce((sum, u) => sum + u.bills, 0).toLocaleString()}
+                                            </td>
+                                            <td className="px-4 py-2 text-right text-yellow-600">
+                                                {units.reduce((sum, u) => sum + u.fines, 0).toLocaleString()}
+                                            </td>
+
+                                            <td className="px-4 py-2 text-right text-blue-600">
+                                                {units.reduce((sum, u) => sum + u.expected, 0).toLocaleString()}
+                                            </td>
+                                            <td className="px-4 py-2 text-right text-green-600">
+                                                {units.reduce((sum, u) => sum + u.received, 0).toLocaleString()}
+                                            </td>
+                                            <td className="px-4 py-2 text-right text-indigo-600">
+                                                {units.reduce((sum, u) => sum + u.balance, 0).toLocaleString()}
+                                            </td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                )}
                             </table>
                         </div>
                     </div>

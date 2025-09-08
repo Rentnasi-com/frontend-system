@@ -137,7 +137,6 @@ const TenantUnits = () => {
             // Navigate after delete
             navigate("/tenants");
         } catch (error) {
-            console.error("Deletion error:", error);
             toast.error("Failed to delete tenant.");
         }
     };
@@ -146,6 +145,32 @@ const TenantUnits = () => {
         setItemToVacate(item);
         setIsVacateModalOpen(true);
         setOpenDropdownId(false);
+    };
+
+    const setWhoToRecievePayment = async (tenantId, unitId, toLandlord) => {
+        try {
+            const response = await axios.patch(`${baseUrl}/manage-tenant/settings/payment`, {
+                tenant_id: tenantId,
+                unit_id: unitId,
+                payments_to_landlord: toLandlord,
+            },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                }
+            );
+
+            if (response.data.success === true) {
+                toast.success("Payment details updated successfully.");
+                await fetchTenantDetails()
+                setOpenDropdownId(null);
+            }
+        } catch (error) {
+            setOpenDropdownId(null);
+            toast.error("An error occurred while updating payment details.");
+        }
     };
 
     return (
@@ -172,20 +197,20 @@ const TenantUnits = () => {
                     <div className="flex space-x-3">
                         <Link
                             to={`/tenants/edit-personal-details?tenant_id=${tenantId}`}
-                            className="flex space-x-3 focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-xs px-2 py-2.5"
+                            className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-xs px-2 py-2.5"
                         >
                             Edit Profile
                         </Link>
                         <Link
                             to={`/tenants/add-tenant-unit?tenant_id=${tenantId}`}
-                            className="flex space-x-3 focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-xs px-2 py-2.5"
+                            className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-xs px-2 py-2.5"
                         >
                             Assign Unit
                         </Link>
 
                         <button
                             onClick={() => handleDelete(tenantId, tenant.name)}
-                            className="flex space-x-3 focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-xs px-2 py-2.5"
+                            className="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-xs px-2 py-2.5"
                         >
                             Delete Tenant
                         </button>
@@ -265,26 +290,30 @@ const TenantUnits = () => {
                                         <span className="text-gray-500 text-xs">
                                             Location: {unit.property_location}
                                         </span>
-                                    </td>
+                                        {unit.payments_to_landlord === false ? (
+                                            <p className="text-green-600 text-xs whitespace-nowrap mt-1">We receive payment</p>
 
+                                        ) : (
+                                            <p className="text-red-600 text-xs whitespace-nowrap mt-1">We don't receive payment</p>
+                                        )}
+                                    </td>
                                     < td className="px-4 py-2">
                                         Unit No: {unit.unit_number}
                                     </td>
-
                                     <td className="text-gray-500 text-xs px-4 py-2">
                                         Arrears:
-                                        <span className="text-red-700 pl-2">KES {(unit.arrears || 0).toLocaleString()}</span>
+                                        <span className="text-red-700 pl-2 font-mono">KES {(unit.arrears || 0).toLocaleString()}</span>
                                         <br />
                                         Expected amount:
-                                        <span className="text-red-700 pl-2">KES {(unit.expected_amount || 0).toLocaleString()}</span>
+                                        <span className="text-red-700 pl-2 font-mono">KES {(unit.expected_amount || 0).toLocaleString()}</span>
                                         <br />
                                         Amount received:
-                                        <span className="text-red-700 pl-2"
+                                        <span className="text-red-700 pl-2 font-mono"
                                         >KES {(unit.amount_received || 0).toLocaleString()}</span>
                                     </td>
                                     <td className="text-gray-500 text-xs px-4 py-2">
                                         Fines:
-                                        <span className="text-red-700 pl-2"
+                                        <span className="text-red-700 pl-2 font-mono"
                                         >KES {(unit.fines || 0).toLocaleString()}</span>
 
                                         <br />
@@ -319,8 +348,23 @@ const TenantUnits = () => {
                                                         to={`/tenants/edit-tenant-unit?tenant_id=${tenantId}&unit_id=${unit.unit_id}`}
                                                         className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 whitespace-nowrap"
                                                     >
-                                                        Edit Unit Assigned
+                                                        Edit Unit
                                                     </Link>
+                                                    {unit.payments_to_landlord === false ? (
+                                                        <button
+                                                            onClick={() => setWhoToRecievePayment(tenantId, unit.unit_id, true)}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-blue-600 hover:bg-gray-100"
+                                                        >
+                                                            Rent To Landlord
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setWhoToRecievePayment(tenantId, unit.unit_id, false)}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-green-600 hover:bg-gray-100"
+                                                        >
+                                                            Rent To Us
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() =>
                                                             handleVacateModalOpen({

@@ -84,7 +84,7 @@ const PropertyCard = ({ redirectUrl, iconSrc, label, value }) => {
                 </h6>
 
                 <div className="text-right">
-                    <h6 className={`text-lg font-bold ${colorScheme.valueColor} ${colorScheme.valueHover} transition-all duration-300 group-hover:scale-105`}>
+                    <h6 className={`text-lg font-bold font-mono ${colorScheme.valueColor} ${colorScheme.valueHover} transition-all duration-300 group-hover:scale-105`}>
                         {value}
                     </h6>
                 </div>

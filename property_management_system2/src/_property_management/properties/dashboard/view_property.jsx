@@ -3,6 +3,7 @@ import { DashboardHeader, PropertyCard, QuickLinksCard } from "./page_components
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
+import toast from "react-hot-toast";
 const Property = () => {
     const { property_id } = useParams();
     const [property, setProperty] = useState([]);
@@ -92,6 +93,12 @@ const Property = () => {
             label: "Total Bills",
             value: `KES ${(property?.revenue?.amounts?.total_bills?.count || "0").toLocaleString()}`,
         },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: property?.revenue?.amounts?.total_fines?.images || "",
+            label: "Total Fines",
+            value: `KES ${(property?.revenue?.amounts?.total_fines?.count || "0").toLocaleString()}`,
+        },
 
         {
             redirectUrl: "/property/revenue-breakdown",
@@ -106,8 +113,6 @@ const Property = () => {
             label: "Amount Paid",
             value: `KES ${(property?.revenue?.amounts?.amount_paid?.count || "0").toLocaleString()}`,
         },
-
-
 
         {
             redirectUrl: "/property/revenue-breakdown",
@@ -185,6 +190,30 @@ const Property = () => {
         setOpenDropdownId(openDropdownId === tenantId ? null : tenantId);
     };
 
+    const setWhoToRecievePayment = async (tenantId, unitId, toLandlord) => {
+        try {
+            const response = await axios.patch(`${baseUrl}/manage-tenant/settings/payment`, {
+                tenant_id: tenantId,
+                unit_id: unitId,
+                payments_to_landlord: toLandlord,
+            },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                }
+            );
+            if (response.status === 200) {
+                toast.success("Payment details updated successfully.");
+                await fetchPropertyUnits()
+                setOpenDropdownId(null);
+            }
+        } catch (error) {
+            setOpenDropdownId(null);
+        }
+    };
+
     return (
         <>
             <DashboardHeader
@@ -234,7 +263,7 @@ const Property = () => {
                         <div className="mt-2">
                             <p className="text-xs font-semibold">Property Type: <span className="font-normal">{property?.property_type}</span></p>
                             <p className="text-xs font-semibold">Payment Status: <span className="font-normal">
-                                {property?.payments_to_landlord === true ? "Landlord Receiving Payment" : "Agency Receiving Payment"}
+                                {property?.payments_to_landlord === true ? "Payment to Landlord" : "Payment to Managers"}
                             </span>
                             </p>
                         </div>
@@ -291,124 +320,107 @@ const Property = () => {
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
                 <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
                 <div className="w-full">
-                    <div className="">
-                        <table className="min-w-full table-auto">
-                            <thead className="sticky top-0 bg-gray-100 text-left text-xs">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full border border-gray-200 rounded-lg">
+                            <thead className="bg-gray-100 text-xs uppercase text-gray-600">
                                 <tr>
-                                    <th className="px-4 py-2">Unit</th>
-                                    <th className="px-4 py-2">Tenant</th>
-                                    <th className="text-end">Exp Rent</th>
-                                    <th className="text-end">Prev Arrears</th>
-                                    <th className="text-end">Bills</th>
-                                    <th className="text-end">Fines</th>
-                                    <th className="text-end">Expected</th>
-                                    <th className="text-end">Paid</th>
-                                    <th className="text-end">Balances</th>
-                                    <th className="px-4 py-2">Status</th>
-                                    <th className=""></th>
+                                    <th className="px-6 py-3 text-left">Property</th>
+                                    <th className="px-6 py-3 text-left">Tenant</th>
+                                    <th className="px-6 py-3 text-right">Exp Rent</th>
+                                    <th className="px-6 py-3 text-right">Pre Arrears</th>
+                                    <th className="px-6 py-3 text-right">Bills</th>
+                                    <th className="px-6 py-3 text-right">Fines</th>
+                                    <th className="px-6 py-3 text-right">Total Payable</th>
+                                    <th className="px-6 py-3 text-right">Paid</th>
+                                    <th className="px-6 py-3 text-right">Balances</th>
+                                    <th className="px-6 py-3 text-left">Status</th>
+                                    <th className="px-6 py-3"></th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-gray-200 text-sm">
                                 {propertyUnits.length === 0 ? (
                                     <tr>
-                                        <td colSpan="7" className="text-center text-sm my-3">No data found.</td>
+                                        <td colSpan="11" className="text-center text-sm my-3">No data found.</td>
                                     </tr>
                                 ) : (
                                     propertyUnits.map((unit, index) => (
-                                        <tr key={index} className="border-b text-sm">
+                                        <tr key={index} className="odd:bg-gray-50">
                                             <td className="px-4 py-2">
                                                 {unit.unit_number}
-                                                <br />
-                                                <span className="text-gray-500 text-xs">{unit.unit_type}</span>
-                                                <br />
-                                                <span className="text-gray-500 text-xs">{unit.floor_number}</span>
+                                                <p className="text-gray-500 text-xs">{unit.unit_type}</p>
+                                                <p className="text-gray-500 text-xs">{unit.floor_number}</p>
+
                                             </td>
                                             <td className="px-4 py-2 text-xs">
                                                 {unit.tenant}
-
-                                                <span className="text-gray-700 text-xs">
-                                                    <br />{unit.tenant_phone}
-                                                </span>
+                                                <p className="text-gray-700 text-xs">{unit.tenant_phone}</p>
 
                                                 {unit.availability_status === 'available' ? (
                                                     <>
-
                                                     </>
-
                                                 ) : (
                                                     <>
-                                                        <br />
                                                         <span className="bg-red-100 border border-red-400 text-red-600 px-2 text-xs rounded">
                                                             Occupied
                                                         </span>
                                                     </>
                                                 )}
+                                                {unit.payments_to_landlord === false ? (
+                                                    <p className="text-green-600 text-xs whitespace-nowrap mt-1">Payment to Managers</p>
+
+                                                ) : (
+                                                    <p className="text-red-600 text-xs whitespace-nowrap mt-1">Payment to Landlord</p>
+                                                )}
                                             </td>
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-blue-600">
-                                                    {(unit.rent_amount).toLocaleString()}
-                                                </span>
+                                            <td className="px-6 py-3 text-right font-mono text-yellow-600">
+
+                                                {(unit.rent_amount).toLocaleString()}
                                             </td>
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-orange-600">
-                                                    {unit.arrears.toLocaleString()}
-                                                </span>
+                                            <td className="px-6 py-3 text-right font-mono text-orange-600">
+
+                                                {unit.arrears.toLocaleString()}
                                             </td>
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-yellow-600">
-                                                    {unit.bills.toLocaleString()}
-                                                </span>
+                                            <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                                {unit.bills.toLocaleString()}
                                             </td>
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-yellow-600">
-                                                    {unit.fines.toLocaleString()}
-                                                </span>
+                                            <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                                {unit.fines.toLocaleString()}
                                             </td>
 
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-blue-600">
-                                                    {(unit.expected).toLocaleString()}
-                                                </span>
+                                            <td className="px-6 py-3 text-right font-mono">
+                                                {(unit.expected).toLocaleString()}
                                             </td>
 
 
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-green-600">
-                                                    {unit.received.toLocaleString()}
-                                                </span>
+                                            <td className="px-6 py-3 text-right font-mono text-green-600">
+                                                {unit.received.toLocaleString()}
                                             </td>
 
-                                            <td className=" text-gray-700 text-end">
-                                                <span className="text-indigo-600">
-                                                    {unit.pending_balances.toLocaleString()}
-                                                </span>
+                                            <td className="px-6 py-3 text-right font-mono text-red-600">
+                                                {unit.pending_balances.toLocaleString()}
                                             </td>
 
 
-                                            <td className="px-4 py-2 text-xs">
+                                            <td className="px-6 py-3 text-xs text-right">
                                                 {unit.availability_status === 'available' ? (
-                                                    <>
-                                                        <br />
-                                                        <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">
-                                                            Vacant
-                                                        </span>
-                                                    </>
+                                                    <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded whitespace-nowrap">
+                                                        Vacant
+                                                    </span>
                                                 ) : (
                                                     <>
-                                                        <br />
                                                         {unit.pending_balances === 0 ? (
-                                                            <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">
+                                                            <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded whitespace-nowrap">
                                                                 No Balance
                                                             </span>
                                                         ) : (
-                                                            <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded">
+                                                            <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded whitespace-nowrap">
                                                                 With Balance
                                                             </span>
                                                         )}
                                                     </>
                                                 )}
-
                                             </td>
+
 
                                             <td className="relative px-4 py-2 text-sm">
                                                 {/* Dropdown button - only in Actions column */}
@@ -444,15 +456,23 @@ const Property = () => {
                                                                 to={`/tenants/edit-tenant-unit?tenant_id=${unit.tenant_id}&unit_id=${unit.unit_id}`}
                                                                 className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                                                             >
-                                                                Edit Assign Unit
+                                                                Edit Unit
                                                             </Link>
-
-                                                            {/* <button
-                                                                onClick={() => openDeleteModal(property)}
-                                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"
-                                                            >
-                                                                Delete Property
-                                                            </button> */}
+                                                            {unit.payments_to_landlord === false ? (
+                                                                <button
+                                                                    onClick={() => setWhoToRecievePayment(unit.tenant_id, unit.unit_id, true)}
+                                                                    className="block w-full px-4 py-2 text-sm text-left text-blue-600 hover:bg-gray-100"
+                                                                >
+                                                                    Rent To Landlord
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => setWhoToRecievePayment(unit.tenant_id, unit.unit_id, false)}
+                                                                    className="block w-full px-4 py-2 text-sm text-left text-green-600 hover:bg-gray-100"
+                                                                >
+                                                                    Rent To Us
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -461,7 +481,38 @@ const Property = () => {
                                         </tr>
                                     ))
                                 )}
+
                             </tbody>
+                            {propertyUnits.length > 0 && (
+                                <tfoot className="sticky bottom-0 bg-yellow-100 font-mono text-sm border-t-2 border-yellow-400 shadow-inner">
+                                    <tr>
+                                        <td colSpan="2" className="px-4 py-2 text-center">Totals</td>
+                                        <td className="px-4 py-2 text-right text-blue-600">
+                                            {propertyUnits.reduce((sum, u) => sum + u.rent_amount, 0).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-orange-600">
+                                            {propertyUnits.reduce((sum, u) => sum + u.arrears, 0).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-yellow-600">
+                                            {propertyUnits.reduce((sum, u) => sum + u.bills, 0).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-yellow-600">
+                                            {propertyUnits.reduce((sum, u) => sum + u.fines, 0).toLocaleString()}
+                                        </td>
+
+                                        <td className="px-4 py-2 text-right text-blue-600">
+                                            {propertyUnits.reduce((sum, u) => sum + u.expected, 0).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-green-600">
+                                            {propertyUnits.reduce((sum, u) => sum + u.received, 0).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-indigo-600">
+                                            {propertyUnits.reduce((sum, u) => sum + u.pending_balances, 0).toLocaleString()}
+                                        </td>
+                                        <td colSpan="2"></td>
+                                    </tr>
+                                </tfoot>
+                            )}
                         </table>
                     </div>
                 </div>
