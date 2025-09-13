@@ -37,11 +37,11 @@ const AddTenantProperty = () => {
         initial_meter_reading: z.string().optional(),
         first_time_billing: z.string().optional(),
 
-        rent_amount: z.string().min(1, "Rent amount is required"),
-        rent_deposit: z.string().min(1, "Deposit must be a positive number"),
-        water: z.string().min(1, "Water deposit must be a positive number"),
-        garbage: z.string().min(1, "Garbage deposit must be a positive number"),
-        electricity: z.string().min(1, "Electricity deposit must be a positive number"),
+        rent_amount: z.coerce.string().min(1, "Rent amount is required"),
+        rent_deposit: z.coerce.string().min(1, "Deposit must be a positive number"),
+        water: z.coerce.string().min(1, "Water deposit must be a positive number"),
+        garbage: z.coerce.string().min(1, "Garbage deposit must be a positive number"),
+        electricity: z.coerce.string().min(1, "Electricity deposit must be a positive number"),
 
         is_the_tenant_have_previous_arrears: z.enum(["1", "0"], {
             errorMap: () => ({ message: "You must select either 'Yes' or 'No'" })
@@ -51,13 +51,13 @@ const AddTenantProperty = () => {
             errorMap: () => ({ message: "You must select either 'Yes' or 'No'" })
         }).optional(),
 
-        arrears_rent_amount: z.string().optional(),
-        arrears_rent_deposit: z.string().optional(),
-        arrears_water: z.string().optional(),
-        arrears_garbage: z.string().optional(),
-        arrears_electricity: z.string().optional(),
+        arrears_rent_amount: z.coerce.string().optional(),
+        arrears_rent_deposit: z.coerce.string().optional(),
+        arrears_water: z.coerce.string().optional(),
+        arrears_garbage: z.coerce.string().optional(),
+        arrears_electricity: z.coerce.string().optional(),
 
-        arrears_total: z.string().optional(),
+        arrears_total: z.coerce.string().optional(),
 
         rent_due_date: z.string().min(1, "Select a valid date"),
         due_rent_reminder_date: z.string().min(1, "Select a valid date"),
@@ -488,6 +488,14 @@ const AddTenantProperty = () => {
 
         }
     }
+
+    useEffect(() => {
+        if (Object.keys(errors).length > 0) {
+            Object.entries(errors).forEach(([field, error]) => {
+                toast.error(`${field}: ${error.message}`);
+            });
+        }
+    }, [errors]);
 
     return (
         <>

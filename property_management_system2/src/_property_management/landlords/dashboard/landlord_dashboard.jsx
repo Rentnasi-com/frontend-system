@@ -211,6 +211,13 @@ const ViewLandlord = () => {
         }
     };
 
+    const ordinal = (n) => {
+        if (!n) return "";
+        const s = ["th", "st", "nd", "rd"],
+            v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
     return (
         <>
             <DashboardHeader
@@ -331,9 +338,9 @@ const ViewLandlord = () => {
                                                         </p>
                                                     </div>
                                                     <div className="mt-1">
-                                                        <p>Id No</p>
+                                                        <p>Date to pay</p>
                                                         <p className="font-semibold text-gray-700">
-                                                            {landlord.landlord_info.id_or_passport_number}
+                                                            {ordinal(landlord.landlord_info.day_of_payment)}
                                                         </p>
                                                     </div>
                                                 </div>

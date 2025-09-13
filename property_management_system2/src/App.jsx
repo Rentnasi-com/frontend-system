@@ -19,7 +19,7 @@ const App = () => {
   return (
     <Router>
       <main className="font-sans">
-        <Toaster />
+        <Toaster position="top-right" />
         <Routes>
           <Route path="/" element={<AuthHandler />} />
           <Route element={<DashboardLayout />}>
