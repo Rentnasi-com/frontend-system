@@ -1,476 +1,392 @@
 import { useEffect, useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { setAuthToken } from './store/authActions';
+import {
+    setLoading,
+    setError,
+    loginSuccess,
+    updateToken,
+    logout,
+    selectToken,
+    selectIsAuthenticated,
+} from './store/authSlice';
 import toast from "react-hot-toast";
 
 const AuthHandler = () => {
-  const dispatch = useDispatch();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const isMountedRef = useRef(true);
-  const intervalRef = useRef(null);
+    const dispatch = useDispatch();
+    const location = useLocation();
+    const navigate = useNavigate();
 
-  // Cleanup function
-  const cleanup = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  };
+    const token = useSelector(selectToken);
+    const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  // Safe state update helper
-  const safeSetState = (callback) => {
-    if (isMountedRef.current) {
-      callback();
-    }
-  };
+    const [isProcessing, setIsProcessing] = useState(false);
+    const isMountedRef = useRef(true);
+    const intervalRef = useRef(null);
 
-  // Redirect to auth service
-  const redirectToAuth = (message = "Redirecting to authentication...") => {
-    toast.error(message);
-    setTimeout(() => {
-      // window.location.href = "https://auth.rentalpay.africa/sign-in";
-    }, 1000);
-  };
+    // App URL - make sure this matches your actual domain
+    const APP_URL = "http://localhost:5180"; // Update this to your actual app URL
+    const API_BASE_URL = "https://auth2.api.rentalpay.africa"; // Updated to match your endpoint
 
-  // Clear user session
-  const clearSession = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('expiry');
-    localStorage.removeItem('sessionId');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('packageInfo');
-    localStorage.removeItem('packageExpiry');
-    localStorage.removeItem('userDetails');
-    dispatch(setAuthToken(null));
-  };
-
-  // Check if token is expired
-  const isTokenExpired = (expiry) => {
-    if (!expiry) return true;
-    const now = Date.now();
-    // Handle the timestamp format from the API (e.g., "20250707055401000000")
-    let tokenExpiry;
-    if (typeof expiry === 'string' && expiry.length === 20) {
-      // Parse the timestamp format: YYYYMMDDHHMMSSSSSSSS
-      const year = parseInt(expiry.substring(0, 4));
-      const month = parseInt(expiry.substring(4, 6)) - 1; // Month is 0-indexed
-      const day = parseInt(expiry.substring(6, 8));
-      const hour = parseInt(expiry.substring(8, 10));
-      const minute = parseInt(expiry.substring(10, 12));
-      const second = parseInt(expiry.substring(12, 14));
-      tokenExpiry = new Date(year, month, day, hour, minute, second).getTime();
-    } else {
-      tokenExpiry = new Date(expiry).getTime();
-    }
-    return tokenExpiry <= now;
-  };
-
-  // Refresh token with proper async handling
-  const refreshToken = async (token, baseUrl) => {
-    try {
-      const response = await axios.post(
-        `${baseUrl}/auth/refresh-token`,
-        { refreshToken: token },
-        {
-          headers: { 'Authorization': `Bearer ${token}` },
-          timeout: 10000 // 10 second timeout
+    // Cleanup intervals
+    const cleanup = () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
         }
-      );
+    };
 
-      // Updated to handle new response structure
-      const newToken = response.data?.data?.authorization?.token;
-      const newExpiry = response.data?.data?.authorization?.expires_at;
+    // Safe state updates
+    const safeSetState = (callback) => {
+        if (isMountedRef.current) {
+            callback();
+        }
+    };
 
-      if (newToken && newExpiry) {
-        localStorage.setItem('token', newToken);
-        localStorage.setItem('expiry', newExpiry);
-        dispatch(setAuthToken(newToken));
-        return { success: true, token: newToken, expiry: newExpiry };
-      } else {
-        throw new Error('Invalid refresh response');
-      }
-    } catch (error) {
-      console.error('Error refreshing token:', error);
-      return { success: false, error };
-    }
-  };
-
-  // Validate and refresh token if needed
-  const validateToken = async () => {
-    const token = localStorage.getItem('token');
-    const expiry = localStorage.getItem('expiry');
-    const baseUrl = import.meta.env.VITE_BASE_URL;
-
-    if (!token || !expiry) {
-      return { isValid: false, needsAuth: true };
-    }
-
-    if (!isTokenExpired(expiry)) {
-      return { isValid: true };
-    }
-
-    // Token is expired, try to refresh
-    const refreshResult = await refreshToken(token, baseUrl);
-
-    if (refreshResult.success) {
-      return { isValid: true, refreshed: true };
-    } else {
-      clearSession();
-      return { isValid: false, needsAuth: true };
-    }
-  };
-
-  // Parse package expiry date from the API format - FIXED VERSION
-  const parsePackageExpiryDate = (packageExpiryString) => {
-    if (!packageExpiryString || typeof packageExpiryString !== 'string') {
-      console.log('No package expiry string provided:', packageExpiryString);
-      return null;
-    }
-
-    try {
-      // Handle the timestamp format: YYYYMMDDHHMMSSSSSSSS
-      if (packageExpiryString.length === 20) {
-        const year = parseInt(packageExpiryString.substring(0, 4));
-        const month = parseInt(packageExpiryString.substring(4, 6)) - 1; // Month is 0-indexed
-        const day = parseInt(packageExpiryString.substring(6, 8));
-        const hour = parseInt(packageExpiryString.substring(8, 10));
-        const minute = parseInt(packageExpiryString.substring(10, 12));
-        const second = parseInt(packageExpiryString.substring(12, 14));
-
-        const parsedDate = new Date(year, month, day, hour, minute, second);
-        console.log('Parsed package expiry date:', parsedDate.toISOString());
-        return parsedDate;
-      }
-
-      // Fallback to regular date parsing
-      const fallbackDate = new Date(packageExpiryString);
-      console.log('Fallback parsed package expiry date:', fallbackDate.toISOString());
-      return fallbackDate;
-    } catch (error) {
-      console.error('Error parsing package expiry date:', error, 'Input:', packageExpiryString);
-      return null;
-    }
-  };
-
-  // IMPROVED: Check package expiry with better error handling and debugging
-  const checkPackageExpiry = (packageData) => {
-    console.log('=== PACKAGE EXPIRY CHECK START ===');
-    console.log('Package data received:', packageData);
-
-    if (!packageData) {
-      console.warn('No package data provided - allowing access');
-      return true; // Allow access if no package data
-    }
-
-    // Check if package is already marked as expired
-    if (packageData.package_expired === true) {
-      console.log('Package is marked as expired in the response');
-      const sessionId = localStorage.getItem('sessionId');
-      const userId = localStorage.getItem('userId');
-      toast.error("Your package has expired. Redirecting to billing...");
-      setTimeout(() => {
-        window.location.href = `https://billing.rentalpay.africa?sessionId=${sessionId}&userId=${userId}`;
-      }, 1000);
-      return false;
-    }
-
-    const packageExpiryString = packageData.package_expires_at;
-    console.log('Package expires at string:', packageExpiryString);
-
-    if (!packageExpiryString) {
-      console.warn('No package expiry date provided - allowing access');
-      return true; // Allow access if no expiry date
-    }
-
-    try {
-      const now = new Date();
-      const packageExpiry = parsePackageExpiryDate(packageExpiryString);
-
-      if (!packageExpiry || isNaN(packageExpiry.getTime())) {
-        console.error('Invalid package expiry date:', packageExpiryString);
-        console.warn('Cannot parse expiry date - allowing access for safety');
-        return true; // Allow access if we can't parse the date
-      }
-
-      // INCREASED buffer time to handle timezone/sync issues
-      const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
-      const effectiveExpiry = new Date(packageExpiry.getTime() + bufferTime);
-
-      const logData = {
-        now: now.toISOString(),
-        packageExpiry: packageExpiry.toISOString(),
-        effectiveExpiry: effectiveExpiry.toISOString(),
-        isExpired: effectiveExpiry <= now,
-        timeDifference: effectiveExpiry.getTime() - now.getTime(),
-        timeDifferenceHours: (effectiveExpiry.getTime() - now.getTime()) / (1000 * 60 * 60),
-        packageData
-      };
-
-      console.log('Package expiry check details:', logData);
-
-      if (effectiveExpiry <= now) {
-        console.log('PACKAGE EXPIRED - Redirecting to billing');
-        const sessionId = localStorage.getItem('sessionId');
-        const userId = localStorage.getItem('userId');
-        toast.error("Your package has expired. Redirecting to billing...");
+    // Redirect to auth service
+    const redirectToAuth = (message = "Redirecting to authentication...") => {
+        toast.error(message);
         setTimeout(() => {
-          window.location.href = `https://billing.rentalpay.africa?sessionId=${sessionId}&userId=${userId}`;
+            window.location.href = "https://auth.rentalpay.africa/sign-in";
         }, 1000);
-        return false;
-      }
+    };
 
-      console.log('PACKAGE IS VALID - Allowing access');
-      console.log('=== PACKAGE EXPIRY CHECK END ===');
-      return true;
-    } catch (error) {
-      console.error('Error checking package expiry:', error);
-      console.warn('Error occurred - allowing access for safety');
-      // If we can't parse the date, allow access but log the error
-      return true;
-    }
-  };
+    // Check if token is expired
+    const isTokenExpired = (expiry) => {
+        if (!expiry) return true;
 
-  // IMPROVED: Authenticate with session - added better debugging
-  const authenticateWithSession = async (sessionId, userId) => {
-    const baseUrl = import.meta.env.VITE_BASE_URL;
-    const appUrl = "https://property.rentnasi.com";
+        const now = Date.now();
+        let tokenExpiry;
 
-    console.log('=== AUTHENTICATION START ===');
-    console.log('Session ID:', sessionId);
-    console.log('User ID:', userId);
-    console.log('Base URL:', baseUrl);
-
-    try {
-      const response = await axios.post(
-        `${baseUrl}/v2/apps/authenticate`,
-        { sessionId, userId, appUrl },
-        { timeout: 15000 } // 15 second timeout
-      );
-
-      console.log('Full authentication response:', response);
-      console.log('Response data:', response.data);
-
-      // Updated to handle new response structure
-      const responseData = response.data?.data;
-      const token = responseData?.authorization?.token;
-      const expiry = responseData?.authorization?.expires_at;
-      const packageData = responseData?.packages;
-      const userDetails = responseData?.user_details;
-
-      console.log('Extracted data:', {
-        token: token ? 'Present' : 'Missing',
-        expiry: expiry ? 'Present' : 'Missing',
-        packageData,
-        userDetails: userDetails ? 'Present' : 'Missing'
-      });
-
-      if (!token || !expiry) {
-        throw new Error('Invalid authentication response - missing token or expiry');
-      }
-
-      localStorage.setItem('token', token);
-      localStorage.setItem('expiry', expiry);
-      dispatch(setAuthToken(token));
-
-      // Store user details
-      if (userDetails) {
-        localStorage.setItem('userDetails', JSON.stringify(userDetails));
-        console.log('User details stored:', userDetails);
-      }
-
-      // Store package information
-      if (packageData) {
-        localStorage.setItem('packageInfo', JSON.stringify(packageData));
-        localStorage.setItem('packageExpiry', packageData.package_expires_at || '');
-        console.log('Package info stored:', packageData);
-      }
-
-      console.log('=== STARTING PACKAGE EXPIRY CHECK ===');
-      // Check package expiry - THIS IS WHERE THE ISSUE MIGHT BE
-      const packageIsValid = checkPackageExpiry(packageData);
-
-      if (!packageIsValid) {
-        console.log('Package check failed - stopping authentication flow');
-        return; // This will cause immediate redirect to billing
-      }
-
-      console.log('Package check passed - proceeding to dashboard');
-      safeSetState(() => {
-        toast.success("Authentication successful");
-        navigate('/dashboard');
-      });
-
-    } catch (error) {
-      console.error('Error during authentication:', error);
-      console.log('Error response:', error.response);
-
-      // Handle specific 403 errors
-      if (error.response?.status === 403) {
-        const errorData = error.response.data;
-        console.log('403 Error details:', errorData);
-
-        if (errorData?.error?.includes('Package has expired') ||
-          errorData?.message?.includes('package') ||
-          errorData?.message?.includes('expired')) {
-          toast.error("Package has expired. Redirecting to billing...");
-          const sessionId = localStorage.getItem('sessionId');
-          const userId = localStorage.getItem('userId');
-          setTimeout(() => {
-            window.location.href = `https://billing.rentalpay.africa?sessionId=${sessionId}&userId=${userId}`;
-          }, 1000);
-          return;
-        }
-      }
-
-      // Handle other error status codes
-      if (error.response?.status === 401) {
-        toast.error("Invalid credentials. Please sign in again.");
-      } else if (error.response?.status === 500) {
-        toast.error("Server error. Please try again later.");
-      } else if (error.code === 'ECONNABORTED') {
-        toast.error("Request timeout. Please check your connection.");
-      } else {
-        toast.error("Authentication failed. Please try again.");
-      }
-
-      clearSession();
-      redirectToAuth("Authentication failed");
-    }
-  };
-
-  // Handle network changes
-  const handleNetworkChange = () => {
-    if (!navigator.onLine) {
-      toast.error("Network connection lost");
-      // Don't immediately log out on offline - user might come back online
-    } else {
-      // User has regained connection - validate token
-      validateToken().then(result => {
-        if (!result.isValid && isMountedRef.current) {
-          clearSession();
-          redirectToAuth("Session expired after network reconnection");
-        }
-      });
-    }
-  };
-
-  // Set up periodic token validation
-  const setupTokenValidation = () => {
-    // Clear any existing interval
-    cleanup();
-
-    intervalRef.current = setInterval(async () => {
-      if (!isMountedRef.current) return;
-
-      const result = await validateToken();
-      if (!result.isValid) {
-        console.warn("Token expired during session. Logging out.");
-        clearSession();
-        safeSetState(() => {
-          redirectToAuth("Session expired");
-        });
-        cleanup();
-      }
-    }, 10 * 60 * 1000); // Check every 10 minutes
-  };
-
-  useEffect(() => {
-    const initialize = async () => {
-      if (isProcessing) return;
-
-      safeSetState(() => setIsProcessing(true));
-
-      try {
-        const queryParams = new URLSearchParams(location.search);
-        const sessionId = queryParams.get('sessionId');
-        const userId = queryParams.get('userId');
-
-        console.log('=== INITIALIZATION START ===');
-        console.log('URL params - sessionId:', sessionId, 'userId:', userId);
-
-        // Store session info if provided
-        if (sessionId && userId) {
-          localStorage.setItem('sessionId', sessionId);
-          localStorage.setItem('userId', userId);
-          console.log('Session info stored in localStorage');
-        }
-
-        // Validate existing token first
-        console.log('Validating existing token...');
-        const tokenValidation = await validateToken();
-        console.log('Token validation result:', tokenValidation);
-
-        if (tokenValidation.isValid) {
-          if (tokenValidation.refreshed) {
-            toast.success("Session refreshed successfully");
-          } else {
-            toast.success("Welcome back!");
-          }
-          console.log('Valid token found - navigating to dashboard');
-          safeSetState(() => navigate('/dashboard'));
-          setupTokenValidation();
-        } else if (sessionId && userId) {
-          // No valid token but we have session info
-          console.log('No valid token - authenticating with session');
-          await authenticateWithSession(sessionId, userId);
-          setupTokenValidation();
+        if (typeof expiry === 'string' && expiry.length === 20) {
+            // Parse format: YYYYMMDDHHMMSSSSSSSS
+            const year = parseInt(expiry.substring(0, 4));
+            const month = parseInt(expiry.substring(4, 6)) - 1;
+            const day = parseInt(expiry.substring(6, 8));
+            const hour = parseInt(expiry.substring(8, 10));
+            const minute = parseInt(expiry.substring(10, 12));
+            const second = parseInt(expiry.substring(12, 14));
+            tokenExpiry = new Date(year, month, day, hour, minute, second).getTime();
         } else {
-          // No valid token and no session info
-          console.log('No valid token or session info - clearing session');
-          clearSession();
-          redirectToAuth("Invalid session");
+            tokenExpiry = new Date(expiry).getTime();
         }
-      } catch (error) {
-        console.error('Initialization error:', error);
-        clearSession();
-        safeSetState(() => {
-          redirectToAuth("Authentication error occurred");
-        });
-      } finally {
-        safeSetState(() => setIsProcessing(false));
-      }
+
+        return tokenExpiry <= now;
     };
 
-    initialize();
+    // Refresh token
+    const refreshToken = async (currentToken) => {
+        try {
+            const response = await axios.post(
+                `${API_BASE_URL}/auth/refresh-token`,
+                { refreshToken: currentToken },
+                {
+                    headers: { 'Authorization': `Bearer ${currentToken}` },
+                    timeout: 10000
+                }
+            );
 
-    // Set up network change listeners
-    window.addEventListener('offline', handleNetworkChange);
-    window.addEventListener('online', handleNetworkChange);
+            const newToken = response.data?.data?.authorization?.token;
+            const newExpiry = response.data?.data?.authorization?.expires_at;
 
-    // Cleanup function
-    return () => {
-      isMountedRef.current = false;
-      cleanup();
-      window.removeEventListener('offline', handleNetworkChange);
-      window.removeEventListener('online', handleNetworkChange);
+            if (newToken && newExpiry) {
+                dispatch(updateToken({ token: newToken, expiry: newExpiry }));
+                return { success: true, token: newToken, expiry: newExpiry };
+            } else {
+                throw new Error('Invalid refresh response');
+            }
+        } catch (error) {
+            console.error('Error refreshing token:', error);
+            return { success: false, error };
+        }
     };
-  }, [dispatch, location, navigate]); // Dependencies
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-      cleanup();
+    // Validate existing token
+    const validateToken = async () => {
+        const storedToken = localStorage.getItem('token');
+        const expiry = localStorage.getItem('expiry');
+
+        if (!storedToken || !expiry) {
+            return { isValid: false, needsAuth: true };
+        }
+
+        if (!isTokenExpired(expiry)) {
+            return { isValid: true };
+        }
+
+        // Try to refresh
+        const refreshResult = await refreshToken(storedToken);
+
+        if (refreshResult.success) {
+            return { isValid: true, refreshed: true };
+        } else {
+            dispatch(logout());
+            return { isValid: false, needsAuth: true };
+        }
     };
-  }, []);
 
-  return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '100vh',
-      flexDirection: 'column',
-      gap: '1rem'
-    }}>
-      <div>Authenticating...</div>
-      {isProcessing && <div style={{ fontSize: '0.8rem', color: '#666' }}>Please wait...</div>}
-    </div>
-  );
+    // Parse package expiry
+    const parsePackageExpiryDate = (packageExpiryString) => {
+        if (!packageExpiryString || typeof packageExpiryString !== 'string') {
+            return null;
+        }
+
+        try {
+            if (packageExpiryString.length === 20) {
+                const year = parseInt(packageExpiryString.substring(0, 4));
+                const month = parseInt(packageExpiryString.substring(4, 6)) - 1;
+                const day = parseInt(packageExpiryString.substring(6, 8));
+                const hour = parseInt(packageExpiryString.substring(8, 10));
+                const minute = parseInt(packageExpiryString.substring(10, 12));
+                const second = parseInt(packageExpiryString.substring(12, 14));
+
+                return new Date(year, month, day, hour, minute, second);
+            }
+
+            return new Date(packageExpiryString);
+        } catch (error) {
+            console.error('Error parsing package expiry date:', error);
+            return null;
+        }
+    };
+
+    // Check package expiry
+    const checkPackageExpiry = (packageData) => {
+        if (!packageData) return true;
+
+        // Check if package is explicitly marked as expired
+        if (packageData.package_expired === true) {
+            const sessionId = localStorage.getItem('sessionId');
+            const userId = localStorage.getItem('userId');
+            toast.error("Your package has expired. Redirecting to billing...");
+            setTimeout(() => {
+                window.location.href = `https://billing.rentalpay.africa?sessionId=${sessionId}&userId=${userId}`;
+            }, 1000);
+            return false;
+        }
+
+        const packageExpiryString = packageData.package_expires_at;
+        if (!packageExpiryString) return true;
+
+        try {
+            const now = new Date();
+            const packageExpiry = parsePackageExpiryDate(packageExpiryString);
+
+            if (!packageExpiry || isNaN(packageExpiry.getTime())) {
+                return true;
+            }
+
+            const bufferTime = 5 * 60 * 1000; // 5 minutes buffer
+            const effectiveExpiry = new Date(packageExpiry.getTime() + bufferTime);
+
+            if (effectiveExpiry <= now) {
+                const sessionId = localStorage.getItem('sessionId');
+                const userId = localStorage.getItem('userId');
+                toast.error("Your package has expired. Redirecting to billing...");
+                setTimeout(() => {
+                    window.location.href = `https://billing.rentalpay.africa?sessionId=${sessionId}&userId=${userId}`;
+                }, 1000);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error checking package expiry:', error);
+            return true;
+        }
+    };
+
+    // Authenticate with session
+    const authenticateWithSession = async (sessionId, userId) => {
+        dispatch(setLoading(true));
+
+        try {
+            console.log('Authenticating with:', { sessionId, userId, appUrl: APP_URL });
+
+            const response = await axios.post(
+                `${API_BASE_URL}/v2/apps/authenticate`,
+                {
+                    sessionId,
+                    userId,
+                    appUrl: APP_URL
+                },
+                { timeout: 15000 }
+            );
+
+            console.log('Authentication response:', response.data);
+
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Authentication failed');
+            }
+
+            const responseData = response.data.data;
+            const newToken = responseData.authorization?.token;
+            const expiry = responseData.authorization?.expires_at;
+            const packageData = responseData.packages;
+            const userDetails = responseData.user_details;
+            const orgDetails = responseData.org_details;
+            const roles = responseData.roles;
+
+            if (!newToken || !expiry) {
+                throw new Error('Invalid authentication response: missing token or expiry');
+            }
+
+            // Check package before setting auth state
+            const packageIsValid = checkPackageExpiry(packageData);
+            if (!packageIsValid) {
+                return;
+            }
+
+            // Store session info
+            localStorage.setItem('sessionId', sessionId);
+            localStorage.setItem('userId', userId);
+
+            // Update Redux state
+            dispatch(loginSuccess({
+                token: newToken,
+                expiry,
+                user: userDetails,
+                packageInfo: packageData,
+                orgDetails,
+                roles,
+            }));
+
+            toast.success("Authentication successful");
+            safeSetState(() => navigate('/dashboard'));
+
+        } catch (error) {
+            console.error('Authentication error:', error);
+
+            // Handle specific error responses
+            if (error.response?.status === 403) {
+                const errorData = error.response.data;
+                if (errorData?.error?.includes('Package has expired') ||
+                    errorData?.message?.includes('package') ||
+                    errorData?.message?.includes('expired')) {
+                    toast.error("Package has expired. Redirecting to billing...");
+                    const storedSessionId = localStorage.getItem('sessionId');
+                    const storedUserId = localStorage.getItem('userId');
+                    setTimeout(() => {
+                        window.location.href = `https://billing.rentalpay.africa?sessionId=${storedSessionId}&userId=${storedUserId}`;
+                    }, 1000);
+                    return;
+                }
+            }
+
+            // Handle different error types
+            let errorMessage = "Authentication failed. Please try again.";
+            if (error.response?.status === 401) {
+                errorMessage = "Invalid credentials. Please sign in again.";
+            } else if (error.response?.status === 500) {
+                errorMessage = "Server error. Please try again later.";
+            } else if (error.code === 'ECONNABORTED') {
+                errorMessage = "Request timeout. Please check your connection.";
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+
+            dispatch(setError(errorMessage));
+            toast.error(errorMessage);
+            dispatch(logout());
+            redirectToAuth("Authentication failed");
+        }
+    };
+
+    // Setup periodic token validation
+    const setupTokenValidation = () => {
+        cleanup();
+        intervalRef.current = setInterval(async () => {
+            if (!isMountedRef.current) return;
+
+            const result = await validateToken();
+            if (!result.isValid) {
+                console.warn("Token expired during session");
+                dispatch(logout());
+                safeSetState(() => {
+                    redirectToAuth("Session expired");
+                });
+                cleanup();
+            }
+        }, 10 * 60 * 1000); // Every 10 minutes
+    };
+
+    // Main initialization effect
+    useEffect(() => {
+        const initialize = async () => {
+            if (isProcessing) return;
+
+            safeSetState(() => setIsProcessing(true));
+
+            try {
+                const queryParams = new URLSearchParams(location.search);
+                const sessionId = queryParams.get('sessionId');
+                const userId = queryParams.get('userId');
+
+                console.log('URL params:', { sessionId, userId });
+
+                // If we have URL parameters, always authenticate with them
+                if (sessionId && userId) {
+                    await authenticateWithSession(sessionId, userId);
+                    setupTokenValidation();
+                } else {
+                    // Check if we have existing valid token
+                    const tokenValidation = await validateToken();
+
+                    if (tokenValidation.isValid) {
+                        if (tokenValidation.refreshed) {
+                            toast.success("Session refreshed successfully");
+                        } else {
+                            toast.success("Welcome back!");
+                        }
+                        safeSetState(() => navigate('/dashboard'));
+                        setupTokenValidation();
+                    } else {
+                        dispatch(logout());
+                        redirectToAuth("Please sign in to continue");
+                    }
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
+                dispatch(setError("Authentication error occurred"));
+                dispatch(logout());
+                safeSetState(() => {
+                    redirectToAuth("Authentication error occurred");
+                });
+            } finally {
+                safeSetState(() => setIsProcessing(false));
+            }
+        };
+
+        initialize();
+
+        return () => {
+            isMountedRef.current = false;
+            cleanup();
+        };
+    }, [location.search]); // Only depend on search params
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            isMountedRef.current = false;
+            cleanup();
+        };
+    }, []);
+
+    return (
+        <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            flexDirection: 'column',
+            gap: '1rem'
+        }}>
+            <div>Authenticating...</div>
+            {isProcessing && <div style={{ fontSize: '0.8rem', color: '#666' }}>Please wait...</div>}
+        </div>
+    );
 };
 
 export default AuthHandler;

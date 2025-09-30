@@ -152,13 +152,10 @@ const SingleStaffPage = ({ staffId, onBack }) => {
             <DashboardHeader
                 title="Staff Management"
                 description="Real-time information and activities of your staff."
-                name="Edit Staff"
-                link="/add-landlord/personal-information"
-                hideSelect={false}
-                hideLink={true}
+
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4 mx-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4 mx-4 p-2">
                 {/* Left Column - Profile Card */}
                 <div className="lg:col-span-1">
                     <div className="bg-white rounded-lg shadow p-6">

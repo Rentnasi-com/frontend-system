@@ -307,7 +307,7 @@ const Tenants = () => {
                 onSelectChange={handleSelectChange}
             />
 
-            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 py-1 px-4">
+            {/* <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 py-1 px-4">
                 {loading ? (
                     Array(3).fill(0).map((_, index) => (
                         <StatCardSkeleton key={index} />
@@ -324,7 +324,7 @@ const Tenants = () => {
                         </div>
                     ))
                 )}
-            </div>
+            </div> */}
 
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
                 <div className="flex justify-between items-center px-4 py-4 border-b border-gray-200">
@@ -467,7 +467,7 @@ const Tenants = () => {
                                                 </table>
                                             </td>
                                         ) : (
-                                            <td className="px-4 py-2">No data found.</td>
+                                            <td className="px-4 py-2 text-red-700">No units assigned.</td>
                                         )}
 
                                         <td className="relative px-4 py-2 text-sm">

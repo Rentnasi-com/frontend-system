@@ -10,14 +10,14 @@ function App() {
   return (
     <Router>
       <main>
-        <Toaster />
+        <Toaster position="top-right" />
         <Routes>
           <Route path="/" element={<AuthHandler />} />
           <Route element={<MainLayout />}>
-            <Route path="/dashboard" element={ <ProtectedRoute> <Home /></ProtectedRoute> } />
-            <Route path="/account-setting" element={ <ProtectedRoute> <Account /></ProtectedRoute> } />
-            <Route path="/organization-setting" element={ <ProtectedRoute> <Organization /></ProtectedRoute> } />
-            <Route path="/view-apps" element={ <ProtectedRoute> <View_Apps /></ProtectedRoute> } />
+            <Route path="/dashboard" element={<ProtectedRoute> <Home /></ProtectedRoute>} />
+            <Route path="/account-setting" element={<ProtectedRoute> <Account /></ProtectedRoute>} />
+            <Route path="/organization-setting" element={<ProtectedRoute> <Organization /></ProtectedRoute>} />
+            <Route path="/view-apps" element={<ProtectedRoute> <View_Apps /></ProtectedRoute>} />
           </Route>
         </Routes>
       </main>

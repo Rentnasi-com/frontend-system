@@ -2,9 +2,10 @@ import { Link, useLocation } from "react-router-dom";
 import { Bar } from 'react-chartjs-2';
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { DashboardHeader } from "./page_components";
+import { DashboardHeader, PropertyCard } from "./page_components";
 import { TourButton, TourOverlay, TourStep } from "./page_components/tours_components";
 import { TourProvider } from './page_components/tours_components/TourContext';
+import toast from "react-hot-toast";
 
 const Tabs = ({ name, url, isActive, onClick }) => {
     return (
@@ -57,6 +58,9 @@ const Home2 = () => {
     const queryParams = new URLSearchParams(location.search);
     const duration = queryParams.get('duration') || 'month';
     const unitInfo = queryParams.get('unit_info') || 'overview';
+
+    const [details, setDetails] = useState([])
+    const [revenue, setRevenue] = useState([])
 
     const fetchPropertiesSummary = async () => {
         try {
@@ -140,7 +144,8 @@ const Home2 = () => {
                     fetchPropertiesSummary(),
                     fetchPropertiesInquiries(),
                     fetchCardItems(),
-                    fetchDueDate()
+                    fetchDueDate(),
+                    fetchProperties()
                 ]);
             } catch (error) {
                 console.log(error);
@@ -150,6 +155,7 @@ const Home2 = () => {
         };
 
         fetchData();
+
     }, [baseUrl, token, duration, unitInfo]);
 
     // Placeholder data for cards
@@ -200,7 +206,7 @@ const Home2 = () => {
     const cardItems = loading ? placeholderCardItems : [
         {
             name: "Expected",
-            value: `Ksh ${(propertyCardStats.expected || "0").toLocaleString()}`,
+            value: `Ksh ${(propertyCardStats?.expected || "0").toLocaleString()}`,
             percentage: "10%",
             color: "#604AE3",
             textColor: "#089964",
@@ -209,7 +215,7 @@ const Home2 = () => {
         },
         {
             name: "Received",
-            value: `Ksh ${(propertyCardStats.received || "0").toLocaleString()}`,
+            value: `Ksh ${(propertyCardStats?.received || "0").toLocaleString()}`,
             percentage: "4.6%",
             color: "#089964",
             textColor: "#089964",
@@ -218,7 +224,7 @@ const Home2 = () => {
         },
         {
             name: "Balance",
-            value: `Ksh ${(propertyCardStats.balance || "0").toLocaleString()}`,
+            value: `Ksh ${(propertyCardStats?.balance || "0").toLocaleString()}`,
             percentage: "4.8%",
             color: "#CB0101",
             textColor: "#CB0101",
@@ -227,7 +233,7 @@ const Home2 = () => {
         },
         {
             name: "Arrears",
-            value: `Ksh ${(propertyCardStats.arrears || "0").toLocaleString()}`,
+            value: `Ksh ${(propertyCardStats?.arrears || "0").toLocaleString()}`,
             percentage: "4.8%",
             color: "#CB0",
             textColor: "#CB0101",
@@ -236,7 +242,7 @@ const Home2 = () => {
         },
         {
             name: "Fines",
-            value: `Ksh ${(propertyCardStats.fines || "0").toLocaleString()}`,
+            value: `Ksh ${(propertyCardStats?.fines || "0").toLocaleString()}`,
             percentage: "4.8%",
             color: "#616B",
             textColor: "#CB0101",
@@ -302,6 +308,121 @@ const Home2 = () => {
         <div className={`bg-gray-200 animate-pulse rounded ${className}`}></div>
     );
 
+    const StatCardSkeleton = () => (
+        <div className="bg-white border border-gray-200 rounded-lg p-2">
+            <div className="flex justify-between items-center">
+                <SkeletonLoader className="h-8 w-8 rounded" />
+                <SkeletonLoader className="h-6 w-6 rounded" />
+            </div>
+            <div className="mt-3">
+                <SkeletonLoader className="h-4 w-24 mb-2" />
+            </div>
+        </div>
+    );
+    const fetchProperties = async (page = 1) => {
+        try {
+            setLoading(true);
+            const response = await axios.get(
+                `${baseUrl}/manage-property/view-properties/saved?pagination=${page}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
+                    },
+                }
+            );
+
+            const result = response.data;
+            setDetails(result.details?.breakdown || {});
+            setRevenue(result.details?.revenue?.amounts || {});
+
+        } catch (err) {
+
+            toast.error("Failed to load properties");
+        } finally {
+            setLoading(false);
+        }
+    };
+    const stats = [
+        {
+            redirectUrl: "/property/property-listing",
+            iconSrc: "../../../assets/icons/png/total_property.png",
+            progress: 2.2,
+            label: "Total Properties",
+            value: details.all_properties?.count,
+        },
+        {
+            redirectUrl: "/property/all-property-units?status=",
+            iconSrc: "../../../assets/icons/png/total_units.png",
+            progress: 4.2,
+            label: "Total Units",
+            value: details.all_property_units?.count,
+        },
+        {
+            redirectUrl: "/property/all-property-units?status=occupied",
+            iconSrc: "../../../assets/icons/png/occupied_units.png",
+            progress: 3.2,
+            label: "Occupied Units",
+            value: details.occupied_units?.count,
+        },
+        {
+            redirectUrl: "/property/all-property-units?status=available",
+            iconSrc: "../../../assets/icons/png/vacate.png",
+            progress: 2,
+            label: "Vacant units",
+            value: details.vacant_units?.count,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: "../../../assets/icons/png/expected_income.png",
+            progress: 20,
+            label: "Rent Payable",
+            value: `KES ${(revenue.total_rent?.count || 0).toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: "../../../assets/icons/png/expected_income.png",
+            progress: 80,
+            label: "Previous Arrears",
+            value: `KES ${(revenue.arrears?.count || 0).toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: "../../../assets/icons/png/outstanding_balance.png",
+            progress: 3.4,
+            label: "Total Bills",
+            value: `KES ${(revenue.total_bills?.count || 0).toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: "../../../assets/icons/png/total_fines.png",
+            progress: 5,
+            label: "Total fines",
+            value: `KES ${(revenue.fines?.count || 0).toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: "../../../assets/icons/png/total_fines.png",
+            progress: 5,
+            label: "Total Payable",
+            value: `KES ${(revenue.expected_amount?.count || 0).toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: "../../../assets/icons/png/total_fines.png",
+            progress: 5,
+            label: "Amount Paid",
+            value: `KES ${(revenue.amount_paid?.count || 0).toLocaleString()}`,
+        },
+        {
+            redirectUrl: "/property/revenue-breakdown",
+            iconSrc: "../../../assets/icons/png/total_fines.png",
+            progress: 5,
+            label: "Total Balance",
+            value: `KES ${(revenue.outstanding_balance?.count || 0).toLocaleString()}`,
+        },
+    ];
+
     return (
         <TourProvider>
             <section>
@@ -316,8 +437,26 @@ const Home2 = () => {
                     link2Name="Receive Payment"
                     link2="/property/receive-payment"
                 />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4">
+                <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 py-1 px-4">
+                    {loading ? (
+                        Array(8).fill(0).map((_, index) => (
+                            <StatCardSkeleton key={index} />
+                        ))
+                    ) : (
+                        stats.map((stat, index) => (
+                            <div key={index}>
+                                <PropertyCard
+                                    redirectUrl={stat.redirectUrl}
+                                    iconSrc={stat.iconSrc}
+                                    label={stat.label}
+                                    value={stat.value}
+                                />
+                            </div>
+                        ))
+                    )}
+                </div>
 
+                {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4 mt-2">
                     <div className="md:col-span-2 border rounded bg-white p-3">
                         <TourStep
                             index={0}
@@ -499,7 +638,7 @@ const Home2 = () => {
                                 ) : (
                                     <Link to="" className="mt-4 flex justify-center items-center space-x-2 text-indigo-700 rounded bg-indigo-100 border border-indigo-700">
                                         <svg width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            {/* SVG path */}
+
                                         </svg>
                                         <p>Receive Payments</p>
                                     </Link>
@@ -507,7 +646,10 @@ const Home2 = () => {
                             </div>
                         </TourStep>
                     </div>
-                </div>
+                </div> */}
+
+
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mx-4 mt-6">
 
                     <div className="border rounded bg-white p-4">

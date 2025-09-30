@@ -1,16 +1,25 @@
 import { Outlet } from "react-router-dom"
 import { Aside, Footer, Header } from "./shared"
+import { useState } from "react"
 
 const DashboardLayout = () => {
+    const [collapsed, setCollapsed] = useState(false)
+
     return (
-        <section>
+        <section className="h-screen flex flex-col">
             <Header />
-            <div className="flex overflow-hidden bg-white">
-                <div className="h-full w-full bg-gray-50 relative overflow-y-auto md:ml-64">
-                    <Aside />
+            <div className="flex flex-1 bg-white relative overflow-hidden">
+                {/* Sidebar */}
+                <Aside collapsed={collapsed} setCollapsed={setCollapsed} />
+
+                {/* Main content */}
+                <main
+                    className={`flex-1 h-full overflow-y-auto transition-all duration-300 
+            ${collapsed ? "ml-16" : "ml-64"}`}
+                >
                     <Outlet />
                     <Footer />
-                </div>
+                </main>
             </div>
         </section>
     )

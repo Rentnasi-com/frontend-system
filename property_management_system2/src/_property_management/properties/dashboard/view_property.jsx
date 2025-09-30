@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { DashboardHeader, PropertyCard, QuickLinksCard } from "./page_components";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
+import { FaDownload, FaEdit, FaEye, FaTrash } from "react-icons/fa";
 import toast from "react-hot-toast";
 const Property = () => {
     const { property_id } = useParams();
@@ -18,9 +18,19 @@ const Property = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [pagination, setPagination] = useState([])
 
+    const [totalUnits, setTotalUnits] = useState("");
+    const [selectedUnits, setSelectedUnits] = useState(10);
+
+    const handleUnitChange = (e) => {
+        const value = parseInt(e.target.value);
+        setSelectedUnits(value);
+    };
+
+    const options = [10, 25, 50, 100, 150, 200].filter((num) => num < totalUnits);
+
     const fetchPropertyUnits = async (page = 1) => {
         const response = await axios.get(
-            `${baseUrl}/manage-property/single-property/unit-listing?property_id=${property_id}&pagination=${page}&status=${status}`,
+            `${baseUrl}/manage-property/single-property/unit-listing?property_id=${property_id}&pagination=${page}&status=${status}&per_page=${selectedUnits}`,
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -32,6 +42,7 @@ const Property = () => {
         setLoading(false);
         setCurrentPage(response.data.pagination.current_page);
         setPagination(response.data.pagination)
+        setTotalUnits(response.data.pagination.total)
     };
 
     const fetchPropertyDetails = async () => {
@@ -53,7 +64,7 @@ const Property = () => {
             fetchPropertyDetails();
             fetchPropertyUnits();
         }
-    }, [property_id, baseUrl, token, status]);
+    }, [property_id, baseUrl, token, status, selectedUnits]);
 
 
     const stats = [
@@ -144,6 +155,292 @@ const Property = () => {
             bgColor: "bg-[#E1D3FE]"
         }
     ]
+
+    const generatePDF = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let yPosition = 20;
+
+        // Header
+        doc.setFontSize(18);
+        doc.setFont(undefined, 'bold');
+        doc.text(`${property?.property_name || 'Property'} - Units Report`, pageWidth / 2, yPosition, { align: 'center' });
+
+        yPosition += 8;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text(`${property?.location_name || ''}`, pageWidth / 2, yPosition, { align: 'center' });
+
+        yPosition += 6;
+        doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, pageWidth / 2, yPosition, { align: 'center' });
+
+        yPosition += 15;
+
+        // Summary Statistics
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Summary Statistics', 14, yPosition);
+        yPosition += 8;
+
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+
+        const summaryStats = [
+            { label: 'Total Units', value: property?.units_breakdown?.all_units?.count || 0 },
+            { label: 'Occupied Units', value: property?.units_breakdown?.occupied?.count || 0 },
+            { label: 'Vacant Units', value: property?.units_breakdown?.vacant?.count || 0 },
+            { label: 'Rent Payable', value: `KES ${(property?.revenue?.amounts?.total_rent?.count || 0).toLocaleString()}` },
+            { label: 'Previous Arrears', value: `KES ${Number(property?.revenue?.amounts?.total_arrears?.count ?? 0).toLocaleString()}` },
+            { label: 'Total Bills', value: `KES ${(property?.revenue?.amounts?.total_bills?.count || 0).toLocaleString()}` },
+            { label: 'Total Fines', value: `KES ${(property?.revenue?.amounts?.total_fines?.count || 0).toLocaleString()}` },
+            { label: 'Total Payable', value: `KES ${(property?.revenue?.amounts?.expected_income?.count || 0).toLocaleString()}` },
+            { label: 'Amount Paid', value: `KES ${(property?.revenue?.amounts?.amount_paid?.count || 0).toLocaleString()}` },
+            { label: 'Total Balance', value: `KES ${(property?.revenue?.amounts?.total_balance?.count || 0).toLocaleString()}` },
+        ];
+
+        summaryStats.forEach((stat, index) => {
+            if (index % 2 === 0 && index > 0) yPosition += 6;
+            const xPos = index % 2 === 0 ? 14 : pageWidth / 2 + 10;
+            doc.text(`${stat.label}: ${stat.value}`, xPos, yPosition);
+            if (index % 2 === 1) yPosition += 6;
+        });
+
+        if (summaryStats.length % 2 === 1) yPosition += 6;
+        yPosition += 12;
+
+        // Check if we need a new page
+        if (yPosition > pageHeight - 80) {
+            doc.addPage();
+            yPosition = 20;
+        }
+
+        // Units Table
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Unit Details', 14, yPosition);
+        yPosition += 8;
+
+        // Table headers
+        doc.setFontSize(8);
+        const headers = ['Unit', 'Tenant', 'Rent', 'Arrears', 'Bills', 'Fines', 'Payable', 'Paid', 'Balance', 'Status'];
+        const colWidths = [25, 35, 20, 20, 18, 18, 22, 20, 22, 25];
+        let xPos = 14;
+
+        doc.setFont(undefined, 'bold');
+        doc.setFillColor(240, 240, 240);
+        doc.rect(14, yPosition - 5, pageWidth - 28, 7, 'F');
+
+        headers.forEach((header, index) => {
+            doc.text(header, xPos, yPosition, { maxWidth: colWidths[index] - 2 });
+            xPos += colWidths[index];
+        });
+
+        yPosition += 8;
+        doc.setFont(undefined, 'normal');
+
+        // Table rows
+        propertyUnits.forEach((unit, index) => {
+            if (yPosition > pageHeight - 20) {
+                doc.addPage();
+                yPosition = 20;
+
+                // Repeat headers on new page
+                doc.setFont(undefined, 'bold');
+                doc.setFillColor(240, 240, 240);
+                doc.rect(14, yPosition - 5, pageWidth - 28, 7, 'F');
+                xPos = 14;
+                headers.forEach((header, idx) => {
+                    doc.text(header, xPos, yPosition, { maxWidth: colWidths[idx] - 2 });
+                    xPos += colWidths[idx];
+                });
+                yPosition += 8;
+                doc.setFont(undefined, 'normal');
+            }
+
+            xPos = 14;
+            const statusText = unit.availability_status === 'available' ? 'Vacant' :
+                (unit.pending_balances === 0 ? 'No Balance' : 'With Balance');
+
+            const rowData = [
+                `${unit.unit_number}\n${unit.unit_type}`,
+                unit.tenant || 'N/A',
+                unit.rent_amount.toLocaleString(),
+                unit.arrears.toLocaleString(),
+                unit.bills.toLocaleString(),
+                unit.fines.toLocaleString(),
+                unit.expected.toLocaleString(),
+                unit.received.toLocaleString(),
+                unit.pending_balances.toLocaleString(),
+                statusText
+            ];
+
+            // Alternating row colors
+            if (index % 2 === 0) {
+                doc.setFillColor(250, 250, 250);
+                doc.rect(14, yPosition - 5, pageWidth - 28, 12, 'F');
+            }
+
+            rowData.forEach((data, idx) => {
+                doc.text(String(data), xPos, yPosition, { maxWidth: colWidths[idx] - 2 });
+                xPos += colWidths[idx];
+            });
+
+            yPosition += 12;
+        });
+
+        // Totals
+        yPosition += 5;
+        if (yPosition > pageHeight - 20) {
+            doc.addPage();
+            yPosition = 20;
+        }
+
+        doc.setFont(undefined, 'bold');
+        doc.setFillColor(255, 255, 200);
+        doc.rect(14, yPosition - 5, pageWidth - 28, 10, 'F');
+
+        xPos = 14;
+        const totals = [
+            'TOTALS',
+            '',
+            propertyUnits.reduce((sum, u) => sum + u.rent_amount, 0).toLocaleString(),
+            propertyUnits.reduce((sum, u) => sum + u.arrears, 0).toLocaleString(),
+            propertyUnits.reduce((sum, u) => sum + u.bills, 0).toLocaleString(),
+            propertyUnits.reduce((sum, u) => sum + u.fines, 0).toLocaleString(),
+            propertyUnits.reduce((sum, u) => sum + u.expected, 0).toLocaleString(),
+            propertyUnits.reduce((sum, u) => sum + u.received, 0).toLocaleString(),
+            propertyUnits.reduce((sum, u) => sum + u.pending_balances, 0).toLocaleString(),
+            ''
+        ];
+
+        totals.forEach((total, idx) => {
+            doc.text(String(total), xPos, yPosition, { maxWidth: colWidths[idx] - 2 });
+            xPos += colWidths[idx];
+        });
+
+        // Footer
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        }
+
+        // Save the PDF
+        doc.save(`${property?.property_name || 'Property'}_Units_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        toast.success('PDF downloaded successfully!');
+    };
+
+    // Excel Generation Function
+    const generateExcel = () => {
+        if (typeof XLSX === 'undefined') {
+            toast.error('Excel library not loaded. Please refresh the page.');
+            return;
+        }
+
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+
+        // Summary Statistics Sheet
+        const summaryData = [
+            [`${property?.property_name || 'Property'} - Units Report`],
+            [`Location: ${property?.location_name || 'N/A'}`],
+            [`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`],
+            [],
+            ['Summary Statistics'],
+            [],
+            ['Metric', 'Value'],
+            ['Property Type', property?.property_type || 'N/A'],
+            ['Payment Status', property?.payments_to_landlord ? 'To Landlord' : 'To Manager'],
+            ['Total Units', property?.units_breakdown?.all_units?.count || 0],
+            ['Occupied Units', property?.units_breakdown?.occupied?.count || 0],
+            ['Vacant Units', property?.units_breakdown?.vacant?.count || 0],
+            ['Rent Payable', `KES ${(property?.revenue?.amounts?.total_rent?.count || 0).toLocaleString()}`],
+            ['Previous Arrears', `KES ${Number(property?.revenue?.amounts?.total_arrears?.count ?? 0).toLocaleString()}`],
+            ['Total Bills', `KES ${(property?.revenue?.amounts?.total_bills?.count || 0).toLocaleString()}`],
+            ['Total Fines', `KES ${(property?.revenue?.amounts?.total_fines?.count || 0).toLocaleString()}`],
+            ['Total Payable', `KES ${(property?.revenue?.amounts?.expected_income?.count || 0).toLocaleString()}`],
+            ['Amount Paid', `KES ${(property?.revenue?.amounts?.amount_paid?.count || 0).toLocaleString()}`],
+            ['Total Balance', `KES ${(property?.revenue?.amounts?.total_balance?.count || 0).toLocaleString()}`],
+        ];
+
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+        // Unit Details Sheet
+        const unitData = [
+            ['Unit Details'],
+            [],
+            ['Unit Number', 'Unit Type', 'Floor', 'Tenant Name', 'Tenant Phone', 'Rent Amount', 'Arrears', 'Bills', 'Fines', 'Total Payable', 'Amount Paid', 'Balance', 'Availability Status', 'Payment Status']
+        ];
+
+        propertyUnits.forEach(unit => {
+            unitData.push([
+                unit.unit_number,
+                unit.unit_type,
+                unit.floor_number,
+                unit.tenant || 'N/A',
+                unit.tenant_phone || 'N/A',
+                unit.rent_amount,
+                unit.arrears,
+                unit.bills,
+                unit.fines,
+                unit.expected,
+                unit.received,
+                unit.pending_balances,
+                unit.availability_status === 'available' ? 'Vacant' : 'Occupied',
+                unit.payments_to_landlord ? 'To Landlord' : 'To Manager'
+            ]);
+        });
+
+        // Add totals row
+        unitData.push([
+            'TOTALS',
+            '',
+            '',
+            '',
+            '',
+            propertyUnits.reduce((sum, u) => sum + u.rent_amount, 0),
+            propertyUnits.reduce((sum, u) => sum + u.arrears, 0),
+            propertyUnits.reduce((sum, u) => sum + u.bills, 0),
+            propertyUnits.reduce((sum, u) => sum + u.fines, 0),
+            propertyUnits.reduce((sum, u) => sum + u.expected, 0),
+            propertyUnits.reduce((sum, u) => sum + u.received, 0),
+            propertyUnits.reduce((sum, u) => sum + u.pending_balances, 0),
+            '',
+            ''
+        ]);
+
+        const wsUnits = XLSX.utils.aoa_to_sheet(unitData);
+
+        // Set column widths
+        wsUnits['!cols'] = [
+            { wch: 15 }, // Unit Number
+            { wch: 20 }, // Unit Type
+            { wch: 10 }, // Floor
+            { wch: 25 }, // Tenant Name
+            { wch: 15 }, // Tenant Phone
+            { wch: 15 }, // Rent Amount
+            { wch: 15 }, // Arrears
+            { wch: 12 }, // Bills
+            { wch: 12 }, // Fines
+            { wch: 15 }, // Total Payable
+            { wch: 15 }, // Amount Paid
+            { wch: 15 }, // Balance
+            { wch: 18 }, // Availability Status
+            { wch: 18 }  // Payment Status
+        ];
+
+        XLSX.utils.book_append_sheet(wb, wsUnits, 'Unit Details');
+
+        // Generate Excel file
+        XLSX.writeFile(wb, `${property?.property_name || 'Property'}_Units_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        toast.success('Excel file downloaded successfully!');
+    };
 
     const handleNextPage = () => {
         if (pagination && currentPage < pagination.last_page) {
@@ -317,10 +614,79 @@ const Property = () => {
                 </div>
 
             </div >
-            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
-                <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
+            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5 overflow-auto">
+                <div className="flex justify-between item-center my-4 px-2">
+                    <h4 className="text-md text-gray-600 ">All property List</h4>
+                    <div className="flex items-center space-x-6">
+                        <div className="flex items-center gap-2 text-xs">
+                            <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
+                                Show Units:
+                            </label>
+                            <select
+                                id="unitSelect"
+                                value={selectedUnits}
+                                onChange={handleUnitChange}
+                                className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            >
+                                {options.map((num) => (
+                                    <option key={num} value={num}>
+                                        {num}
+                                    </option>
+                                ))}
+                                <option value={totalUnits}>{totalUnits} (All)</option>
+                            </select>
+                        </div>
+                        <div className="relative">
+                            <button
+                                onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
+                                disabled={loading || propertyUnits.length === 0}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <FaDownload className="w-4 h-4" />
+                                Download
+                                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+
+                            {openDropdownId === 'download' && (
+                                <div className="absolute left-0 z-50 w-40 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                    <div className="py-1">
+                                        <button
+                                            onClick={() => {
+                                                generatePDF();
+                                                setOpenDropdownId(null);
+                                            }}
+                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                        >
+                                            <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                            </svg>
+                                            PDF Format
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                generateExcel();
+                                                setOpenDropdownId(null);
+                                            }}
+                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                        >
+                                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                            </svg>
+                                            Excel Format
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                </div>
+
+
                 <div className="w-full">
-                    <div className="overflow-x-auto">
+                    <div className="">
                         <table className="min-w-full border border-gray-200 rounded-lg">
                             <thead className="bg-gray-100 text-xs uppercase text-gray-600">
                                 <tr>

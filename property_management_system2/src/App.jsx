@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './AuthContext';
 import DashboardLayout from './_dashboardLayout';
-import AuthHandler from './AuthHandler';
 import ProtectedRoute from './ProtectedRoute';
 
 import { BulkWaterBill, ReceiveElectricityBilling, ReceivePayment } from './_property_management/billings'
@@ -14,232 +14,477 @@ import { Recycle } from './_property_management/recycleBin'
 import { HelpCenter } from './_property_management/helpCenter'
 import { MonthlyRevenueBreakdown, Reports, RevenueBreakdown } from './_property_management/reports'
 import { SingleStaffPage, Users } from './_property_management/users';
+import { AddPersonalInfo, AddPropertiesAssignPermissions } from './_property_management/users/add_staff';
+import { EditStaffPermissions, EditStaffProperties } from './_property_management/users/edit_staff';
 
 const App = () => {
-  return (
-    <Router>
-      <main className="font-sans">
-        <Toaster position="top-right" />
-        <Routes>
-          <Route path="/" element={<AuthHandler />} />
-          <Route element={<DashboardLayout />}>
+    return (
+        <AuthProvider>
+            <Router>
+                <main className="font-sans">
+                    <Toaster position="top-right" />
+                    <Routes>
 
-            {/* Property management */}
-            <Route
-              path="/dashboard"
-              element={<ProtectedRoute element={<Home2 />} />}
-            />
+                        <Route element={<DashboardLayout />}>
+                            {/* Update all ProtectedRoute usage */}
+                            <Route
+                                path="/"
+                                element={
+                                    <ProtectedRoute>
+                                        <Home2 />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/dashboard"
+                                element={
+                                    <ProtectedRoute>
+                                        <Home2 />
+                                    </ProtectedRoute>
+                                }
+                            />
 
-            <Route
-              path="/add-property/general-information"
-              element={<ProtectedRoute element={<General_information />} />}
-            />
-            <Route
-              path="/edit-property/general-information"
-              element={<ProtectedRoute element={<EditGeneralInformation />} />}
-            />
-            <Route
-              path="/add-property/amenities"
-              element={<ProtectedRoute element={<Amenities />} />}
-            />
-            <Route
-              path="/edit-property/amenities"
-              element={<ProtectedRoute element={<EditAmenities />} />}
-            />
-            <Route
-              path="/add-property/property-type"
-              element={<ProtectedRoute element={<Property_types />} />}
-            />
-            <Route
-              path="/edit-property/property-type"
-              element={<ProtectedRoute element={<EditPropertyTypes />} />}
-            />
-            <Route
-              path="/add-property/multi-unit"
-              element={<ProtectedRoute element={<Property_floors />} />}
-            />
-            <Route
-              path="/add-property/multi-single-unit"
-              element={<ProtectedRoute element={<AddMultiSingleUnit />} />}
-            />
-            <Route
-              path="/edit-property/multi-unit"
-              element={<ProtectedRoute element={<EditMultiUnit />} />}
-            />
-            <Route
-              path="/add-property/single-unit"
-              element={<ProtectedRoute element={<Single_Unit />} />}
-            />
-            <Route
-              path="/edit-property/single-unit"
-              element={<ProtectedRoute element={<EditSingleUnit />} />}
-            />
-            <Route
-              path="/add-property/manage-images"
-              element={<ProtectedRoute element={<ManageImages />} />}
-            />
-            <Route
-              path="/edit-property/manage-images"
-              element={<ProtectedRoute element={<EditManageImages />} />}
-            />
-            <Route
-              path="/edit-property/single-unit/:property_id/:unit_id"
-              element={<ProtectedRoute element={<EditMultiUnitSingleUnit />} />}
-            />
+                            {/* Property routes with specific permissions */}
+                            <Route
+                                path="/add-property/general-information"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="add">
+                                        <General_information />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/edit-property/general-information"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="edit">
+                                        <EditGeneralInformation />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/add-property/amenities"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="add">
+                                        <Amenities />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/edit-property/amenities"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="edit">
+                                        <EditAmenities />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/add-property/property-type"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="add">
+                                        <Property_types />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/edit-property/property-type"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="edit">
+                                        <EditPropertyTypes />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/add-property/multi-unit"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="add">
+                                        <Property_floors />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/add-property/multi-single-unit"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="add">
+                                        <AddMultiSingleUnit />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/edit-property/multi-unit"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="edit">
+                                        <EditMultiUnit />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/add-property/single-unit"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="add">
+                                        <Single_Unit />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/edit-property/single-unit"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="edit">
+                                        <EditSingleUnit />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/add-property/manage-images"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="add">
+                                        <ManageImages />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/edit-property/manage-images"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="edit">
+                                        <EditManageImages />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/edit-property/single-unit/:property_id/:unit_id"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="edit">
+                                        <EditMultiUnitSingleUnit />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/add-property/property-summary"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="add">
+                                        <Property_summary />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/property/property-listing"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="view">
+                                        <PropertyListing />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/property/all-property-units"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="view">
+                                        <UnitListing />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/property/view-property/:property_id"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="view">
+                                        <Property />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/property/single-unit/:unit_id"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="view">
+                                        <Unit />
+                                    </ProtectedRoute>
+                                }
+                            />
 
-            <Route
-              path="/add-property/property-summary"
-              element={<ProtectedRoute element={<Property_summary />} />}
-            />
-            <Route
-              path="/property/property-listing"
-              element={<ProtectedRoute element={<PropertyListing />} />}
-            />
-            <Route
-              path="/property/all-property-units"
-              element={<ProtectedRoute element={<UnitListing />} />}
-            />
-            <Route
-              path="/dashboard/inquiries"
-              element={<ProtectedRoute element={<Inquiries />} />}
-            />
-            <Route
-              path="/dashboard/inquiries/chatroom"
-              element={<ProtectedRoute element={<ChatRoom />} />}
-            />
-            <Route
-              path="/property/revenue-breakdown"
-              element={<ProtectedRoute element={<RevenueBreakdown />} />}
-            />
-            <Route
-              path="/property/view-property/:property_id"
-              element={<ProtectedRoute element={<Property />} />}
-            />
-            <Route
-              path="/property/single-unit/:unit_id"
-              element={<ProtectedRoute element={<Unit />} />}
-            />
-            <Route
-              path="/property/payment-history"
-              element={<ProtectedRoute element={<PaymentHistory />} />}
-            />
-            <Route
-              path="/property/unit/tenant-history/:unit_id"
-              element={<ProtectedRoute element={<TenantHistory />} />}
-            />
 
-            <Route
-              path="/help-center"
-              element={<ProtectedRoute element={<HelpCenter />} />}
-            />
-
-
-            <Route
-              path="/dashboard/reports"
-              element={<ProtectedRoute element={<Reports />} />}
-            />
-            <Route
-              path="/dashboard/reports/revenue-breakdown"
-              element={<ProtectedRoute element={<MonthlyRevenueBreakdown />} />}
-            />
-            <Route
-              path="/dashboard/due-rent"
-              element={<ProtectedRoute element={<DueRent />} />}
-            />
-            <Route
-              path="/settings"
-              element={<ProtectedRoute element={<Settings />} />}
-            />
-
-            <Route
-              path="/recycle"
-              element={<ProtectedRoute element={<Recycle />} />}
-            />
-            <Route
-              path="/landlords"
-              element={<ProtectedRoute element={<ViewLandlord />} />}
-            />
-            <Route
-              path="/landlords/view-landlord/:landlord_id"
-              element={<ProtectedRoute element={<LandlordSingleView />} />}
-            />
-            <Route
-              path="/add-landlord/personal-information"
-              element={<ProtectedRoute element={<AddLandlordPersonalInfo />} />}
-            />
-            <Route
-              path="/add-landlord/payment-details"
-              element={<ProtectedRoute element={<AddLandlordPaymentsDetails />} />}
-            />
-            <Route
-              path="/edit-landlord/personal-information/"
-              element={<ProtectedRoute element={<EditLandlordPersonalInfo />} />}
-            />
-            <Route
-              path="/edit-landlord/payment-details/"
-              element={<ProtectedRoute element={<EditLandlordPaymentsDetails />} />}
-            />
-            <Route
-              path="/tenants/add-personal-details"
-              element={<ProtectedRoute element={<Add_Personal_Info />} />}
-            />
-            <Route
-              path="/tenants/add-tenant-unit"
-              element={<ProtectedRoute element={<AddTenantProperty />} />}
-            />
-            <Route
-              path="/tenants/edit-personal-details"
-              element={<ProtectedRoute element={<EditPersonalInfo />} />}
-            />
-            <Route
-              path="/tenants/edit-tenant-unit"
-              element={<ProtectedRoute element={<EditTenantProperty />} />}
-            />
-            <Route
-              path="/tenants"
-              element={<ProtectedRoute element={<Tenants />} />}
-            />
-            <Route
-              path="/tenants/view-tenant-units"
-              element={<ProtectedRoute element={<TenantUnits />} />}
-            />
-            <Route
-              path="/property/receive-payment"
-              element={<ProtectedRoute element={<ReceivePayment />} />}
-            />
-            <Route
-              path="/property/receive-water"
-              element={<ProtectedRoute element={<BulkWaterBill />} />}
-            />
-            <Route
-              path="/property/receive-bulk-electricity"
-              element={<ProtectedRoute element={<ReceiveElectricityBilling />} />}
-            />
-            <Route
-              path="/property/market-unit"
-              element={<ProtectedRoute element={<MarketUnit />} />}
-            />
-            <Route
-              path="/settings/payment_details"
-              element={<ProtectedRoute element={<PaymentsDetails />} />}
-            />
-            <Route
-              path="/settings/make-paybill-pdf"
-              element={<ProtectedRoute element={<MakePaybillPdf />} />}
-            />
-            <Route
-              path="/staffs/staff-listings"
-              element={<ProtectedRoute element={<Users />} />}
-            />
-            <Route
-              path="/staffs/staff-001"
-              element={<ProtectedRoute element={<SingleStaffPage />} />}
-            />
-          </Route>
-        </Routes>
-      </main>
-    </Router>
-  );
+                            <Route
+                                path="/property/revenue-breakdown"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="view">
+                                        <RevenueBreakdown />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/property/payment-history"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="view">
+                                        <PaymentHistory />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/property/unit/tenant-history/:unit_id"
+                                element={
+                                    <ProtectedRoute requiredModule="tenants" requiredAction="view">
+                                        <TenantHistory />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/help-center"
+                                element={
+                                    <ProtectedRoute>
+                                        <HelpCenter />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/dashboard/reports"
+                                element={
+                                    <ProtectedRoute>
+                                        <Reports />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/dashboard/reports/revenue-breakdown"
+                                element={
+                                    <ProtectedRoute>
+                                        <MonthlyRevenueBreakdown />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/dashboard/due-rent"
+                                element={
+                                    <ProtectedRoute requiredModule="tenants" requiredAction="view">
+                                        <DueRent />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/settings"
+                                element={
+                                    <ProtectedRoute requiredModule="settings" requiredAction="view">
+                                        <Settings />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/recycle"
+                                element={
+                                    <ProtectedRoute requiredModule="trash" requiredAction="view">
+                                        <Recycle />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/landlords"
+                                element={
+                                    <ProtectedRoute requiredModule="landlords" requiredAction="view">
+                                        <ViewLandlord />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/landlords/view-landlord/:landlord_id"
+                                element={
+                                    <ProtectedRoute requiredModule="landlords" requiredAction="view">
+                                        <LandlordSingleView />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/add-landlord/personal-information"
+                                element={
+                                    <ProtectedRoute requiredModule="landlords" requiredAction="add">
+                                        <AddLandlordPersonalInfo />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/add-landlord/payment-details"
+                                element={
+                                    <ProtectedRoute requiredModule="landlords" requiredAction="add">
+                                        <AddLandlordPaymentsDetails />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/edit-landlord/personal-information/"
+                                element={
+                                    <ProtectedRoute requiredModule="landlords" requiredAction="edit">
+                                        <EditLandlordPersonalInfo />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/edit-landlord/payment-details/"
+                                element={
+                                    <ProtectedRoute requiredModule="landlords" requiredAction="edit">
+                                        <EditLandlordPaymentsDetails />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/tenants/add-personal-details"
+                                element={
+                                    <ProtectedRoute requiredModule="tenants" requiredAction="add">
+                                        <Add_Personal_Info />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/tenants/add-tenant-unit"
+                                element={
+                                    <ProtectedRoute requiredModule="tenants" requiredAction="add">
+                                        <AddTenantProperty />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/tenants/edit-personal-details"
+                                element={
+                                    <ProtectedRoute requiredModule="tenants" requiredAction="edit">
+                                        <EditPersonalInfo />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/tenants/edit-tenant-unit"
+                                element={
+                                    <ProtectedRoute requiredModule="tenants" requiredAction="edit">
+                                        <EditTenantProperty />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/tenants"
+                                element={
+                                    <ProtectedRoute requiredModule="tenants" requiredAction="add">
+                                        <Tenants />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/tenants/view-tenant-units"
+                                element={
+                                    <ProtectedRoute requiredModule="tenants" requiredAction="add">
+                                        <TenantUnits />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/property/receive-payment"
+                                element={
+                                    <ProtectedRoute requiredModule="payments" requiredAction="add">
+                                        <ReceivePayment />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/property/receive-water"
+                                element={
+                                    <ProtectedRoute requiredModule="payments" requiredAction="add">
+                                        <BulkWaterBill />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/property/receive-bulk-electricity"
+                                element={
+                                    <ProtectedRoute requiredModule="payments" requiredAction="add">
+                                        <ReceiveElectricityBilling />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/property/market-unit"
+                                element={
+                                    <ProtectedRoute>
+                                        <MarketUnit />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/settings/payment_details"
+                                element={
+                                    <ProtectedRoute requiredModule="settings" requiredAction="add">
+                                        <PaymentsDetails />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/settings/make-paybill-pdf"
+                                element={
+                                    <ProtectedRoute>
+                                        <MakePaybillPdf />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/staffs/staff-listings"
+                                element={
+                                    <ProtectedRoute requiredModule="users" requiredAction="view">
+                                        <Users />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/staffs/staff-001"
+                                element={
+                                    <ProtectedRoute>
+                                        <SingleStaffPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/staffs/add-personal-info"
+                                element={
+                                    <ProtectedRoute requiredModule="users" requiredAction="add">
+                                        <AddPersonalInfo />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/staffs/add-properties-and-assign-permissions"
+                                element={
+                                    <ProtectedRoute requiredModule="users" requiredAction="add">
+                                        <AddPropertiesAssignPermissions />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/staffs/assign-properties"
+                                element={
+                                    <ProtectedRoute requiredModule="users" requiredAction="add">
+                                        <EditStaffProperties />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/staffs/assign-permissions"
+                                element={
+                                    <ProtectedRoute requiredModule="users" requiredAction="add">
+                                        <EditStaffPermissions />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/dashboard/inquiries"
+                                element={
+                                    <ProtectedRoute>
+                                        <Inquiries />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/dashboard/inquiries/chatroom"
+                                element={
+                                    <ProtectedRoute>
+                                        <ChatRoom />
+                                    </ProtectedRoute>
+                                }
+                            />
+                        </Route>
+                    </Routes>
+                </main>
+            </Router>
+        </AuthProvider>
+    );
 };
 
 export default App;

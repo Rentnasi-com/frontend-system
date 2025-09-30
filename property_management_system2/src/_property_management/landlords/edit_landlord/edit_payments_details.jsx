@@ -23,20 +23,21 @@ const EditLandlordPaymentsDetails = () => {
         payment_method: z.enum(["mpesa", "bank"]).optional(),
         date_of_payment: z.number().min(1, "Day must be at least 1").max(31, "Day must be at most 31"),
 
-        mpesa_method: z.enum(["send_money", "pay_bill", "buy_goods"]).optional(),
-        mpesa_phone_number: z.string().optional(),
-        mpesa_hakikisha_name: z.string().optional(),
-        mpesa_pay_bill_number: z.string().optional(),
-        mpesa_account_number: z.string().optional(),
-        mpesa_till_number: z.string().optional(),
+        // Change these to allow null/undefined and handle in superRefine
+        mpesa_method: z.enum(["send_money", "pay_bill", "buy_goods"]).optional().nullable(),
+        mpesa_phone_number: z.string().optional().nullable(),
+        mpesa_hakikisha_name: z.string().optional().nullable(),
+        mpesa_pay_bill_number: z.string().optional().nullable(),
+        mpesa_account_number: z.string().optional().nullable(),
+        mpesa_till_number: z.string().optional().nullable(),
 
-        bank_account_number: z.string().optional(),
-        bank_account_name: z.string().optional(),
-        bank_name: z.string().optional(),
-        bank_branch: z.string().optional(),
-        bank_code: z.string().optional(),
+        bank_account_number: z.string().optional().nullable(),
+        bank_account_name: z.string().optional().nullable(),
+        bank_name: z.string().optional().nullable(),
+        bank_branch: z.string().optional().nullable(),
+        bank_code: z.string().optional().nullable(),
 
-        is_property_created: z.enum(["0", "1"]).optional(),
+        is_property_created: z.enum(["0", "1"]).optional().nullable(),
         properties: z.array(z.number().min(1)).optional(),
     }).superRefine((data, ctx) => {
 
@@ -60,7 +61,7 @@ const EditLandlordPaymentsDetails = () => {
 
         // Mpesa validation
         if (data.payment_method === "mpesa") {
-            if (!data.mpesa_method) {
+            if (!data.mpesa_method || data.mpesa_method === null) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     message: "Please select an Mpesa payment method",
@@ -136,7 +137,7 @@ const EditLandlordPaymentsDetails = () => {
             });
         }
 
-        // Property validation - NEW ADDITION
+        // Property validation
         if (data.is_property_created === "1") {
             if (!data.properties || data.properties.length === 0) {
                 ctx.addIssue({
@@ -156,6 +157,23 @@ const EditLandlordPaymentsDetails = () => {
         formState: { errors, isSubmitting },
     } = useForm({
         resolver: zodResolver(schema),
+        defaultValues: {
+            payment_method: undefined,
+            date_of_payment: undefined,
+            mpesa_method: undefined,
+            mpesa_phone_number: "",
+            mpesa_hakikisha_name: "",
+            mpesa_pay_bill_number: "",
+            mpesa_account_number: "",
+            mpesa_till_number: "",
+            bank_account_number: "",
+            bank_account_name: "",
+            bank_name: "",
+            bank_branch: "",
+            bank_code: "",
+            is_property_created: undefined,
+            properties: [],
+        }
     })
 
     const payment_method = watch("payment_method")
@@ -200,33 +218,28 @@ const EditLandlordPaymentsDetails = () => {
             if (response.data.success) {
                 const data = response.data.result
                 if (data) {
-                    setValue("payment_method", String(data.payment_method))
-                    setValue("date_of_payment", String(data.date_of_payment)),
-                        setValue("mpesa_method", String(data.mpesa_method))
-                    setValue("is_property_created", String(data.is_property_created))
-                    if (data.payment_method === "mpesa") {
-                        setValue("mpesa_method", data.mpesa_method)
-                    }
-                    if (data.mpesa_method === "send_money") {
-                        setValue("mpesa_phone_number", data.mpesa_phone_number)
-                        setValue("mpesa_hakikisha_name", data.mpesa_hakikisha_name)
-                    }
-                    if (data.mpesa_method === "pay_bill") {
-                        setValue("mpesa_pay_bill_number", data.mpesa_pay_bill_number)
-                        setValue("mpesa_account_number", data.mpesa_account_number)
-                    }
-                    if (data.mpesa_method === "buy_goods") {
-                        setValue("mpesa_till_number", data.mpesa_till_number)
-                    }
-                    if (data.payment_method === "bank") {
-                        setValue("bank_account_number", data.bank_account_number)
-                        setValue("bank_account_name", data.bank_account_name)
-                        setValue("bank_name", data.bank_name)
-                        setValue("bank_branch", data.bank_branch)
-                        setValue("bank_code", data.bank_code)
-                    }
+                    // Set values with proper null checking
+                    setValue("payment_method", data.payment_method || undefined)
+                    setValue("date_of_payment", data.date_of_payment || undefined)
+                    setValue("mpesa_method", data.mpesa_method || undefined)
+                    setValue("is_property_created", data.is_property_created !== null ? String(data.is_property_created) : undefined)
 
-                    if (data.is_property_created === 1) {
+                    // Set mpesa fields
+                    setValue("mpesa_phone_number", data.mpesa_phone_number || "")
+                    setValue("mpesa_hakikisha_name", data.mpesa_hakikisha_name || "")
+                    setValue("mpesa_pay_bill_number", data.mpesa_pay_bill_number || "")
+                    setValue("mpesa_account_number", data.mpesa_account_number || "")
+                    setValue("mpesa_till_number", data.mpesa_till_number || "")
+
+                    // Set bank fields
+                    setValue("bank_account_number", data.bank_account_number || "")
+                    setValue("bank_account_name", data.bank_account_name || "")
+                    setValue("bank_name", data.bank_name || "")
+                    setValue("bank_branch", data.bank_branch || "")
+                    setValue("bank_code", data.bank_code || "")
+
+                    // Handle properties
+                    if (data.is_property_created === 1 && data.properties) {
                         const propertyIds = data.properties.map(property => Number(property.property_id));
                         setValue("properties", propertyIds);
                         setSelectedProperties(propertyIds);
@@ -234,6 +247,7 @@ const EditLandlordPaymentsDetails = () => {
                 }
             }
         } catch (error) {
+            console.error("Error fetching landlord payments details:", error)
             toast.error("Failed to fetch landlord payments details. Please try again.")
         }
     }
@@ -289,6 +303,14 @@ const EditLandlordPaymentsDetails = () => {
             toast.success(error.data.message)
         }
     }
+
+    useEffect(() => {
+        if (Object.keys(errors).length > 0) {
+            Object.entries(errors).forEach(([field, error]) => {
+                toast.error(`${field}: ${error.message}`);
+            });
+        }
+    }, [errors]);
 
     return (
         <>

@@ -261,229 +261,226 @@ const UnitListing = () => {
                     ))
                 )}
             </div>
-            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5 overflow-x-auto">
+            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5 overflow-auto">
                 <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
-                <div className="w-full">
-                    <div >
-                        <table className="min-w-full border border-gray-200 rounded-lg">
-                            <thead className="bg-gray-100 text-xs uppercase text-gray-600">
-                                <tr>
-                                    <th className="px-6 py-3 text-left">Property</th>
-                                    <th className="px-6 py-3 text-left">Unit</th>
-                                    <th className="px-6 py-3 text-left">Tenant</th>
 
-                                    <th className="px-6 py-3 text-right">Exp Rent</th>
-                                    <th className="px-6 py-3 text-right">Prev Arrears</th>
-                                    <th className="px-6 py-3 text-right">Bills</th>
-                                    <th className="px-6 py-3 text-right">Fines</th>
-                                    <th className="px-6 py-3 text-right">Paid</th>
-                                    <th className="px-6 py-3 text-right">Rent</th>
-                                    <th className="px-6 py-3 text-right">Balances</th>
-                                    <th className="px-6 py-3 text-left">Status</th>
-                                    <th className="px-4 py-2"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 text-sm">
-                                {loading ? (
-                                    Array(5).fill(0).map((_, index) => (
-                                        <TableRowSkeleton key={index} />
-                                    ))
-                                ) : (
-                                    propertiesUnits.map((unit, index) => (
-                                        <tr key={index} className="odd:bg-gray-50 ">
-                                            <td className="px-4 py-2 whitespace-nowrap">{unit.property_name}</td>
+                <table className="min-w-full border border-gray-200 rounded-lg">
+                    <thead className="bg-gray-100 text-xs uppercase text-gray-600">
+                        <tr>
+                            <th className="px-6 py-3 text-left">Property</th>
+                            <th className="px-6 py-3 text-left">Unit</th>
+                            <th className="px-6 py-3 text-left">Tenant</th>
 
-                                            <td className="px-4 py-2 whitespace-nowrap">
-                                                {unit.unit_number}
-                                                <p className="text-gray-500 text-xs">{unit.unit_type}</p>
-                                                <p className="text-gray-500 text-xs">Floor: {unit.floor_number}</p>
-                                            </td>
+                            <th className="px-6 py-3 text-right">Exp Rent</th>
+                            <th className="px-6 py-3 text-right">Prev Arrears</th>
+                            <th className="px-6 py-3 text-right">Bills</th>
+                            <th className="px-6 py-3 text-right">Fines</th>
+                            <th className="px-6 py-3 text-right">Paid</th>
+                            <th className="px-6 py-3 text-right">Rent</th>
+                            <th className="px-6 py-3 text-right">Balances</th>
+                            <th className="px-6 py-3 text-left">Status</th>
+                            <th className="px-4 py-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 text-sm">
+                        {loading ? (
+                            Array(5).fill(0).map((_, index) => (
+                                <TableRowSkeleton key={index} />
+                            ))
+                        ) : (
+                            propertiesUnits.map((unit, index) => (
+                                <tr key={index} className="odd:bg-gray-50">
+                                    <td className="px-4 py-2 whitespace-nowrap">{unit.property_name}</td>
 
-                                            {/* Tenant */}
-                                            <td className="px-4 py-2 text-xs">
-                                                {unit.tenant}
+                                    <td className="px-4 py-2 whitespace-nowrap">
+                                        {unit.unit_number}
+                                        <p className="text-gray-500 text-xs">{unit.unit_type}</p>
+                                        <p className="text-gray-500 text-xs">Floor: {unit.floor_number}</p>
+                                    </td>
 
-                                                <p className="text-gray-700 text-xs">
-                                                    {unit.tenant_phone}
-                                                </p>
+                                    {/* Tenant */}
+                                    <td className="px-4 py-2 text-xs">
+                                        {unit.tenant}
 
-                                                {unit.availability_status === 'available' ? (
-                                                    <>
+                                        <p className="text-gray-700 text-xs">
+                                            {unit.tenant_phone}
+                                        </p>
 
-                                                    </>
+                                        {unit.availability_status === 'available' ? (
+                                            <>
 
-                                                ) : (
-                                                    <>
-                                                        <br />
-                                                        <span className="bg-red-100 border border-red-400 text-red-600 px-2 text-xs rounded">
-                                                            Occupied
-                                                        </span>
-                                                    </>
-                                                )}
-                                                {unit.payments_to_landlord === false ? (
-                                                    <p className="text-green-600 text-xs whitespace-nowrap mt-1">Payment to Managers</p>
+                                            </>
 
-                                                ) : (
-                                                    <p className="text-red-600 text-xs whitespace-nowrap mt-1">Payment to Landlord</p>
-                                                )}
-                                            </td>
+                                        ) : (
+                                            <>
+                                                <br />
+                                                <span className="bg-red-100 border border-red-400 text-red-600 px-2 text-xs rounded">
+                                                    Occupied
+                                                </span>
+                                            </>
+                                        )}
+                                        {unit.payments_to_landlord === false ? (
+                                            <p className="text-green-600 text-xs whitespace-nowrap mt-1">Payment to Managers</p>
 
-                                            {/* Rent Info */}
-                                            <td className="px-6 py-3 text-right font-mono text-yellow-600">
-                                                {(unit.expected).toLocaleString()}
-                                            </td>
+                                        ) : (
+                                            <p className="text-red-600 text-xs whitespace-nowrap mt-1">Payment to Landlord</p>
+                                        )}
+                                    </td>
 
-                                            <td className="px-6 py-3 text-right font-mono text-orange-600">
-                                                {unit.arrears.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-3 text-right font-mono text-yellow-600">
-                                                {unit.fines.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                    {/* Rent Info */}
+                                    <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                        {(unit.expected).toLocaleString()}
+                                    </td>
 
-                                                {unit.bills.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-3 text-right font-mono">
-                                                {unit.received.toLocaleString()}
-                                            </td>
+                                    <td className="px-6 py-3 text-right font-mono text-orange-600">
+                                        {unit.arrears.toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-3 text-right font-mono text-yellow-600">
+                                        {unit.fines.toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-3 text-right font-mono text-yellow-600">
 
-                                            <td className="px-6 py-3 text-right font-mono text-green-600">
-                                                {(unit.rent_amount).toLocaleString()}
-                                            </td>
+                                        {unit.bills.toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-3 text-right font-mono">
+                                        {unit.received.toLocaleString()}
+                                    </td>
 
-                                            <td className="px-6 py-3 text-right font-mono text-red-600">
-                                                {unit.pending_balances.toLocaleString()}
-                                            </td>
+                                    <td className="px-6 py-3 text-right font-mono text-green-600">
+                                        {(unit.rent_amount).toLocaleString()}
+                                    </td>
 
-                                            <td className="px-6 py-3 text-right text-xs whitespace-nowrap">
-                                                {unit.availability_status === "available" ? (
-                                                    <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">
-                                                        Vacant
-                                                    </span>
-                                                ) : unit.pending_balances === 0 ? (
-                                                    <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">
-                                                        No Balance
-                                                    </span>
-                                                ) : (
-                                                    <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded">
-                                                        With Balance
-                                                    </span>
-                                                )}
-                                            </td>
-                                            {/* Actions Dropdown */}
-                                            < td className="relative px-4 py-2 text-sm">
-                                                <button
-                                                    onClick={() => toggleDropdown(unit.unit_id)}
-                                                    className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
-                                                >
-                                                    Actions
-                                                    <svg
-                                                        className="w-5 h-5 ml-2 -mr-1"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 20 20"
+                                    <td className="px-6 py-3 text-right font-mono text-red-600">
+                                        {unit.pending_balances.toLocaleString()}
+                                    </td>
+
+                                    <td className="px-6 py-3 text-right text-xs whitespace-nowrap">
+                                        {unit.availability_status === "available" ? (
+                                            <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">
+                                                Vacant
+                                            </span>
+                                        ) : unit.pending_balances === 0 ? (
+                                            <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded">
+                                                No Balance
+                                            </span>
+                                        ) : (
+                                            <span className="bg-red-100 border border-red-400 text-red-600 px-2 py-1 rounded">
+                                                With Balance
+                                            </span>
+                                        )}
+                                    </td>
+                                    {/* Actions Dropdown */}
+                                    < td className="relative px-4 py-2 text-sm">
+                                        <button
+                                            onClick={() => toggleDropdown(unit.unit_id)}
+                                            className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                                        >
+                                            Actions
+                                            <svg
+                                                className="w-5 h-5 ml-2 -mr-1"
+                                                fill="currentColor"
+                                                viewBox="0 0 20 20"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                    clipRule="evenodd"
+                                                />
+                                            </svg>
+                                        </button>
+
+                                        {openDropdownId === unit.unit_id && (
+                                            <div className="absolute right-0 z-50 w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                <div className="py-1">
+                                                    {/* View Unit */}
+                                                    <Link
+                                                        to={`/property/single-unit/unit_id:${unit.unit_id}`}
+                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                                                     >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                </button>
+                                                        View Unit
+                                                    </Link>
 
-                                                {openDropdownId === unit.unit_id && (
-                                                    <div className="absolute right-0 z-50 w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                                                        <div className="py-1">
-                                                            {/* View Unit */}
-                                                            <Link
-                                                                to={`/property/single-unit/unit_id:${unit.unit_id}`}
-                                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                            >
-                                                                View Unit
-                                                            </Link>
+                                                    {/* Add Tenant - Only if Available */}
+                                                    {unit.availability_status === 'available' && (
+                                                        <Link
+                                                            to={`/tenants/add-personal-details/?property_id=${unit.property_id}&unit_id=${unit.unit_id}`}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
+                                                        >
+                                                            Add Tenant
+                                                        </Link>
+                                                    )}
 
-                                                            {/* Add Tenant - Only if Available */}
-                                                            {unit.availability_status === 'available' && (
-                                                                <Link
-                                                                    to={`/tenants/add-personal-details/?property_id=${unit.property_id}&unit_id=${unit.unit_id}`}
-                                                                    className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
-                                                                >
-                                                                    Add Tenant
-                                                                </Link>
-                                                            )}
+                                                    {/* Market Unit - Only if in market */}
+                                                    {unit.availability_status === 'available' && (
+                                                        <Link
+                                                            to={`/property/market-unit?property_id=${unit.property_id}&unit_id=${unit.unit_id}`}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-yellow-700 hover:bg-yellow-50"
+                                                        >
+                                                            Market Unit
+                                                        </Link>
+                                                    )}
+                                                    <Link
+                                                        to={`/tenants/edit-tenant-unit?tenant_id=${unit.tenant_id}&unit_id=${unit.unit_id}`}
+                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                    >
+                                                        Edit Unit
+                                                    </Link>
+                                                    {unit.payments_to_landlord === false ? (
+                                                        <button
+                                                            onClick={() => setWhoToRecievePayment(unit.tenant_id, unit.unit_id, true)}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-blue-600 hover:bg-gray-100"
+                                                        >
+                                                            Rent To Landlord
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setWhoToRecievePayment(unit.tenant_id, unit.unit_id, false)}
+                                                            className="block w-full px-4 py-2 text-sm text-left text-green-600 hover:bg-gray-100"
+                                                        >
+                                                            Rent To Us
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
 
-                                                            {/* Market Unit - Only if in market */}
-                                                            {unit.availability_status === 'available' && (
-                                                                <Link
-                                                                    to={`/property/market-unit?property_id=${unit.property_id}&unit_id=${unit.unit_id}`}
-                                                                    className="block w-full px-4 py-2 text-sm text-left text-yellow-700 hover:bg-yellow-50"
-                                                                >
-                                                                    Market Unit
-                                                                </Link>
-                                                            )}
-                                                            <Link
-                                                                to={`/tenants/edit-tenant-unit?tenant_id=${unit.tenant_id}&unit_id=${unit.unit_id}`}
-                                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                            >
-                                                                Edit Unit
-                                                            </Link>
-                                                            {unit.payments_to_landlord === false ? (
-                                                                <button
-                                                                    onClick={() => setWhoToRecievePayment(unit.tenant_id, unit.unit_id, true)}
-                                                                    className="block w-full px-4 py-2 text-sm text-left text-blue-600 hover:bg-gray-100"
-                                                                >
-                                                                    Rent To Landlord
-                                                                </button>
-                                                            ) : (
-                                                                <button
-                                                                    onClick={() => setWhoToRecievePayment(unit.tenant_id, unit.unit_id, false)}
-                                                                    className="block w-full px-4 py-2 text-sm text-left text-green-600 hover:bg-gray-100"
-                                                                >
-                                                                    Rent To Us
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
+                    </tbody>
+                    {propertiesUnits.length > 0 && (
+                        <tfoot className="sticky bottom-0 bg-yellow-100 font-mono text-sm border-t-2 border-yellow-400 shadow-inner">
+                            <tr>
+                                <td colSpan="3" className="px-4 py-2 text-center">Totals</td>
 
-                            </tbody>
-                            {propertiesUnits.length > 0 && (
-                                <tfoot className="sticky bottom-0 bg-yellow-100 font-mono text-sm border-t-2 border-yellow-400 shadow-inner">
-                                    <tr>
-                                        <td colSpan="3" className="px-4 py-2 text-center">Totals</td>
+                                <td className="px-4 py-2 text-right text-blue-600">
+                                    {propertiesUnits.reduce((sum, u) => sum + u.expected, 0).toLocaleString()}
+                                </td>
+                                <td className="px-4 py-2 text-right text-orange-600">
+                                    {propertiesUnits.reduce((sum, u) => sum + u.arrears, 0).toLocaleString()}
+                                </td>
+                                <td className="px-4 py-2 text-right text-yellow-600">
+                                    {propertiesUnits.reduce((sum, u) => sum + u.fines, 0).toLocaleString()}
+                                </td>
+                                <td className="px-4 py-2 text-right text-yellow-600">
+                                    {propertiesUnits.reduce((sum, u) => sum + u.bills, 0).toLocaleString()}
+                                </td>
 
-                                        <td className="px-4 py-2 text-right text-blue-600">
-                                            {propertiesUnits.reduce((sum, u) => sum + u.expected, 0).toLocaleString()}
-                                        </td>
-                                        <td className="px-4 py-2 text-right text-orange-600">
-                                            {propertiesUnits.reduce((sum, u) => sum + u.arrears, 0).toLocaleString()}
-                                        </td>
-                                        <td className="px-4 py-2 text-right text-yellow-600">
-                                            {propertiesUnits.reduce((sum, u) => sum + u.fines, 0).toLocaleString()}
-                                        </td>
-                                        <td className="px-4 py-2 text-right text-yellow-600">
-                                            {propertiesUnits.reduce((sum, u) => sum + u.bills, 0).toLocaleString()}
-                                        </td>
-
-                                        <td className="px-4 py-2 text-right text-blue-600">
-                                            {propertiesUnits.reduce((sum, u) => sum + u.received, 0).toLocaleString()}
-                                        </td>
-                                        <td className="px-4 py-2 text-right text-green-600">
-                                            {propertiesUnits.reduce((sum, u) => sum + u.rent_amount, 0).toLocaleString()}
-                                        </td>
-                                        <td className="px-4 py-2 text-right text-indigo-600">
-                                            {propertiesUnits.reduce((sum, u) => sum + u.pending_balances, 0).toLocaleString()}
-                                        </td>
-                                        <td colSpan="2"></td>
-                                    </tr>
-                                </tfoot>
-                            )}
-                        </table>
-                    </div>
-                </div >
+                                <td className="px-4 py-2 text-right text-blue-600">
+                                    {propertiesUnits.reduce((sum, u) => sum + u.received, 0).toLocaleString()}
+                                </td>
+                                <td className="px-4 py-2 text-right text-green-600">
+                                    {propertiesUnits.reduce((sum, u) => sum + u.rent_amount, 0).toLocaleString()}
+                                </td>
+                                <td className="px-4 py-2 text-right text-indigo-600">
+                                    {propertiesUnits.reduce((sum, u) => sum + u.pending_balances, 0).toLocaleString()}
+                                </td>
+                                <td colSpan="2"></td>
+                            </tr>
+                        </tfoot>
+                    )}
+                </table>
 
             </div >
 

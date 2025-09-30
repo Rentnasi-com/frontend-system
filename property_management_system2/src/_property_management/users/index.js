@@ -1,4 +1,4 @@
-import Users from "./users"
+import Users from "./staffs"
 import SingleStaffPage from "./staff"
 export {
     Users,
