@@ -115,7 +115,7 @@ const Units = ({ floor, updateUnitField, removeUnit, unitTypes, duplicateUnit, p
     const fieldState = getFieldState(floor.units[unitIndex], field);
 
     return (
-      <td className="p-1">
+      <td className="p-1 overflow-auto">
         <input
           type="number"
           className={`bg-white border border-gray-300 rounded text-gray-900 text-xs focus:ring-red-500 focus:border-red-500 block w-full p-1.5 ${fieldState.disabled ? 'bg-gray-100 cursor-not-allowed' : ''

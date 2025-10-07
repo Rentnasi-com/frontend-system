@@ -596,11 +596,11 @@ const PropertyListing = () => {
                     ))
                 )}
             </div>
-            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
-                <div className="flex justify-between items-center">
-                    <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2 md:mb-0 mr-2">
-                        <div className="flex items-center gap-2 text-xs">
+            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5 ">
+                <div className="flex justify-between items-center px-2 my-4">
+                    <h4 className="text-md text-gray-600">All property List</h4>
+                    <div className="md:flex justify-between items-center space-x-2 space-y-2">
+                        <div className="flex items-center text-xs">
                             <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
                                 Show Units:
                             </label>
@@ -622,7 +622,7 @@ const PropertyListing = () => {
                             <button
                                 onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
                                 disabled={loading || properties.length === 0}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                className="flex items-center gap-2 px-4 py-2  w-full bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
                                 <FaDownload className="w-4 h-4" />
                                 Download
@@ -663,9 +663,9 @@ const PropertyListing = () => {
                             )}
                         </div>
 
-                        <form onSubmit={handleSubmitSearch} className="w-44 md:w-72">
+                        <form onSubmit={handleSubmitSearch} className="">
                             <label className="text-sm font-medium text-gray-900 sr-only">Search</label>
-                            <div className="relative">
+                            <div className="relative w-full">
                                 <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                                     <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
                                         <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
@@ -673,7 +673,7 @@ const PropertyListing = () => {
                                 </div>
                                 <input
                                     type="search"
-                                    className="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-red-500 focus:border-red-500"
+                                    className="block p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-red-500 focus:border-red-500"
                                     placeholder="Search property..."
                                     value={searchQuery}
                                     onChange={handleSearch}
@@ -682,7 +682,7 @@ const PropertyListing = () => {
                         </form>
                     </div>
                 </div>
-                <div className="overflow-auto max-h-[70vh]">
+                <div className="overflow-auto">
                     <table className="min-w-full border border-gray-200 rounded-lg">
                         <thead className="bg-gray-100 text-xs uppercase text-gray-600">
                             <tr>

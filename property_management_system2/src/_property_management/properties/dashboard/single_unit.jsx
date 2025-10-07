@@ -738,7 +738,7 @@ const Unit = () => {
                             {hasPermission("tenants", "edit") &&
                                 <Link
                                     to={`/tenants/edit-personal-details?tenant_id=${tenantId}`}
-                                    className="rounded w-full px-4 py-2 text-sm text-left text-white bg-green-700 hover:bg-green-800"
+                                    className="rounded w-full px-4 py-2 text-xs text-center text-white bg-green-700 hover:bg-green-800"
                                 >
                                     Edit Profile
                                 </Link>
@@ -747,7 +747,7 @@ const Unit = () => {
                             {hasPermission("tenants", "edit") &&
                                 <Link
                                     to={`/tenants/edit-tenant-unit?tenant_id=${tenantId}&unit_id=${unitsDetails.unit_id}`}
-                                    className="rounded text-white w-full px-4 py-2 text-sm text-left bg-purple-700 hover:bg-purple-800 whitespace-nowrap"
+                                    className="rounded text-white w-full px-4 py-2 text-xs text-center bg-purple-700 hover:bg-purple-800 whitespace-nowrap"
                                 >
                                     Edit Unit
                                 </Link>
@@ -762,7 +762,7 @@ const Unit = () => {
                                             name: unitsDetails.unit_number
                                         })
                                     }
-                                    className="rounded w-full px-4 py-2 text-sm text-left text-white bg-yellow-700 hover:bg-yellow-800"
+                                    className="rounded w-full px-4 py-2 text-xs text-center text-white bg-yellow-700 hover:bg-yellow-800"
                                 >
                                     Vacate tenant
                                 </button>
@@ -821,15 +821,15 @@ const Unit = () => {
                 </div>
             </div>
             {/* Active Bills */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4 mt-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4 mt-5 ">
                 <div className="col-span-3 rounded-lg border border-gray-200 bg-white">
                     <div className="flex justify-between my-2 px-2">
                         <h4 className="text-md text-gray-600 ">Active Bills</h4>
                         <div className="space-x-2">
-                            <Link to={`/property/payment-history?unit_id=${extractedUnitId}`} className="text-xs bg-green-700 text-white py-.5 px-2 rounded-xl">View all</Link>
+                            <Link to={`/property/payment-history?unit_id=${extractedUnitId}`} className="text-xs bg-green-700 text-white py-1.5 px-2 rounded">View all</Link>
 
                             {hasPermission("payments", "add") &&
-                                <button onClick={openAddBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Add bill item</button>
+                                <button onClick={openAddBillModal} className="text-xs bg-red-700 text-white py-1.5 px-2 rounded">Add bill item</button>
                             }
                         </div>
                     </div>
@@ -865,7 +865,7 @@ const Unit = () => {
                                                 </td>
 
                                                 {item.bill_items.length > 0 ? (
-                                                    <td className="px-4 py-2">
+                                                    <td className="px-4 py-2 ">
                                                         <table className="w-full text-xs border border-gray-300">
                                                             <thead>
                                                                 <tr className="bg-gray-100">
@@ -999,9 +999,9 @@ const Unit = () => {
                         <h4 className="text-md text-gray-600 ">Bill Overview</h4>
 
                     </div>
-                    <div className="w-full">
+                    <div className="w-full overflow-auto">
                         <div className="">
-                            <table className="min-w-full table-auto">
+                            <table className="min-w-full ">
                                 <thead className="bg-gray-100 text-left text-xs">
                                     <tr>
                                         <th className="px-4 py-2">Date</th>
@@ -1095,7 +1095,7 @@ const Unit = () => {
                         </div>
                         <div className="w-full">
                             <div className="">
-                                <table className="min-w-full table-auto">
+                                <table className="min-w-full overflow-auto">
                                     <thead className="bg-gray-100 text-left text-xs">
                                         <tr>
                                             <th className="px-4 py-2">Date</th>

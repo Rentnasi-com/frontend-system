@@ -619,10 +619,10 @@ const Tenants = () => {
             </div> */}
 
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
-                <div className="flex justify-between items-center px-4 py-4 border-b border-gray-200">
+                <div className="flex justify-between items-center px-2 my-4">
                     <h4 className="text-md text-gray-600">All tenant list</h4>
 
-                    <div className="flex space-x-4">
+                    <div className="md:flex justify-between items-center space-x-2 space-y-2">
                         <div className="flex items-center gap-2 text-xs">
                             <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
                                 Show Units:
@@ -646,7 +646,7 @@ const Tenants = () => {
                             <button
                                 onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
                                 disabled={loading || tenants.length === 0}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                className="w-full flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
                                 <FaDownload className="w-4 h-4" />
                                 Download
@@ -686,10 +686,10 @@ const Tenants = () => {
                                 </div>
                             )}
                         </div>
-                        <form onSubmit={handleSubmitSearch} className="w-72">
+                        <form onSubmit={handleSubmitSearch} className="">
                             <label className="text-sm font-medium text-gray-900 sr-only">Search</label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                                <div className="w-full absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
                                     <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
                                         <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
                                     </svg>
@@ -735,7 +735,7 @@ const Tenants = () => {
                     )}
                 </div>
 
-                <div className="relative">
+                <div className="relative overflow-auto">
                     <table className="min-w-full table-auto">
                         <thead className="bg-gray-100 text-left text-xs border-b sticky top-0 z-20">
                             <tr className="px-4 py-2">

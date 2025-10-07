@@ -380,7 +380,7 @@ const EditMultiUnit = () => {
         <p className="text-sm text-gray-500">Properties / Edit Property / Multi-Unit</p>
       </div>
       <form className="mx-4" onSubmit={handleSubmit(handleFinalSubmit)}>
-        <div className="mb-4">
+        <div className="mb-4 overflow-auto">
           <label className="mb-2 text-sm block">Number of Floors</label>
           <input
             className={`bg-white border ${errors.nof ? "border-red-500" : "border-gray-300"
@@ -394,7 +394,7 @@ const EditMultiUnit = () => {
         </div>
         {floors.length > 0 && (
           <>
-            <div className="relative overflow-x-auto">
+            <div className="relative overflow-auto">
               <table className="w-full text-sm text-gray-500">
                 <thead className="bg-red-700 text-white uppercase">
                   <tr>
@@ -417,7 +417,7 @@ const EditMultiUnit = () => {
                 </tbody>
               </table>
             </div>
-            <div id="units">
+            <div className="overflow-auto" id="units">
               {floors.map((floor) => (
                 <Units
                   key={floor.floor_no}

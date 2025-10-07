@@ -255,7 +255,7 @@ const ManageImages = () => {
                 <h1 className="text-xl font-bold">Edit Property Images</h1>
                 <p className="text-sm text-gray-500">Properties / Edit Property / Images</p>
             </div>
-            <div className="grid grid-cols-2 gap-4 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
                 <ImageUploadSection
                     title="Cover Image *Upload only 1 image"
                     images={coverImage}

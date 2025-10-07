@@ -326,14 +326,14 @@ const ReceivePayment = () => {
                 )
             }
 
-            <div className="grid grid-cols-2">
+            <div className="grid grid-cols-1 md:grid-cols-2">
                 <div className="bg-white rounded-xl shadow col-span-2 p-4 mx-4 h-full">
 
                     <h3 className="font-bold text-lg text-gray-800">Tenant Payment</h3>
                     <h3 className="font-bold text-gray-600 mt-2">Select property and unit</h3>
 
                     <div className="space-y-4">
-                        <div className="flex justify-between space-x-4">
+                        <div className="md:flex justify-between md:space-x-4">
                             <div className="w-full ">
                                 <label
                                     htmlFor="property-name"
@@ -407,8 +407,8 @@ const ReceivePayment = () => {
                                 alt=""
                             />
                         </div>
-                        <div className="col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div className="col-span-4">
+                        <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="md:col-span-4">
                                 <h6 className="text-sm">Property Details</h6>
                                 <div className="grid grid-cols-1 md:grid-cols-2 bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-2 text-sm font-semibold">
                                     <div>

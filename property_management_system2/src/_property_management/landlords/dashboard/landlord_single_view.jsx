@@ -318,7 +318,7 @@ const LandlordSingleView = () => {
             <div className="m-4 py-2 bg-white rounded border">
                 <div className="flex flex-col md:flex-row">
                     <div className="w-full px-4 mt-4 md:mt-0">
-                        <div className="flex justify-between items-center">
+                        <div className="md:flex justify-between items-center">
                             <div>
                                 <h2 className="font-semibold text-lg">{landlordDetails.name}</h2>
                                 <div className="flex justify-between space-x-4 mt-2">
@@ -327,7 +327,7 @@ const LandlordSingleView = () => {
                                 </div>
                             </div>
                             {/* Add New Tenant Button */}
-                            <div className="flex space-x-4">
+                            <div className="flex space-x-4 mt-2 md:mt-0">
                                 <Link to={`/edit-landlord/personal-information?landlord_id=${landlord_id}`}>
                                     <div className="flex space-x-3 focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-xs px-2 py-2.5">
                                         <p>Edit landlord</p>
@@ -345,7 +345,7 @@ const LandlordSingleView = () => {
                     </div>
                 </div>
             </div>
-            <div className="w-full grid grid-cols-12 gap-4 py-1 px-4">
+            <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 py-1 px-4">
                 {stats.map((stat, index) => (
                     <div key={index} className="col-span-3">
                         <PropertyCard

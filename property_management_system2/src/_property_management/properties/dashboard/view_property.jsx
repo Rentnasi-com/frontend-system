@@ -20,7 +20,7 @@ const Property = () => {
     const [pagination, setPagination] = useState([])
 
     const [totalUnits, setTotalUnits] = useState("");
-    const [selectedUnits, setSelectedUnits] = useState(10);
+    const [selectedUnits, setSelectedUnits] = useState(15);
     const { hasPermission } = useAuth();
 
     const handleUnitChange = (e) => {
@@ -575,7 +575,7 @@ const Property = () => {
 
                         <div className="mt-4">
                             <h3 className="text-red-500 font-semibold text-xs">Quick action</h3>
-                            <div className="grid md:grid-cols-4 grid-cols-1 gap-2 mt-2">
+                            <div className="md:flex justify-between items-center gap-2 space-y-3 mt-2">
                                 {quicks.map((quick, index) => (
                                     <QuickLinksCard
                                         key={index}
@@ -621,7 +621,7 @@ const Property = () => {
                 </div>
 
             </div >
-            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5 overflow-auto">
+            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5 ">
                 <div className="flex justify-between item-center my-4 px-2">
                     <h4 className="text-md text-gray-600 ">All property List</h4>
                     <div className="grid md:grid-cols-2 gap-2 grid-cols-1">
@@ -647,7 +647,7 @@ const Property = () => {
                             <button
                                 onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
                                 disabled={loading || propertyUnits.length === 0}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                className="w-full flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
                                 <FaDownload className="w-4 h-4" />
                                 Download
@@ -688,11 +688,10 @@ const Property = () => {
                             )}
                         </div>
                     </div>
-
                 </div>
 
 
-                <div className="w-full">
+                <div className="w-full overflow-auto">
                     <div className="">
                         <table className="min-w-full border border-gray-200 rounded-lg">
                             <thead className="bg-gray-100 text-xs uppercase text-gray-600">

@@ -36,16 +36,6 @@ const StaffManagement = () => {
         setOpenDropdownId(openDropdownId === tenantId ? null : tenantId);
     };
 
-    const formatNaturalDate = (date) => {
-        const options = {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            weekday: 'long'
-        };
-        return date.toLocaleDateString('en-US', options);
-    };
-
     return (
         <div className="min-h-screen bg-gray-100">
             <DashboardHeader
@@ -180,22 +170,22 @@ const StaffManagement = () => {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-2">
-                                                    {staff.department}
+                                                <td className="px-4 py-2 text-xs">
+                                                    {staff?.profile?.department}
                                                 </td>
                                                 <td className="px-6 py-3 text-right font-mono text-green-600">
-                                                    {(staff.salary)}
+                                                    {(staff?.profile?.salary || "-").toLocaleString() || '—'}
                                                 </td>
-                                                <td className="px-6 py-3 text-right">
-                                                    {(staff.profile.hire_date.toLocaleDateString())}
+                                                <td className="px-6 py-3 text-right text-xs">
+                                                    {new Date(staff?.profile?.hire_date || '-').toLocaleDateString() || '—'}
                                                 </td>
-                                                <td className="px-4 py-2">
+                                                <td className="px-4 py-2 text-center">
                                                     <div className="text-xs">
                                                         {(staff.properties)}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-2 text-xs text-right">
-                                                    {staff.status === 'active' ? (
+                                                    {staff?.profile?.active ? (
                                                         <span className="bg-green-100 border border-green-400 text-green-600 px-2 py-1 rounded whitespace-nowrap">
                                                             Active
                                                         </span>
@@ -227,7 +217,7 @@ const StaffManagement = () => {
                                                         <div className="absolute right-0 z-50 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
                                                             <div className="py-1">
                                                                 <Link
-                                                                    to=""
+                                                                    to={`/staffs/view-profile?staff_id=${staff.id}`}
                                                                     className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                                                                 >
                                                                     View Profile

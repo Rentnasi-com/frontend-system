@@ -273,7 +273,7 @@ const ReceiveElectricityBilling = () => {
                     <h3 className="font-bold text-lg text-gray-800">Receive Bulk Electricity Billing</h3>
 
                     <div className="space-y-4">
-                        <div className="flex justify-between space-x-4">
+                        <div className="md:flex justify-between md:space-x-4">
                             <div className="w-full">
                                 <label
                                     htmlFor="property-name"
@@ -324,7 +324,7 @@ const ReceiveElectricityBilling = () => {
                             <div className="flex justify-between my-2 px-2 items-center">
                                 <h4 className="text-md text-gray-600">Electricity Meter History</h4>
                             </div>
-                            <div className="w-full">
+                            <div className="w-full overflow-auto">
                                 <form className="">
                                     <table className="min-w-full table-auto">
                                         <thead className="bg-gray-100 text-left text-xs">

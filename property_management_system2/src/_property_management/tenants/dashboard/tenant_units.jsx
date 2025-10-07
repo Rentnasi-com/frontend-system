@@ -186,7 +186,7 @@ const TenantUnits = () => {
             />
 
             <div className="rounded-lg border border-gray-200 bg-white p-4 mb-8 mx-4">
-                <div className="flex items-center justify-between mb-6">
+                <div className="md:flex items-center justify-between mb-6">
                     <div className="flex items-center space-x-3">
                         <div className="bg-blue-100 p-3 rounded-full">
                             <User className="w-6 h-6 text-blue-600" />
@@ -195,7 +195,7 @@ const TenantUnits = () => {
                             <h2 className="text-2xl font-semibold text-gray-900">{tenant.name}</h2>
                         </div>
                     </div>
-                    <div className="flex space-x-3">
+                    <div className="flex space-x-3 md:mt-0 mt-2">
                         {hasPermission("tenants", "edit") &&
                             <Link
                                 to={`/tenants/edit-personal-details?tenant_id=${tenantId}`}
@@ -267,7 +267,7 @@ const TenantUnits = () => {
                 </div>
             </div>
 
-            <div className="relative mx-4 rounded-lg border border-gray-200">
+            <div className="relative mx-4 rounded-lg border border-gray-200 overflow-auto">
                 <table className="min-w-full table-auto">
                     <thead className="bg-gray-100 text-left text-xs border-b sticky top-0 z-20">
                         <tr className="px-4 py-2">

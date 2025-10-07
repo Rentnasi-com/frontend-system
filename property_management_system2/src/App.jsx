@@ -15,7 +15,7 @@ import { HelpCenter } from './_property_management/helpCenter'
 import { MonthlyRevenueBreakdown, Reports, RevenueBreakdown } from './_property_management/reports'
 import { SingleStaffPage, Users } from './_property_management/users';
 import { AddPersonalInfo, AddPropertiesAssignPermissions } from './_property_management/users/add_staff';
-import { EditStaffPermissions, EditStaffProperties } from './_property_management/users/edit_staff';
+import { EditStaffPermissions, EditStaffProperties, EditStaffInfo } from './_property_management/users/edit_staff';
 
 const App = () => {
     return (
@@ -424,9 +424,9 @@ const App = () => {
                                 }
                             />
                             <Route
-                                path="/staffs/staff-001"
+                                path="/staffs/view-profile"
                                 element={
-                                    <ProtectedRoute>
+                                    <ProtectedRoute requiredModule="users" requiredAction="view">
                                         <SingleStaffPage />
                                     </ProtectedRoute>
                                 }
@@ -436,6 +436,14 @@ const App = () => {
                                 element={
                                     <ProtectedRoute requiredModule="users" requiredAction="add">
                                         <AddPersonalInfo />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/staffs/edit-personal-info"
+                                element={
+                                    <ProtectedRoute requiredModule="users" requiredAction="edit">
+                                        <EditStaffInfo />
                                     </ProtectedRoute>
                                 }
                             />
