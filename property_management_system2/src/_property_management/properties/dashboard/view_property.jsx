@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { FaDownload, FaEdit, FaEye, FaTrash } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { useAuth } from "../../../AuthContext";
 const Property = () => {
     const { property_id } = useParams();
     const [property, setProperty] = useState([]);
@@ -20,6 +21,7 @@ const Property = () => {
 
     const [totalUnits, setTotalUnits] = useState("");
     const [selectedUnits, setSelectedUnits] = useState(10);
+    const { hasPermission } = useAuth();
 
     const handleUnitChange = (e) => {
         const value = parseInt(e.target.value);
@@ -536,25 +538,30 @@ const Property = () => {
                                 <p className="text-gray-500 text-sm">{property?.location_name}</p>
                             </div>
                             <div className="flex space-x-3">
-                                <Link
-                                    to="/tenants/add-personal-details"
-                                    className="flex space-x-3 focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded text-xs px-2 py-2.5"
-                                >
-                                    Add Tenant
-                                </Link>
-                                <Link
-                                    to={`/edit-property/general-information?property_id=${property_id}`}
-                                    className="flex space-x-3 focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded text-xs px-2 py-2.5"
-                                >
-                                    Edit Property
-                                </Link>
-                                <Link
-                                    to="/add-property/multi-single-unit"
-                                    className="flex space-x-3 focus:outline-none text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:ring-yellow-300 font-medium rounded text-xs px-2 py-2.5"
-                                >
-                                    Add Unit
-                                </Link>
-
+                                {hasPermission("tenant", "add") &&
+                                    <Link
+                                        to="/tenants/add-personal-details"
+                                        className="flex space-x-3 focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded text-xs px-2 py-2.5"
+                                    >
+                                        Add Tenant
+                                    </Link>
+                                }
+                                {hasPermission("property", "edit") &&
+                                    <Link
+                                        to={`/edit-property/general-information?property_id=${property_id}`}
+                                        className="flex space-x-3 focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded text-xs px-2 py-2.5"
+                                    >
+                                        Edit Property
+                                    </Link>
+                                }
+                                {hasPermission("property", "add") &&
+                                    <Link
+                                        to="/add-property/multi-single-unit"
+                                        className="flex space-x-3 focus:outline-none text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:ring-yellow-300 font-medium rounded text-xs px-2 py-2.5"
+                                    >
+                                        Add Unit
+                                    </Link>
+                                }
                             </div>
                         </div>
                         <div className="mt-2">
@@ -568,7 +575,7 @@ const Property = () => {
 
                         <div className="mt-4">
                             <h3 className="text-red-500 font-semibold text-xs">Quick action</h3>
-                            <div className="flex space-x-4 mt-2">
+                            <div className="grid md:grid-cols-4 grid-cols-1 gap-2 mt-2">
                                 {quicks.map((quick, index) => (
                                     <QuickLinksCard
                                         key={index}
@@ -586,7 +593,7 @@ const Property = () => {
             </div>
             <div className="w-full gap-4 py-1 px-4">
                 {/* First 3 cards in grid-cols-3 */}
-                <div className="grid grid-cols-4 gap-4 mb-4">
+                <div className="grid md:grid-cols-4 grid-cols-1 gap-4 mb-4">
                     {stats.slice(0, 3).map((stat, index) => (
                         <div key={index} className="">
                             <PropertyCard
@@ -600,7 +607,7 @@ const Property = () => {
                 </div>
 
                 {/* Remaining cards in grid-cols-5 */}
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid md:grid-cols-4 grid-cols-1 gap-4">
                     {stats.slice(3).map((stat, index) => (
                         <div key={index + 3}>
                             <PropertyCard
@@ -617,7 +624,7 @@ const Property = () => {
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5 overflow-auto">
                 <div className="flex justify-between item-center my-4 px-2">
                     <h4 className="text-md text-gray-600 ">All property List</h4>
-                    <div className="flex items-center space-x-6">
+                    <div className="grid md:grid-cols-2 gap-2 grid-cols-1">
                         <div className="flex items-center gap-2 text-xs">
                             <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
                                 Show Units:
@@ -818,12 +825,15 @@ const Property = () => {
                                                                     Market Unit
                                                                 </Link>
                                                             )}
-                                                            <Link
-                                                                to={`/tenants/edit-tenant-unit?tenant_id=${unit.tenant_id}&unit_id=${unit.unit_id}`}
-                                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                            >
-                                                                Edit Unit
-                                                            </Link>
+
+                                                            {hasPermission("properties", "edit") &&
+                                                                <Link
+                                                                    to={`/tenants/edit-tenant-unit?tenant_id=${unit.tenant_id}&unit_id=${unit.unit_id}`}
+                                                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                                >
+                                                                    Edit Unit
+                                                                </Link>
+                                                            }
                                                             {unit.payments_to_landlord === false ? (
                                                                 <button
                                                                     onClick={() => setWhoToRecievePayment(unit.tenant_id, unit.unit_id, true)}

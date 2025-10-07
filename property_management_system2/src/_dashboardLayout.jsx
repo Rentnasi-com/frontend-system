@@ -12,10 +12,12 @@ const DashboardLayout = () => {
                 {/* Sidebar */}
                 <Aside collapsed={collapsed} setCollapsed={setCollapsed} />
 
+
+
                 {/* Main content */}
                 <main
                     className={`flex-1 h-full overflow-y-auto transition-all duration-300 
-            ${collapsed ? "ml-16" : "ml-64"}`}
+                ${collapsed ? "ml-0 md:ml-16" : "ml-0 md:ml-64"}`}
                 >
                     <Outlet />
                     <Footer />

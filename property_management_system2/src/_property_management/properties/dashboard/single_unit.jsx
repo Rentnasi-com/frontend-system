@@ -9,8 +9,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { MdApartment, MdEmail } from "react-icons/md";
 import DatePicker from "react-datepicker"
-import { House, HousePlusIcon, LocateIcon, Phone, PhoneCallIcon, User, User2, } from "lucide-react";
+import { House, HousePlusIcon, LocateIcon, Pencil, Phone, PhoneCallIcon, Save, User, User2, X, } from "lucide-react";
 import { DashboardHeader, QuickLinksCard } from "./page_components";
+import { useAuth } from "../../../AuthContext";
 
 const Unit = () => {
     const [propertyDetails, setPropertyDetails] = useState({})
@@ -51,6 +52,8 @@ const Unit = () => {
     const [itemToVacate, setItemToVacate] = useState(null);
 
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const { hasPermission } = useAuth();
 
     const handleClose = () => {
         setShowModal(false)
@@ -732,31 +735,38 @@ const Unit = () => {
 
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 ">
-                            <Link
-                                to={`/tenants/edit-personal-details?tenant_id=${tenantId}`}
-                                className="rounded w-full px-4 py-2 text-sm text-left text-white bg-green-700 hover:bg-green-800"
-                            >
-                                Edit Profile
-                            </Link>
-                            <Link
-                                to={`/tenants/edit-tenant-unit?tenant_id=${tenantId}&unit_id=${unitsDetails.unit_id}`}
-                                className="rounded text-white w-full px-4 py-2 text-sm text-left bg-purple-700 hover:bg-purple-800 whitespace-nowrap"
-                            >
-                                Edit Unit
-                            </Link>
+                            {hasPermission("tenants", "edit") &&
+                                <Link
+                                    to={`/tenants/edit-personal-details?tenant_id=${tenantId}`}
+                                    className="rounded w-full px-4 py-2 text-sm text-left text-white bg-green-700 hover:bg-green-800"
+                                >
+                                    Edit Profile
+                                </Link>
+                            }
 
-                            <button
-                                onClick={() =>
-                                    handleVacateModalOpen({
-                                        id: tenantId,
-                                        unit_id: unitsDetails.unit_id,
-                                        name: unitsDetails.unit_number
-                                    })
-                                }
-                                className="rounded w-full px-4 py-2 text-sm text-left text-white bg-yellow-700 hover:bg-yellow-800"
-                            >
-                                Vacate tenant
-                            </button>
+                            {hasPermission("tenants", "edit") &&
+                                <Link
+                                    to={`/tenants/edit-tenant-unit?tenant_id=${tenantId}&unit_id=${unitsDetails.unit_id}`}
+                                    className="rounded text-white w-full px-4 py-2 text-sm text-left bg-purple-700 hover:bg-purple-800 whitespace-nowrap"
+                                >
+                                    Edit Unit
+                                </Link>
+                            }
+
+                            {hasPermission("tenants", "delete") &&
+                                <button
+                                    onClick={() =>
+                                        handleVacateModalOpen({
+                                            id: tenantId,
+                                            unit_id: unitsDetails.unit_id,
+                                            name: unitsDetails.unit_number
+                                        })
+                                    }
+                                    className="rounded w-full px-4 py-2 text-sm text-left text-white bg-yellow-700 hover:bg-yellow-800"
+                                >
+                                    Vacate tenant
+                                </button>
+                            }
                         </div>
                     </div>
                     <div className="bg-white border border-gray-200 rounded mb-2">
@@ -798,12 +808,14 @@ const Unit = () => {
                         </table>
 
                         <div className="w-36 m-2">
-                            <button onClick={handleOpen}>
-                                <div className="flex space-x-3 focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-xl text-xs px-2 py-1">
-                                    <p>Receive Payment</p>
-                                    <img width={15} height={15} src="../../../assets/icons/png/plus.png" alt="" />
-                                </div>
-                            </button>
+                            {hasPermission("payments", "add") &&
+                                <button onClick={handleOpen}>
+                                    <div className="flex space-x-3 focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-xl text-xs px-2 py-1">
+                                        <p>Receive Payment</p>
+                                        <img width={15} height={15} src="../../../assets/icons/png/plus.png" alt="" />
+                                    </div>
+                                </button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -815,7 +827,10 @@ const Unit = () => {
                         <h4 className="text-md text-gray-600 ">Active Bills</h4>
                         <div className="space-x-2">
                             <Link to={`/property/payment-history?unit_id=${extractedUnitId}`} className="text-xs bg-green-700 text-white py-.5 px-2 rounded-xl">View all</Link>
-                            <button onClick={openAddBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Add bill item</button>
+
+                            {hasPermission("payments", "add") &&
+                                <button onClick={openAddBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Add bill item</button>
+                            }
                         </div>
                     </div>
                     <div className="w-full">
@@ -911,47 +926,50 @@ const Unit = () => {
                                                                             {openDropdownId === billItem.bill_item_id && (
                                                                                 <div className="absolute right-0 z-50 w-36 mt-1 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
                                                                                     <div className="py-1">
-                                                                                        {editItemId === billItem.bill_item_id ? (
-                                                                                            <>
+                                                                                        {hasPermission("payments", "edit") && (
+                                                                                            editItemId === billItem.bill_item_id ? (
+                                                                                                <>
+                                                                                                    <button
+                                                                                                        onClick={() => handleBillItemPatch(billItem)}
+                                                                                                        className="flex items-center w-full px-3 py-1 text-xs text-green-600 hover:bg-green-100"
+                                                                                                    >
+                                                                                                        <Save className="w-4 h-4 mr-1" /> Save
+                                                                                                    </button>
+                                                                                                    <button
+                                                                                                        onClick={() => setEditItemId(null)}
+                                                                                                        className="flex items-center w-full px-3 py-1 text-xs text-gray-600 hover:bg-gray-100"
+                                                                                                    >
+                                                                                                        <X className="w-4 h-4 mr-1" /> Cancel
+                                                                                                    </button>
+                                                                                                </>
+                                                                                            ) : (
                                                                                                 <button
-                                                                                                    onClick={() => handleBillItemPatch(billItem)}
-                                                                                                    className="block w-full px-3 py-1 text-xs text-left text-green-600 hover:bg-green-100"
+                                                                                                    onClick={() => {
+                                                                                                        setEditItemId(billItem.bill_item_id);
+                                                                                                        setEditedAmount(billItem.amount_expected);
+                                                                                                    }}
+                                                                                                    className="flex items-center w-full px-3 py-1 text-xs text-gray-700 hover:bg-gray-100"
                                                                                                 >
-                                                                                                    Save
+                                                                                                    <Pencil className="w-4 h-4 mr-1" /> Edit
                                                                                                 </button>
-                                                                                                <button
-                                                                                                    onClick={() => setEditItemId(null)}
-                                                                                                    className="block w-full px-3 py-1 text-xs text-left text-gray-600 hover:bg-gray-100"
-                                                                                                >
-                                                                                                    Cancel
-                                                                                                </button>
-                                                                                            </>
-                                                                                        ) : (
-                                                                                            <button
-                                                                                                onClick={() => {
-                                                                                                    setEditItemId(billItem.bill_item_id);
-                                                                                                    setEditedAmount(billItem.amount_expected);
-                                                                                                }}
-                                                                                                className="block w-full px-3 py-1 text-xs text-left text-gray-700 hover:bg-gray-100"
-                                                                                            >
-                                                                                                Edit
-                                                                                            </button>
+                                                                                            )
                                                                                         )}
 
-                                                                                        <button
-                                                                                            onClick={() => {
-                                                                                                setBillItemToDelete({
-                                                                                                    unit_id: extractedUnitId,
-                                                                                                    tenant_id: tenantId,
-                                                                                                    bill_item_id: billItem.bill_item_id
-                                                                                                });
-                                                                                                setShowBillItemDeleteModal(true);
-                                                                                            }}
-                                                                                            className="block w-full px-3 py-1 text-xs text-left text-red-600 hover:bg-red-100"
-                                                                                        >
-                                                                                            Delete
-                                                                                        </button>
-
+                                                                                        {hasPermission("payments", "delete") &&
+                                                                                            <button
+                                                                                                onClick={() => {
+                                                                                                    setBillItemToDelete({
+                                                                                                        unit_id: extractedUnitId,
+                                                                                                        tenant_id: tenantId,
+                                                                                                        bill_item_id: billItem.bill_item_id
+                                                                                                    });
+                                                                                                    setShowBillItemDeleteModal(true);
+                                                                                                }}
+                                                                                                className="block w-full px-3 py-1 text-xs text-left text-red-600 hover:bg-red-100"
+                                                                                            >
+                                                                                                Delete
+                                                                                            </button>
+                                                                                        }
                                                                                     </div>
                                                                                 </div>
                                                                             )}

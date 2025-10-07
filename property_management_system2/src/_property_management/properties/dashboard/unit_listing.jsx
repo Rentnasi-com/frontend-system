@@ -3,6 +3,7 @@ import { DashboardHeader, PropertyCard, TableRow } from "./page_components";
 import axios from "axios";
 import { Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
+import { FaDownload } from "react-icons/fa";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -50,9 +51,12 @@ const UnitListing = () => {
     const token = localStorage.getItem('token')
     const baseUrl = import.meta.env.VITE_BASE_URL
 
+    const [totalUnits, setTotalUnits] = useState("");
+    const [selectedUnits, setSelectedUnits] = useState(10);
+
     const fetchPropertiesDetails = async (page = 1) => {
         try {
-            const response = await axios.get(`${baseUrl}/manage-property/view-properties/units?status=${status}&pagination=${page}&property_id=${selectedProperty}`,
+            const response = await axios.get(`${baseUrl}/manage-property/view-properties/units?status=${status}&pagination=${page}&property_id=${selectedProperty}&per_page=${selectedUnits}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -64,6 +68,7 @@ const UnitListing = () => {
                 setPropertiesUnits(response.data.result.data)
                 setCurrentPage(response.data.result.current_page);
                 setPagination(response.data.result)
+                setTotalUnits(response.data.result.total)
             }
         } catch (error) {
             toast.error("An error occurred while fetching property details!")
@@ -92,7 +97,7 @@ const UnitListing = () => {
     useEffect(() => {
         fetchPropertiesDetails(currentPage)
         fetchProperties()
-    }, [currentPage, status, token, selectedProperty])
+    }, [currentPage, status, token, selectedProperty, selectedUnits])
 
     const handleNextPage = () => {
         if (pagination && currentPage < pagination.last_page) {
@@ -230,6 +235,309 @@ const UnitListing = () => {
         }
     };
 
+    const handleUnitChange = (e) => {
+        const value = parseInt(e.target.value);
+        setSelectedUnits(value);
+
+    };
+
+    const options = [10, 25, 50, 100, 150, 200].filter((num) => num < totalUnits);
+
+    const generatePDF = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let yPosition = 20;
+
+        // Header
+        doc.setFontSize(18);
+        doc.setFont(undefined, 'bold');
+        doc.text('All Units Report', pageWidth / 2, yPosition, { align: 'center' });
+
+        yPosition += 8;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, pageWidth / 2, yPosition, { align: 'center' });
+
+        yPosition += 6;
+        doc.text(`Total Units: ${propertiesUnits.length}`, pageWidth / 2, yPosition, { align: 'center' });
+
+        yPosition += 15;
+
+        // Summary Statistics
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Summary Statistics', 14, yPosition);
+        yPosition += 8;
+
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+
+        const summaryStats = [
+            { label: 'Total Units', value: propertiesBreakdown.all_property_units?.count || 0 },
+            { label: 'Occupied Units', value: propertiesBreakdown.occupied_units?.count || 0 },
+            { label: 'Vacant Units', value: propertiesBreakdown.vacant_units?.count || 0 },
+            { label: 'Total Payable', value: `KES ${(propertiesRevenue.revenue?.amounts?.expected_income?.count || 0).toLocaleString()}` },
+            { label: 'Total Rent', value: `KES ${(propertiesRevenue.revenue?.amounts?.total_rent?.count || 0).toLocaleString()}` },
+            { label: 'Amount Paid', value: `KES ${(propertiesRevenue.revenue?.amounts?.amount_paid?.count || 0).toLocaleString()}` },
+            { label: 'Total Arrears', value: `KES ${Number(propertiesRevenue.revenue?.amounts?.total_arrears?.count ?? 0).toLocaleString()}` },
+            { label: 'Total Fines', value: `KES ${(propertiesRevenue.revenue?.amounts?.total_fines?.count || 0).toLocaleString()}` },
+            { label: 'Total Bills', value: `KES ${(propertiesRevenue.revenue?.amounts?.total_bills?.count || 0).toLocaleString()}` },
+            { label: 'Total Balance', value: `KES ${(propertiesRevenue.revenue?.amounts?.total_balance?.count || 0).toLocaleString()}` },
+        ];
+
+        summaryStats.forEach((stat, index) => {
+            if (index % 2 === 0 && index > 0) yPosition += 6;
+            const xPos = index % 2 === 0 ? 14 : pageWidth / 2 + 10;
+            doc.text(`${stat.label}: ${stat.value}`, xPos, yPosition);
+            if (index % 2 === 1) yPosition += 6;
+        });
+
+        if (summaryStats.length % 2 === 1) yPosition += 6;
+        yPosition += 12;
+
+        // Check if we need a new page
+        if (yPosition > pageHeight - 80) {
+            doc.addPage();
+            yPosition = 20;
+        }
+
+        // Units Table
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Unit Details', 14, yPosition);
+        yPosition += 8;
+
+        // Table headers
+        doc.setFontSize(7);
+        const headers = ['Property', 'Unit', 'Tenant', 'Exp Rent', 'Arrears', 'Fines', 'Bills', 'Paid', 'Rent', 'Balance', 'Status'];
+        const colWidths = [35, 25, 30, 18, 18, 16, 16, 18, 18, 18, 23];
+        let xPos = 14;
+
+        doc.setFont(undefined, 'bold');
+        doc.setFillColor(240, 240, 240);
+        doc.rect(14, yPosition - 5, pageWidth - 28, 7, 'F');
+
+        headers.forEach((header, index) => {
+            doc.text(header, xPos, yPosition, { maxWidth: colWidths[index] - 2 });
+            xPos += colWidths[index];
+        });
+
+        yPosition += 8;
+        doc.setFont(undefined, 'normal');
+
+        // Table rows
+        propertiesUnits.forEach((unit, index) => {
+            const rowHeight = 12;
+
+            if (yPosition + rowHeight > pageHeight - 20) {
+                doc.addPage();
+                yPosition = 20;
+
+                // Repeat headers on new page
+                doc.setFont(undefined, 'bold');
+                doc.setFillColor(240, 240, 240);
+                doc.rect(14, yPosition - 5, pageWidth - 28, 7, 'F');
+                xPos = 14;
+                headers.forEach((header, idx) => {
+                    doc.text(header, xPos, yPosition, { maxWidth: colWidths[idx] - 2 });
+                    xPos += colWidths[idx];
+                });
+                yPosition += 8;
+                doc.setFont(undefined, 'normal');
+            }
+
+            xPos = 14;
+
+            // Determine status
+            let statusText = 'Vacant';
+            if (unit.availability_status !== 'available') {
+                statusText = unit.pending_balances === 0 ? 'No Balance' : 'With Balance';
+            }
+
+            const rowData = [
+                unit.property_name,
+                `${unit.unit_number}\n${unit.unit_type}`,
+                unit.tenant || 'N/A',
+                unit.expected.toLocaleString(),
+                unit.arrears.toLocaleString(),
+                unit.fines.toLocaleString(),
+                unit.bills.toLocaleString(),
+                unit.received.toLocaleString(),
+                unit.rent_amount.toLocaleString(),
+                unit.pending_balances.toLocaleString(),
+                statusText
+            ];
+
+            // Alternating row colors
+            if (index % 2 === 0) {
+                doc.setFillColor(250, 250, 250);
+                doc.rect(14, yPosition - 5, pageWidth - 28, rowHeight, 'F');
+            }
+
+            rowData.forEach((data, idx) => {
+                doc.text(String(data), xPos, yPosition, { maxWidth: colWidths[idx] - 2 });
+                xPos += colWidths[idx];
+            });
+
+            yPosition += rowHeight;
+        });
+
+        // Totals
+        yPosition += 5;
+        if (yPosition > pageHeight - 20) {
+            doc.addPage();
+            yPosition = 20;
+        }
+
+        doc.setFont(undefined, 'bold');
+        doc.setFillColor(255, 255, 200);
+        doc.rect(14, yPosition - 5, pageWidth - 28, 10, 'F');
+
+        xPos = 14;
+        const totals = [
+            'TOTALS',
+            '',
+            '',
+            propertiesUnits.reduce((sum, u) => sum + u.expected, 0).toLocaleString(),
+            propertiesUnits.reduce((sum, u) => sum + u.arrears, 0).toLocaleString(),
+            propertiesUnits.reduce((sum, u) => sum + u.fines, 0).toLocaleString(),
+            propertiesUnits.reduce((sum, u) => sum + u.bills, 0).toLocaleString(),
+            propertiesUnits.reduce((sum, u) => sum + u.received, 0).toLocaleString(),
+            propertiesUnits.reduce((sum, u) => sum + u.rent_amount, 0).toLocaleString(),
+            propertiesUnits.reduce((sum, u) => sum + u.pending_balances, 0).toLocaleString(),
+            ''
+        ];
+
+        totals.forEach((total, idx) => {
+            doc.text(String(total), xPos, yPosition, { maxWidth: colWidths[idx] - 2 });
+            xPos += colWidths[idx];
+        });
+
+        // Footer
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        }
+
+        // Save the PDF
+        doc.save(`All_Units_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        toast.success('PDF downloaded successfully!');
+    };
+
+    // Excel Generation Function
+    const generateExcel = () => {
+        if (typeof XLSX === 'undefined') {
+            toast.error('Excel library not loaded. Please refresh the page.');
+            return;
+        }
+
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+
+        // Summary Statistics Sheet
+        const summaryData = [
+            ['All Units Report'],
+            [`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`],
+            [`Total Units: ${propertiesUnits.length}`],
+            [],
+            ['Summary Statistics'],
+            [],
+            ['Metric', 'Value'],
+            ['Total Units', propertiesBreakdown.all_property_units?.count || 0],
+            ['Occupied Units', propertiesBreakdown.occupied_units?.count || 0],
+            ['Vacant Units', propertiesBreakdown.vacant_units?.count || 0],
+            ['Total Payable', `KES ${(propertiesRevenue.revenue?.amounts?.expected_income?.count || 0).toLocaleString()}`],
+            ['Total Rent', `KES ${(propertiesRevenue.revenue?.amounts?.total_rent?.count || 0).toLocaleString()}`],
+            ['Amount Paid', `KES ${(propertiesRevenue.revenue?.amounts?.amount_paid?.count || 0).toLocaleString()}`],
+            ['Total Arrears', `KES ${Number(propertiesRevenue.revenue?.amounts?.total_arrears?.count ?? 0).toLocaleString()}`],
+            ['Total Fines', `KES ${(propertiesRevenue.revenue?.amounts?.total_fines?.count || 0).toLocaleString()}`],
+            ['Total Bills', `KES ${(propertiesRevenue.revenue?.amounts?.total_bills?.count || 0).toLocaleString()}`],
+            ['Total Balance', `KES ${(propertiesRevenue.revenue?.amounts?.total_balance?.count || 0).toLocaleString()}`],
+        ];
+
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+        // Unit Details Sheet
+        const unitData = [
+            ['Unit Details'],
+            [],
+            ['Property Name', 'Unit Number', 'Unit Type', 'Floor', 'Tenant Name', 'Tenant Phone', 'Expected Rent', 'Previous Arrears', 'Fines', 'Bills', 'Amount Paid', 'Rent Amount', 'Pending Balance', 'Availability Status', 'Payment Status']
+        ];
+
+        propertiesUnits.forEach(unit => {
+            unitData.push([
+                unit.property_name,
+                unit.unit_number,
+                unit.unit_type,
+                unit.floor_number,
+                unit.tenant || 'N/A',
+                unit.tenant_phone || 'N/A',
+                unit.expected,
+                unit.arrears,
+                unit.fines,
+                unit.bills,
+                unit.received,
+                unit.rent_amount,
+                unit.pending_balances,
+                unit.availability_status === 'available' ? 'Vacant' : 'Occupied',
+                unit.payments_to_landlord ? 'To Landlord' : 'To Manager'
+            ]);
+        });
+
+        // Add totals row
+        unitData.push([
+            'TOTALS',
+            '',
+            '',
+            '',
+            '',
+            '',
+            propertiesUnits.reduce((sum, u) => sum + u.expected, 0),
+            propertiesUnits.reduce((sum, u) => sum + u.arrears, 0),
+            propertiesUnits.reduce((sum, u) => sum + u.fines, 0),
+            propertiesUnits.reduce((sum, u) => sum + u.bills, 0),
+            propertiesUnits.reduce((sum, u) => sum + u.received, 0),
+            propertiesUnits.reduce((sum, u) => sum + u.rent_amount, 0),
+            propertiesUnits.reduce((sum, u) => sum + u.pending_balances, 0),
+            '',
+            ''
+        ]);
+
+        const wsUnits = XLSX.utils.aoa_to_sheet(unitData);
+
+        // Set column widths
+        wsUnits['!cols'] = [
+            { wch: 30 }, // Property Name
+            { wch: 15 }, // Unit Number
+            { wch: 20 }, // Unit Type
+            { wch: 10 }, // Floor
+            { wch: 25 }, // Tenant Name
+            { wch: 15 }, // Tenant Phone
+            { wch: 15 }, // Expected Rent
+            { wch: 15 }, // Previous Arrears
+            { wch: 12 }, // Fines
+            { wch: 12 }, // Bills
+            { wch: 15 }, // Amount Paid
+            { wch: 15 }, // Rent Amount
+            { wch: 15 }, // Pending Balance
+            { wch: 18 }, // Availability Status
+            { wch: 18 }  // Payment Status
+        ];
+
+        XLSX.utils.book_append_sheet(wb, wsUnits, 'Unit Details');
+
+        // Generate Excel file
+        XLSX.writeFile(wb, `All_Units_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        toast.success('Excel file downloaded successfully!');
+    };
+
     return (
         <>
             <DashboardHeader
@@ -243,7 +551,7 @@ const UnitListing = () => {
                 onSelectChange={handleSelectChange}
 
             />
-            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 py-1 px-4">
+            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 py-1 px-4 mt-2">
                 {loading ? (
                     Array(3).fill(0).map((_, index) => (
                         <StatCardSkeleton key={index} />
@@ -262,7 +570,75 @@ const UnitListing = () => {
                 )}
             </div>
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5 overflow-auto">
-                <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
+                <div className="flex justify-between items-center">
+                    <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
+                    <div className="flex space-x-4">
+                        <div className="flex items-center gap-2 text-xs">
+                            <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
+                                Show Units:
+                            </label>
+                            <select
+                                id="unitSelect"
+                                value={selectedUnits}
+                                onChange={handleUnitChange}
+                                className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            >
+                                {options.map((num) => (
+                                    <option key={num} value={num}>
+                                        {num}
+                                    </option>
+                                ))}
+                                <option value={totalUnits}>{totalUnits} (All)</option>
+                            </select>
+                        </div>
+                        <div className="relative">
+
+                            <button
+                                onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
+                                disabled={loading || propertiesUnits.length === 0}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <FaDownload className="w-4 h-4" />
+                                Download
+                                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+
+                            {openDropdownId === 'download' && (
+                                <div className="absolute left-0 z-50 w-40 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                    <div className="py-1">
+                                        <button
+                                            onClick={() => {
+                                                generatePDF();
+                                                setOpenDropdownId(null);
+                                            }}
+                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                        >
+                                            <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                            </svg>
+                                            PDF Format
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                generateExcel();
+                                                setOpenDropdownId(null);
+                                            }}
+                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                        >
+                                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                            </svg>
+                                            Excel Format
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
 
                 <table className="min-w-full border border-gray-200 rounded-lg">
                     <thead className="bg-gray-100 text-xs uppercase text-gray-600">
@@ -273,8 +649,8 @@ const UnitListing = () => {
 
                             <th className="px-6 py-3 text-right">Exp Rent</th>
                             <th className="px-6 py-3 text-right">Prev Arrears</th>
-                            <th className="px-6 py-3 text-right">Bills</th>
                             <th className="px-6 py-3 text-right">Fines</th>
+                            <th className="px-6 py-3 text-right">Bills</th>
                             <th className="px-6 py-3 text-right">Paid</th>
                             <th className="px-6 py-3 text-right">Rent</th>
                             <th className="px-6 py-3 text-right">Balances</th>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import axios from "axios"
 import toast from "react-hot-toast"
 import { FaBell } from "react-icons/fa"
+import { useAuth } from "../../../../AuthContext"
 
 const DashboardHeader = ({ title, description, link, name, hideSelect, selectUnit, hideLink, properties, units, onSelectChange, onUnitSelectChange, showLink2, link2Name, link2 }) => {
     const baseUrl = import.meta.env.VITE_BASE_URL
@@ -86,6 +87,8 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
     //     console.error(error)
     //   }
     // }
+
+    const { hasPermission } = useAuth();
 
     return (
         <>
@@ -190,7 +193,8 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
 
                     </div>
                     <div className="flex space-x-3">
-                        {hideLink && (
+
+                        {hasPermission("properties", "add") && hideLink && (
                             <Link to={link}>
                                 <div className="flex space-x-3 focus:outline-none text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-xs px-2 py-2.5">
                                     <p>{name}</p>
@@ -199,7 +203,7 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
                             </Link>
                         )}
 
-                        {showLink2 && (
+                        {hasPermission("payments", "add") && showLink2 && (
                             <Link to={link2}>
                                 <div className="flex space-x-3 focus:outline-none text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-xs px-2 py-2.5">
                                     <p>{link2Name}</p>

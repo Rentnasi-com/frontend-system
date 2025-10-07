@@ -36,6 +36,16 @@ const StaffManagement = () => {
         setOpenDropdownId(openDropdownId === tenantId ? null : tenantId);
     };
 
+    const formatNaturalDate = (date) => {
+        const options = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'long'
+        };
+        return date.toLocaleDateString('en-US', options);
+    };
+
     return (
         <div className="min-h-screen bg-gray-100">
             <DashboardHeader
@@ -177,20 +187,11 @@ const StaffManagement = () => {
                                                     {(staff.salary)}
                                                 </td>
                                                 <td className="px-6 py-3 text-right">
-                                                    {(staff.hire_date)}
+                                                    {(staff.profile.hire_date.toLocaleDateString())}
                                                 </td>
                                                 <td className="px-4 py-2">
                                                     <div className="text-xs">
-                                                        {staff.assigned_properties && staff.assigned_properties.length > 0 ? (
-                                                            <>
-                                                                <span className="font-medium">{staff.assigned_properties.length}</span> properties
-                                                                <div className="mt-1 text-gray-500 truncate max-w-xs">
-                                                                    {staff.assigned_properties.join(', ')}
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <span className="text-gray-400">Not assigned</span>
-                                                        )}
+                                                        {(staff.properties)}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-2 text-xs text-right">

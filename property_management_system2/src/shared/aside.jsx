@@ -1,104 +1,183 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-    Home,
-    Building2,
-    Users,
-    UserCheck,
-    BarChart3,
-    MessageCircle,
-    Settings,
-    HelpCircle,
-    LogOut,
-    Recycle,
-    Crown,
-    ChevronRight,
-    Sparkles,
-    ChevronDown,
-    Wallet,
-    PanelLeftClose,
-    PanelLeftOpen
-} from "lucide-react";
+import { Home, Building2, Users, UserCheck, BarChart3, MessageCircle, Settings, HelpCircle, LogOut, Recycle, Crown, ChevronRight, Sparkles, ChevronDown, Wallet, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useAuth } from "../AuthContext";
+
 
 const Aside = ({ collapsed, setCollapsed }) => {
     const [openDropdown, setOpenDropdown] = useState(null);
+    const { hasPermission } = useAuth();
+    const location = useLocation();
+    const [activeLink, setActiveLink] = useState(location.pathname);
 
-    const links = [
+    // Define all links with permissions
+    const allLinks = [
         { to: "/dashboard", label: "Dashboard", iconPath: "Home" },
         {
             label: "Properties",
             iconPath: "Building2",
+            permission: { module: "properties", action: "view" },
             submenu: [
-                { to: "/property/property-listing", label: "Properties" },
-                { to: "/property/all-property-units", label: "Units" },
-                { to: "/add-property/general-information", label: "Add Property" }
+                {
+                    to: "/property/property-listing",
+                    label: "Properties",
+                    permission: { module: "properties", action: "view" }
+                },
+                {
+                    to: "/property/all-property-units",
+                    label: "Units",
+                    permission: { module: "properties", action: "view" }
+                },
+                {
+                    to: "/add-property/general-information",
+                    label: "Add Property",
+                    permission: { module: "properties", action: "add" }
+                }
             ]
         },
         {
             label: "Tenants",
             iconPath: "Users",
+            permission: { module: "tenants", action: "view" },
             submenu: [
-                { to: "/tenants", label: "Tenants" },
-                { to: "/tenants/add-personal-details", label: "Add Tenant" }
+                {
+                    to: "/tenants",
+                    label: "Tenants",
+                    permission: { module: "tenants", action: "view" }
+                },
+                {
+                    to: "/tenants/add-personal-details",
+                    label: "Add Tenant",
+                    permission: { module: "tenants", action: "add" }
+                }
             ]
         },
         {
             label: "Landlords",
             iconPath: "UserCheck",
+            permission: { module: "landlords", action: "view" },
             submenu: [
-                { to: "/landlords", label: "Landlords" },
-                { to: "/add-landlord/personal-information", label: "Add Landlord" }
+                {
+                    to: "/landlords",
+                    label: "Landlords",
+                    permission: { module: "landlords", action: "view" }
+                },
+                {
+                    to: "/add-landlord/personal-information",
+                    label: "Add Landlord",
+                    permission: { module: "landlords", action: "add" }
+                }
             ]
         },
         {
             label: "Billings",
             iconPath: "Wallet",
+            permission: { module: "payments", action: "view" },
             submenu: [
-                { to: "/property/receive-water", label: "Water Billing" },
-                { to: "/property/receive-bulk-electricity", label: "Electricity Billing" },
-                { to: "/property/receive-payment", label: "Receive Payment" }
+                {
+                    to: "/property/receive-water",
+                    label: "Water Billing",
+                    permission: { module: "payments", action: "add" }
+                },
+                {
+                    to: "/property/receive-bulk-electricity",
+                    label: "Electricity Billing",
+                    permission: { module: "payments", action: "add" }
+                },
+                {
+                    to: "/property/receive-payment",
+                    label: "Receive Payment",
+                    permission: { module: "payments", action: "add" }
+                }
             ]
         },
         {
             label: "Staff",
             iconPath: "Users",
+            permission: { module: "users", action: "view" },
             submenu: [
-                { to: "/staffs/staff-listings", label: "Users" },
-                { to: "/staffs/add-personal-info", label: "Add Users" }
+                {
+                    to: "/staffs/staff-listings",
+                    label: "Users",
+                    permission: { module: "users", action: "view" }
+                },
+                {
+                    to: "/staffs/add-personal-info",
+                    label: "Add Users",
+                    permission: { module: "users", action: "add" }
+                }
             ]
         },
-        { to: "/dashboard/reports", label: "Reports", iconPath: "BarChart3" },
-        { to: "/dashboard/inquiries", label: "Inquiries", iconPath: "MessageCircle" },
-        { to: "/settings", label: "Settings", iconPath: "Settings" },
+        {
+            to: "/dashboard/reports",
+            label: "Reports",
+            iconPath: "BarChart3",
+            permission: { module: "reports", action: "view" }
+        },
+        {
+            to: "/dashboard/inquiries",
+            label: "Inquiries",
+            iconPath: "MessageCircle",
+            permission: { module: "inquiries", action: "view" }
+        },
+        {
+            to: "/settings",
+            label: "Settings",
+            iconPath: "Settings",
+            permission: { module: "settings", action: "view" }
+        },
         { to: "/help-center", label: "Help Center", iconPath: "HelpCircle" },
-        { to: "/recycle", label: "Recycle", iconPath: "Recycle" },
+        {
+            to: "/recycle",
+            label: "Recycle",
+            iconPath: "Recycle",
+            permission: { module: "trash", action: "view" }
+        },
         { to: "/logout", label: "Logout", iconPath: "LogOut" }
     ];
 
-    const location = useLocation();
-    const [activeLink, setActiveLink] = useState(location.pathname);
+    // Filter links based on permissions
+    const links = useMemo(() => {
+        return allLinks
+            .map(link => {
+                // If link has no permission requirement, keep it
+                if (!link.permission) {
+                    return link;
+                }
+
+                // Check if user has permission for this link
+                if (!hasPermission(link.permission.module, link.permission.action)) {
+                    return null;
+                }
+
+                // If link has submenu, filter submenu items too
+                if (link.submenu) {
+                    const filteredSubmenu = link.submenu.filter(sublink => {
+                        if (!sublink.permission) return true;
+                        return hasPermission(sublink.permission.module, sublink.permission.action);
+                    });
+
+                    // Only show parent if at least one submenu item is visible
+                    if (filteredSubmenu.length === 0) {
+                        return null;
+                    }
+
+                    return {
+                        ...link,
+                        submenu: filteredSubmenu
+                    };
+                }
+
+                return link;
+            })
+            .filter(link => link !== null);
+    }, [hasPermission]);
 
     const handleLinkClick = (path) => setActiveLink(path);
     const toggleDropdown = (label) =>
         setOpenDropdown(openDropdown === label ? null : label);
 
-    const iconMap = {
-        Home,
-        Building2,
-        Users,
-        UserCheck,
-        BarChart3,
-        MessageCircle,
-        Settings,
-        HelpCircle,
-        LogOut,
-        Recycle,
-        Crown,
-        ChevronRight,
-        Sparkles,
-        ChevronDown,
-        Wallet
-    };
+    const iconMap = { Home, Building2, Users, UserCheck, BarChart3, MessageCircle, Settings, HelpCircle, LogOut, Recycle, Crown, ChevronRight, Sparkles, ChevronDown, Wallet };
 
     return (
         <aside

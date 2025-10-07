@@ -6,6 +6,7 @@ import axios from "axios"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { Button } from "../../../shared"
 import { set } from "date-fns"
+import { useAuth } from "../../../AuthContext"
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -50,7 +51,7 @@ const TenantUnits = () => {
     const [itemToVacate, setItemToVacate] = useState(null);
 
     const navigate = useNavigate()
-
+    const { hasPermission } = useAuth();
 
     const fetchTenantDetails = async () => {
         try {
@@ -195,12 +196,14 @@ const TenantUnits = () => {
                         </div>
                     </div>
                     <div className="flex space-x-3">
-                        <Link
-                            to={`/tenants/edit-personal-details?tenant_id=${tenantId}`}
-                            className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-xs px-2 py-2.5"
-                        >
-                            Edit Profile
-                        </Link>
+                        {hasPermission("tenants", "edit") &&
+                            <Link
+                                to={`/tenants/edit-personal-details?tenant_id=${tenantId}`}
+                                className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-xs px-2 py-2.5"
+                            >
+                                Edit Profile
+                            </Link>
+                        }
                         <Link
                             to={`/tenants/add-tenant-unit?tenant_id=${tenantId}`}
                             className="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-red-300 font-medium rounded text-xs px-2 py-2.5"
@@ -282,7 +285,7 @@ const TenantUnits = () => {
                                 <TableRowSkeleton key={index} />
                             ))
                         ) : (
-                            tenant.tenantUnits.map((unit, index) => (
+                            tenant?.tenantUnits.map((unit, index) => (
                                 <tr key={index} className="border-b text-sm">
                                     <td className="px-4 py-2">
                                         {unit.property_name}

@@ -354,7 +354,7 @@ const App = () => {
                             <Route
                                 path="/tenants"
                                 element={
-                                    <ProtectedRoute requiredModule="tenants" requiredAction="add">
+                                    <ProtectedRoute requiredModule="tenants" requiredAction="view">
                                         <Tenants />
                                     </ProtectedRoute>
                                 }
@@ -362,7 +362,7 @@ const App = () => {
                             <Route
                                 path="/tenants/view-tenant-units"
                                 element={
-                                    <ProtectedRoute requiredModule="tenants" requiredAction="add">
+                                    <ProtectedRoute requiredModule="tenants" requiredAction="view">
                                         <TenantUnits />
                                     </ProtectedRoute>
                                 }

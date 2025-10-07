@@ -5,6 +5,7 @@ import { FaDownload } from "react-icons/fa";
 import { Button } from "../../../shared";
 import toast from "react-hot-toast";
 import { DashboardHeader, PropertyCard } from "./page_components";
+import { useAuth } from "../../../AuthContext";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -59,6 +60,8 @@ const PropertyListing = () => {
 
     const [searchQuery, setSearchQuery] = useState('')
     const [confirmedSearch, setConfirmedSearch] = useState("");
+
+    const { hasPermission } = useAuth();
 
     const handleUnitChange = (e) => {
         const value = parseInt(e.target.value);
@@ -567,17 +570,15 @@ const PropertyListing = () => {
 
     return (
         <>
-
-
             <DashboardHeader
                 title="All your property"
                 description="Manage All Your Properties in One Place"
-                name="New property"
+                name="Add property"
                 link="/add-property/general-information"
                 hideSelect={false}
                 hideLink={true}
             />
-            <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 py-1 px-4">
+            <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 py-1 px-4 mt-2">
                 {loading ? (
                     Array(8).fill(0).map((_, index) => (
                         <StatCardSkeleton key={index} />
@@ -598,7 +599,7 @@ const PropertyListing = () => {
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
                 <div className="flex justify-between items-center">
                     <h4 className="text-md text-gray-600 my-4 px-2">All property List</h4>
-                    <div className="flex items-center gap-2 mr-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2 md:mb-0 mr-2">
                         <div className="flex items-center gap-2 text-xs">
                             <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
                                 Show Units:
@@ -662,7 +663,7 @@ const PropertyListing = () => {
                             )}
                         </div>
 
-                        <form onSubmit={handleSubmitSearch} className="w-72">
+                        <form onSubmit={handleSubmitSearch} className="w-44 md:w-72">
                             <label className="text-sm font-medium text-gray-900 sr-only">Search</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
@@ -755,12 +756,14 @@ const PropertyListing = () => {
                                                         >
                                                             View Property
                                                         </Link>
-                                                        <Link
-                                                            to={`/edit-property/general-information?property_id=${property.id}`}
-                                                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                        >
-                                                            Edit Property
-                                                        </Link>
+                                                        {hasPermission("properties", "add") &&
+                                                            <Link
+                                                                to={`/edit-property/general-information?property_id=${property.id}`}
+                                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                            >
+                                                                Edit Property
+                                                            </Link>
+                                                        }
                                                         {property.payments_to_landlord === false ? (
                                                             <button
                                                                 onClick={() => setWhoToRecievePayment(property.id, true)}
@@ -777,12 +780,15 @@ const PropertyListing = () => {
                                                             </button>
                                                         )}
                                                         <hr />
-                                                        <button
-                                                            onClick={() => openDeleteModal(property)}
-                                                            className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"
-                                                        >
-                                                            Delete Property
-                                                        </button>
+
+                                                        {hasPermission("properties", "delete") &&
+                                                            <button
+                                                                onClick={() => openDeleteModal(property)}
+                                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"
+                                                            >
+                                                                Delete Property
+                                                            </button>
+                                                        }
                                                     </div>
                                                 </div>
                                             )}

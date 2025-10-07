@@ -429,7 +429,7 @@ const Home2 = () => {
                 <DashboardHeader
                     title="Dashboard"
                     description="Welcome to Rentalpay Property Management Platform"
-                    name="New property"
+                    name="Add property"
                     link="/add-property/general-information"
                     hideSelect={false}
                     hideLink={true}
@@ -437,7 +437,8 @@ const Home2 = () => {
                     link2Name="Receive Payment"
                     link2="/property/receive-payment"
                 />
-                <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 py-1 px-4">
+
+                <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 py-1 px-4 mt-2">
                     {loading ? (
                         Array(8).fill(0).map((_, index) => (
                             <StatCardSkeleton key={index} />

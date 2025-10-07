@@ -3,6 +3,7 @@ import axios from "axios"
 import { Link, useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
 import { DashboardHeader } from "../../properties/dashboard/page_components";
+import { FaDownload } from "react-icons/fa";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -44,15 +45,18 @@ const ViewLandlord = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [pagination, setPagination] = useState([]);
 
+    const [totalUnits, setTotalUnits] = useState("");
+    const [selectedUnits, setSelectedUnits] = useState(10);
+
     useEffect(() => {
 
         fetchLandlord(currentPage)
-    }, [baseUrl, token, confirmedSearch])
+    }, [baseUrl, token, confirmedSearch, selectedUnits])
 
     const fetchLandlord = async (page = 1) => {
         try {
             const response = await axios.get(
-                `${baseUrl}/manage-landlord/get-all-landlord?query=${confirmedSearch}&pagination=${page}`,
+                `${baseUrl}/manage-landlord/get-all-landlord?query=${confirmedSearch}&pagination=${page}&per_page=${selectedUnits}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -62,6 +66,8 @@ const ViewLandlord = () => {
             setLandlords(response.data.result)
             setCurrentPage(response.data.pagination.current_page);
             setPagination(response.data.pagination)
+            setTotalUnits(response.data.pagination.total)
+
         } catch (error) {
             toast.error("Failed to fetch landlords. Please try again later.");
         } finally {
@@ -218,6 +224,288 @@ const ViewLandlord = () => {
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
     }
 
+    const handleUnitChange = (e) => {
+        const value = parseInt(e.target.value);
+        setSelectedUnits(value);
+
+    };
+
+    const options = [10, 25, 50, 100, 150, 200, 300, 400, 500].filter((num) => num < totalUnits);
+
+
+
+    // PDF Generation Function
+    const generatePDF = () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let yPosition = 20;
+
+        // Header
+        doc.setFontSize(18);
+        doc.setFont(undefined, 'bold');
+        doc.text('Landlords Report', pageWidth / 2, yPosition, { align: 'center' });
+
+        yPosition += 8;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, pageWidth / 2, yPosition, { align: 'center' });
+
+        yPosition += 6;
+        doc.text(`Total Landlords: ${landlords.length}`, pageWidth / 2, yPosition, { align: 'center' });
+
+        yPosition += 15;
+
+        // Summary Totals
+        const totalExpected = landlords.reduce((sum, l) => sum + l.expected_revenue, 0);
+        const totalOutstanding = landlords.reduce((sum, l) => sum + l.outstanding_revenue, 0);
+        const totalPending = landlords.reduce((sum, l) => sum + l.pending_balance, 0);
+        const totalFines = landlords.reduce((sum, l) => sum + l.fines, 0);
+        const totalProperties = landlords.reduce((sum, l) => sum + l.properties, 0);
+        const totalVacant = landlords.reduce((sum, l) => sum + l.vacant_units, 0);
+        const totalOccupied = landlords.reduce((sum, l) => sum + l.occupied_units, 0);
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('Summary Statistics', 14, yPosition);
+        yPosition += 8;
+
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+
+        const summaryStats = [
+            { label: 'Total Properties', value: totalProperties },
+            { label: 'Total Vacant Units', value: totalVacant },
+            { label: 'Total Occupied Units', value: totalOccupied },
+            { label: 'Expected Revenue', value: `KES ${totalExpected.toLocaleString()}` },
+            { label: 'Outstanding Revenue', value: `KES ${totalOutstanding.toLocaleString()}` },
+            { label: 'Pending Balances', value: `KES ${totalPending.toLocaleString()}` },
+            { label: 'Total Fines', value: `KES ${totalFines.toLocaleString()}` },
+        ];
+
+        summaryStats.forEach((stat, index) => {
+            if (index % 2 === 0 && index > 0) yPosition += 6;
+            const xPos = index % 2 === 0 ? 14 : pageWidth / 2 + 10;
+            doc.text(`${stat.label}: ${stat.value}`, xPos, yPosition);
+            if (index % 2 === 1) yPosition += 6;
+        });
+
+        if (summaryStats.length % 2 === 1) yPosition += 6;
+        yPosition += 12;
+
+        // Landlords Table
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Landlord Details', 14, yPosition);
+        yPosition += 10;
+
+        // Process each landlord
+        landlords.forEach((landlord, landlordIndex) => {
+            const estimatedHeight = 25 + (landlord.landlord_details?.length || 0) * 5;
+
+            if (yPosition + estimatedHeight > pageHeight - 20) {
+                doc.addPage();
+                yPosition = 20;
+            }
+
+            // Landlord Header
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            doc.setFillColor(240, 240, 240);
+            doc.rect(14, yPosition - 5, pageWidth - 28, 8, 'F');
+
+            doc.text(`${landlord.landlord_info.name}`, 16, yPosition);
+            yPosition += 5;
+
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Email: ${landlord.landlord_info.email} | Phone: ${landlord.landlord_info.phone} | Payment Day: ${ordinal(landlord.landlord_info.day_of_payment)}`, 16, yPosition);
+            yPosition += 8;
+
+            // Properties list
+            if (landlord.landlord_details && landlord.landlord_details.length > 0) {
+                doc.setFontSize(8);
+                doc.setFont(undefined, 'bold');
+                doc.text(`Properties (${landlord.properties}):`, 20, yPosition);
+                yPosition += 5;
+
+                doc.setFont(undefined, 'normal');
+                landlord.landlord_details.forEach((property, idx) => {
+                    if (yPosition > pageHeight - 15) {
+                        doc.addPage();
+                        yPosition = 20;
+                    }
+                    doc.text(`${String.fromCharCode(97 + idx)}. ${property.property_name}`, 25, yPosition);
+                    yPosition += 4;
+                });
+                yPosition += 3;
+            }
+
+            // Financial Summary
+            doc.setFontSize(8);
+            const financialData = [
+                `Units: Vacant ${landlord.vacant_units} | Occupied ${landlord.occupied_units}`,
+                `Expected Revenue: KES ${landlord.expected_revenue.toLocaleString()}`,
+                `Outstanding Revenue: KES ${landlord.outstanding_revenue.toLocaleString()}`,
+                `Pending Balance: KES ${landlord.pending_balance.toLocaleString()}`,
+                `Fines: KES ${landlord.fines.toLocaleString()}`
+            ];
+
+            financialData.forEach(line => {
+                if (yPosition > pageHeight - 15) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                doc.text(line, 20, yPosition);
+                yPosition += 4;
+            });
+
+            yPosition += 8; // Space between landlords
+        });
+
+        // Footer
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        }
+
+        // Save the PDF
+        doc.save(`Landlords_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        toast.success('PDF downloaded successfully!');
+    };
+
+    // Excel Generation Function
+    const generateExcel = () => {
+        if (typeof XLSX === 'undefined') {
+            toast.error('Excel library not loaded. Please refresh the page.');
+            return;
+        }
+
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+
+        // Calculate totals
+        const totalExpected = landlords.reduce((sum, l) => sum + l.expected_revenue, 0);
+        const totalOutstanding = landlords.reduce((sum, l) => sum + l.outstanding_revenue, 0);
+        const totalPending = landlords.reduce((sum, l) => sum + l.pending_balance, 0);
+        const totalFines = landlords.reduce((sum, l) => sum + l.fines, 0);
+        const totalProperties = landlords.reduce((sum, l) => sum + l.properties, 0);
+        const totalVacant = landlords.reduce((sum, l) => sum + l.vacant_units, 0);
+        const totalOccupied = landlords.reduce((sum, l) => sum + l.occupied_units, 0);
+
+        // Summary Statistics Sheet
+        const summaryData = [
+            ['Landlords Report'],
+            [`Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`],
+            [`Total Landlords: ${landlords.length}`],
+            [],
+            ['Summary Statistics'],
+            [],
+            ['Metric', 'Value'],
+            ['Total Properties', totalProperties],
+            ['Total Vacant Units', totalVacant],
+            ['Total Occupied Units', totalOccupied],
+            ['Expected Revenue', `KES ${totalExpected.toLocaleString()}`],
+            ['Outstanding Revenue', `KES ${totalOutstanding.toLocaleString()}`],
+            ['Pending Balances', `KES ${totalPending.toLocaleString()}`],
+            ['Total Fines', `KES ${totalFines.toLocaleString()}`],
+        ];
+
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+        // Landlords Overview Sheet
+        const landlordsData = [
+            ['Landlords Overview'],
+            [],
+            ['Name', 'Email', 'Phone', 'Payment Day', 'Properties', 'Vacant Units', 'Occupied Units', 'Expected Revenue', 'Outstanding Revenue', 'Pending Balance', 'Fines']
+        ];
+
+        landlords.forEach(landlord => {
+            landlordsData.push([
+                landlord.landlord_info.name,
+                landlord.landlord_info.email,
+                landlord.landlord_info.phone,
+                ordinal(landlord.landlord_info.day_of_payment),
+                landlord.properties,
+                landlord.vacant_units,
+                landlord.occupied_units,
+                landlord.expected_revenue,
+                landlord.outstanding_revenue,
+                landlord.pending_balance,
+                landlord.fines
+            ]);
+        });
+
+        // Add totals row
+        landlordsData.push([
+            'TOTALS',
+            '',
+            '',
+            '',
+            totalProperties,
+            totalVacant,
+            totalOccupied,
+            totalExpected,
+            totalOutstanding,
+            totalPending,
+            totalFines
+        ]);
+
+        const wsLandlords = XLSX.utils.aoa_to_sheet(landlordsData);
+        wsLandlords['!cols'] = [
+            { wch: 30 }, // Name
+            { wch: 30 }, // Email
+            { wch: 15 }, // Phone
+            { wch: 12 }, // Payment Day
+            { wch: 12 }, // Properties
+            { wch: 12 }, // Vacant Units
+            { wch: 15 }, // Occupied Units
+            { wch: 18 }, // Expected Revenue
+            { wch: 18 }, // Outstanding Revenue
+            { wch: 15 }, // Pending Balance
+            { wch: 12 }  // Fines
+        ];
+        XLSX.utils.book_append_sheet(wb, wsLandlords, 'Landlords Overview');
+
+        // Properties Details Sheet
+        const propertiesData = [
+            ['Landlord Properties'],
+            [],
+            ['Landlord Name', 'Landlord Email', 'Property Name']
+        ];
+
+        landlords.forEach(landlord => {
+            if (landlord.landlord_details && landlord.landlord_details.length > 0) {
+                landlord.landlord_details.forEach(property => {
+                    propertiesData.push([
+                        landlord.landlord_info.name,
+                        landlord.landlord_info.email,
+                        property.property_name
+                    ]);
+                });
+            }
+        });
+
+        const wsProperties = XLSX.utils.aoa_to_sheet(propertiesData);
+        wsProperties['!cols'] = [
+            { wch: 30 }, // Landlord Name
+            { wch: 30 }, // Landlord Email
+            { wch: 40 }  // Property Name
+        ];
+        XLSX.utils.book_append_sheet(wb, wsProperties, 'Properties Details');
+
+        // Generate Excel file
+        XLSX.writeFile(wb, `Landlords_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        toast.success('Excel file downloaded successfully!');
+    };
+
+
     return (
         <>
             <DashboardHeader
@@ -231,25 +519,91 @@ const ViewLandlord = () => {
 
             <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
                 <div className="flex justify-between items-center px-4 py-4 border-b border-gray-200">
+
                     <h4 className="text-md text-gray-600">All landlord list</h4>
 
-                    <form onSubmit={handleSubmitSearch} className="w-72">
-                        <label className="text-sm font-medium text-gray-900 sr-only">Search</label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
-                                </svg>
-                            </div>
-                            <input
-                                type="search"
-                                className="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-red-500 focus:border-red-500"
-                                placeholder="Search landlords..."
-                                value={searchQuery}
-                                onChange={handleSearch}
-                            />
+                    <div className="flex justify-between items-center space-x-4">
+                        <div className="flex items-center gap-2 text-xs">
+                            <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
+                                Show Units:
+                            </label>
+                            <select
+                                id="unitSelect"
+                                value={selectedUnits}
+                                onChange={handleUnitChange}
+                                className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            >
+                                {options.map((num) => (
+                                    <option key={num} value={num}>
+                                        {num}
+                                    </option>
+                                ))}
+                                <option value={totalUnits}>{totalUnits} (All)</option>
+                            </select>
                         </div>
-                    </form>
+                        <div className="relative">
+
+                            <button
+                                onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
+                                disabled={loading || landlords.length === 0}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <FaDownload className="w-4 h-4" />
+                                Download
+                                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+
+                            {openDropdownId === 'download' && (
+                                <div className="absolute left-0 z-50 w-40 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                    <div className="py-1">
+                                        <button
+                                            onClick={() => {
+                                                generatePDF();
+                                                setOpenDropdownId(null);
+                                            }}
+                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                        >
+                                            <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                            </svg>
+                                            PDF Format
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                generateExcel();
+                                                setOpenDropdownId(null);
+                                            }}
+                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                        >
+                                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                            </svg>
+                                            Excel Format
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <form onSubmit={handleSubmitSearch} className="w-72">
+                            <label className="text-sm font-medium text-gray-900 sr-only">Search</label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                                    <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                                    </svg>
+                                </div>
+                                <input
+                                    type="search"
+                                    className="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-red-500 focus:border-red-500"
+                                    placeholder="Search landlords..."
+                                    value={searchQuery}
+                                    onChange={handleSearch}
+                                />
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
                 <div className="flex justify-between items-center px-4 text-xs">
