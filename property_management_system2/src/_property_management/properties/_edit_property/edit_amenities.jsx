@@ -166,7 +166,7 @@ const EditAmenities = () => {
 
       if (response.data.status) {
         toast.success(response.data.message);
-        navigate(`/edit-property/property-type?property_id=${propertyIdUrl}`);
+        navigate(-1);
       } else {
         toast.error(response.data.message);
       }

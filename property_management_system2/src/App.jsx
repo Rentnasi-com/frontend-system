@@ -4,10 +4,10 @@ import { AuthProvider } from './AuthContext';
 import DashboardLayout from './_dashboardLayout';
 import ProtectedRoute from './ProtectedRoute';
 
-import { BulkWaterBill, ReceiveElectricityBilling, ReceivePayment } from './_property_management/billings'
+import { ArrearsDashboard, BulkWaterBill, PaymentsReceived, ReceiveElectricityBilling, ReceivePayment } from './_property_management/billings'
 import { MakePaybillPdf, PaymentsDetails, Settings } from './_property_management/settings'
 import { AddLandlordPaymentsDetails, AddLandlordPersonalInfo, EditLandlordPaymentsDetails, EditLandlordPersonalInfo, LandlordSingleView, ViewLandlord } from './_property_management/landlords'
-import { AddMultiSingleUnit, Amenities, DueRent, EditAmenities, EditGeneralInformation, EditManageImages, EditMultiUnit, EditMultiUnitSingleUnit, EditPropertyTypes, EditSingleUnit, General_information, Home2, ManageImages, MarketUnit, PaymentHistory, Property, Property_floors, Property_summary, Property_types, PropertyListing, Single_Unit, Unit, UnitListing } from './_property_management/properties'
+import { AddFloors, AddMultiSingleUnit, Amenities, DueRent, EditAmenities, EditGeneralInformation, EditManageImages, EditMultiUnit, EditMultiUnitSingleUnit, EditPropertyTypes, EditSingleUnit, General_information, Home2, ManageImages, MarketUnit, PaymentHistory, Property, Property_floors, Property_summary, Property_types, PropertyListing, Single_Unit, Unit, UnitListing } from './_property_management/properties'
 import { Add_Personal_Info, AddTenantProperty, EditPersonalInfo, EditTenantProperty, TenantHistory, Tenants, TenantUnits } from './_property_management/tenants'
 import { ChatRoom, Inquiries } from './_property_management/inquiries'
 import { Recycle } from './_property_management/recycleBin'
@@ -106,6 +106,14 @@ const App = () => {
                                 element={
                                     <ProtectedRoute requiredModule="properties" requiredAction="add">
                                         <AddMultiSingleUnit />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/add-property/add-floors"
+                                element={
+                                    <ProtectedRoute requiredModule="properties" requiredAction="add">
+                                        <AddFloors />
                                     </ProtectedRoute>
                                 }
                             />
@@ -388,6 +396,22 @@ const App = () => {
                                 element={
                                     <ProtectedRoute requiredModule="payments" requiredAction="add">
                                         <ReceiveElectricityBilling />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/payments/payments-received"
+                                element={
+                                    <ProtectedRoute requiredModule="payments" requiredAction="view">
+                                        <PaymentsReceived />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/payments/payments-arrears"
+                                element={
+                                    <ProtectedRoute requiredModule="payments" requiredAction="view">
+                                        <ArrearsDashboard />
                                     </ProtectedRoute>
                                 }
                             />

@@ -114,7 +114,7 @@ const EditSingleUnit = () => {
 
             if (response.data.status) {
                 toast.success(response.data.message);
-                navigate(`/edit-property/manage-images?property_id=${propertyIdUrl}`);
+                navigate(-1);
             } else {
                 toast.error(response.data.message);
             }

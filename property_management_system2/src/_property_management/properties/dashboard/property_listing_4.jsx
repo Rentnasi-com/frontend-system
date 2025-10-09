@@ -6,6 +6,7 @@ import { Button } from "../../../shared";
 import toast from "react-hot-toast";
 import { DashboardHeader, PropertyCard } from "./page_components";
 import { useAuth } from "../../../AuthContext";
+import { Building2, Home, Layers, MapPin, Plus, Sparkles, X } from "lucide-react";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -568,6 +569,69 @@ const PropertyListing = () => {
         }
     };
 
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedStep, setSelectedStep] = useState(null);
+    const [propertyId, setPropertyId] = useState(null);
+    const [totalPropertyUnits, setTotalPropertyUnits] = useState(null);
+
+    const steps = [
+        {
+            id: 1,
+            title: 'Property Name & Location',
+            description: 'Edit basic property details and address',
+            icon: MapPin,
+            color: 'from-blue-500 to-cyan-500',
+            link: `/edit-property/general-information?property_id=${propertyId}`
+        },
+        {
+            id: 2,
+            title: 'Amenities',
+            description: 'Manage property amenities and features',
+            icon: Sparkles,
+            color: 'from-purple-500 to-pink-500',
+            link: `edit-property/amenities?property_id=${propertyId}`
+        },
+        {
+            id: 3,
+            title: 'Property Type',
+            description: 'Configure property type and category',
+            icon: Home,
+            color: 'from-amber-500 to-orange-500',
+            link: `/edit-property/property-type?property_id=${propertyId}`
+        },
+
+        {
+            id: 4,
+            title: totalPropertyUnits > 1 ? 'Edit Multiple Units' : 'Edit Single Unit',
+            description: totalPropertyUnits > 1
+                ? 'Manage floors and unit configurations'
+                : 'Edit single unit details and configuration',
+            icon: Layers,
+            color: 'from-green-500 to-emerald-500',
+            link: totalPropertyUnits > 1 ? `/edit-property/multi-unit?property_id=${propertyId}` : `/edit-property/single-unit?property_id=${propertyId}`
+
+        }
+
+    ];
+
+    const additionalActions = [
+        {
+            id: 'add-floor',
+            title: 'Add Floor',
+            description: 'Add a new floor to the property',
+            icon: Plus,
+            color: 'from-indigo-500 to-blue-500',
+            link: `/add-property/add-floors?property_id=${propertyId}`
+        },
+        {
+            id: 'add-unit',
+            title: 'Add Unit',
+            description: 'Add a new unit to existing floors',
+            icon: Plus,
+            color: 'from-rose-500 to-red-500',
+            link: '/add-property/multi-single-unit'
+        }
+    ];
     return (
         <>
             <DashboardHeader
@@ -758,7 +822,11 @@ const PropertyListing = () => {
                                                         </Link>
                                                         {hasPermission("properties", "add") &&
                                                             <Link
-                                                                to={`/edit-property/general-information?property_id=${property.id}`}
+                                                                onClick={() => {
+                                                                    setPropertyId(property.id);
+                                                                    setIsOpen(true);
+                                                                    setTotalPropertyUnits(property.total_units)
+                                                                }}
                                                                 className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
                                                             >
                                                                 Edit Property
@@ -828,7 +896,7 @@ const PropertyListing = () => {
                         )}
                     </table>
                 </div>
-            </div>
+            </div >
 
             {isModalOpen && (
                 <div className="fixed z-50 inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
@@ -851,59 +919,173 @@ const PropertyListing = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
-            {pagination && pagination.last_page > 1 && (
-                <div className="flex flex-col sm:flex-row justify-between items-center mt-4 px-4 gap-4">
-                    <div className="text-sm text-gray-700">
-                        Showing page {pagination.from} to {pagination.last_page} of {pagination.total} results
+            {
+                isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
+                        {/* Modal Content */}
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+                            {/* Header */}
+                            <div className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 p-6 rounded-t-2xl">
+                                <button
+                                    onClick={() => setIsOpen(false)}
+                                    className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full text-white transition-all duration-200"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                                        <Building2 className="w-6 h-6 text-white" />
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-white">Edit Property</h2>
+                                </div>
+                                <p className="text-blue-100">Choose which aspect of the property you'd like to edit</p>
+                            </div>
+
+                            {/* Steps Grid */}
+                            <div className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Property Configuration</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    {steps.map((step) => {
+                                        const Icon = step.icon;
+                                        return (
+                                            <Link
+                                                key={step.id}
+                                                to={step.link}
+
+                                                className="group relative bg-white border-2 border-gray-200 rounded-xl p-5 text-left hover:border-transparent hover:shadow-xl transition-all duration-300 overflow-hidden"
+                                            >
+                                                {/* Gradient Background on Hover */}
+                                                <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+
+                                                <div className="relative z-10">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className={`p-3 bg-gradient-to-br ${step.color} rounded-lg transform group-hover:scale-110 transition-transform duration-300`}>
+                                                            <Icon className="w-6 h-6 text-white" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className={`text-xs font-bold px-2 py-1 bg-gradient-to-r ${step.color} text-white rounded-full`}>
+                                                                    Step {step.id}
+                                                                </span>
+                                                            </div>
+                                                            <h4 className="text-base font-semibold text-gray-800 mb-1 group-hover:text-gray-900">
+                                                                {step.title}
+                                                            </h4>
+                                                            <p className="text-sm text-gray-600 group-hover:text-gray-700">
+                                                                {step.description}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Arrow indicator */}
+                                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300">
+                                                    <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Additional Actions */}
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4 mt-8">Quick Actions</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {additionalActions.map((action) => {
+                                        const Icon = action.icon;
+                                        return (
+                                            <Link
+                                                key={action.id}
+                                                to={action.link}
+                                                className="group relative bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-5 text-left hover:border-solid hover:from-white hover:to-white hover:shadow-lg transition-all duration-300"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`p-3 bg-gradient-to-br ${action.color} rounded-lg transform group-hover:scale-110 transition-transform duration-300`}>
+                                                        <Icon className="w-5 h-5 text-white" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="text-base font-semibold text-gray-800 mb-1">
+                                                            {action.title}
+                                                        </h4>
+                                                        <p className="text-sm text-gray-600">
+                                                            {action.description}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="border-t border-gray-200 p-4 bg-gray-50 rounded-b-2xl">
+                                <p className="text-xs text-gray-500 text-center">
+                                    Select an option above to edit your property details
+                                </p>
+                            </div>
+                        </div>
                     </div>
+                )
+            }
 
-                    <div className="flex items-center space-x-2">
-                        <button
-                            className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-l ${currentPage === 1
-                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                                : 'text-white bg-red-800 hover:bg-red-900'
-                                }`}
-                            onClick={handlePrevPage}
-                            disabled={currentPage === 1 || loading}
-                        >
-                            <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4" />
-                            </svg>
-                            Previous
-                        </button>
+            {
+                pagination && pagination.last_page > 1 && (
+                    <div className="flex flex-col sm:flex-row justify-between items-center mt-4 px-4 gap-4">
+                        <div className="text-sm text-gray-700">
+                            Showing page {pagination.from} to {pagination.last_page} of {pagination.total} results
+                        </div>
 
-                        {generatePageNumbers().map((pageNum) => (
+                        <div className="flex items-center space-x-2">
                             <button
-                                key={pageNum}
-                                className={`flex items-center justify-center px-3 h-8 text-sm font-medium ${pageNum === currentPage
-                                    ? 'text-white bg-red-800'
-                                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-100'
+                                className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-l ${currentPage === 1
+                                    ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                    : 'text-white bg-red-800 hover:bg-red-900'
                                     }`}
-                                onClick={() => handlePageClick(pageNum)}
-                                disabled={loading}
+                                onClick={handlePrevPage}
+                                disabled={currentPage === 1 || loading}
                             >
-                                {pageNum}
+                                <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4" />
+                                </svg>
+                                Previous
                             </button>
-                        ))}
 
-                        <button
-                            className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-r ${currentPage === pagination.last_page
-                                ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                                : 'text-white bg-red-800 hover:bg-red-900'
-                                }`}
-                            onClick={handleNextPage}
-                            disabled={currentPage === pagination.last_page || loading}
-                        >
-                            Next
-                            <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
-                            </svg>
-                        </button>
+                            {generatePageNumbers().map((pageNum) => (
+                                <button
+                                    key={pageNum}
+                                    className={`flex items-center justify-center px-3 h-8 text-sm font-medium ${pageNum === currentPage
+                                        ? 'text-white bg-red-800'
+                                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-100'
+                                        }`}
+                                    onClick={() => handlePageClick(pageNum)}
+                                    disabled={loading}
+                                >
+                                    {pageNum}
+                                </button>
+                            ))}
+
+                            <button
+                                className={`flex items-center justify-center px-3 h-8 text-sm font-medium rounded-r ${currentPage === pagination.last_page
+                                    ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                    : 'text-white bg-red-800 hover:bg-red-900'
+                                    }`}
+                                onClick={handleNextPage}
+                                disabled={currentPage === pagination.last_page || loading}
+                            >
+                                Next
+                                <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </>
     );
 };

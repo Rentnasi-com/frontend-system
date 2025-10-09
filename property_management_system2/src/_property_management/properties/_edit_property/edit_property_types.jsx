@@ -93,9 +93,9 @@ const EditPropertyTypes = () => {
       if (response.data.status) {
         toast.success(response.data.message);
         if (response.data.data.requires_multiple_floors) {
-          navigate(`/edit-property/multi-unit?property_id=${propertyIdUrl}`);
+          navigate(-1);
         } else {
-          navigate(`/edit-property/single-unit?property_id=${propertyIdUrl}`);
+          navigate(-1);
         }
       } else {
         toast.error(response.data.message);

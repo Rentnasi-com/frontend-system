@@ -6,6 +6,8 @@ import Property_types from "./_add_property/pages/add_property_types"
 import Property_floors from "./_add_property/pages/add_multi_unit"
 import Single_Unit from "./_add_property/pages/add_single_unit"
 import AddMultiSingleUnit from "./_add_property/pages/add_multi_single_unit"
+import AddFloors from "./_add_property/pages/add_floors"
+
 import EditGeneralInformation from "./_edit_property/edit_general_information"
 import EditAmenities from "./_edit_property/edit_amenities"
 import EditPropertyTypes from "./_edit_property/edit_property_types"
@@ -31,6 +33,8 @@ export {
     Property_floors,
     Single_Unit,
     AddMultiSingleUnit,
+    AddFloors,
+
     EditGeneralInformation,
     EditAmenities,
     EditPropertyTypes,

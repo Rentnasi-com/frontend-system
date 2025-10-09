@@ -122,7 +122,7 @@ const EditGeneralInformation = () => {
         const propertyId = response.data.data.id;
         localStorage.setItem("propertyId", propertyId);
         toast.success(response.data.message);
-        navigate(`/edit-property/amenities?property_id=${propertyIdUrl}`);
+        navigate(-1);
       } else {
         toast.error(response.data.message || "An error occurred");
       }

@@ -64,7 +64,7 @@ const PropertySummary = () => {
       setIsLoading(true);
       try {
         const response = await axios.get(
-          `${baseUrl}/manage-property/property-summary/overview?property_id=${propertyId}&page=${page}`,
+          `${baseUrl}/manage-property/property-summary/overview?property_id=${propertyId}&pagination=${page}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

@@ -538,7 +538,7 @@ const Property = () => {
                                 <p className="text-gray-500 text-sm">{property?.location_name}</p>
                             </div>
                             <div className="flex space-x-3">
-                                {hasPermission("tenant", "add") &&
+                                {hasPermission("tenants", "add") &&
                                     <Link
                                         to="/tenants/add-personal-details"
                                         className="flex space-x-3 focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded text-xs px-2 py-2.5"
@@ -546,7 +546,7 @@ const Property = () => {
                                         Add Tenant
                                     </Link>
                                 }
-                                {hasPermission("property", "edit") &&
+                                {hasPermission("properties", "edit") &&
                                     <Link
                                         to={`/edit-property/general-information?property_id=${property_id}`}
                                         className="flex space-x-3 focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded text-xs px-2 py-2.5"
@@ -554,7 +554,7 @@ const Property = () => {
                                         Edit Property
                                     </Link>
                                 }
-                                {hasPermission("property", "add") &&
+                                {hasPermission("properties", "add") &&
                                     <Link
                                         to="/add-property/multi-single-unit"
                                         className="flex space-x-3 focus:outline-none text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:ring-yellow-300 font-medium rounded text-xs px-2 py-2.5"

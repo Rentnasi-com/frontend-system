@@ -106,7 +106,7 @@ const AddMultiSingleUnit = () => {
             )
 
             if (response.data.success) {
-                navigate("/property/all-property-units")
+                navigate(-1)
             }
 
         } catch (error) {

@@ -88,6 +88,16 @@ const Aside = ({ collapsed, setCollapsed }) => {
                     to: "/property/receive-payment",
                     label: "Receive Payment",
                     permission: { module: "payments", action: "add" }
+                },
+                {
+                    to: "/payments/payments-received",
+                    label: "Payment Received",
+                    permission: { module: "payments", action: "view" }
+                },
+                {
+                    to: "/payments/payments-arrears",
+                    label: "Arrears",
+                    permission: { module: "payments", action: "view" }
                 }
             ]
         },
