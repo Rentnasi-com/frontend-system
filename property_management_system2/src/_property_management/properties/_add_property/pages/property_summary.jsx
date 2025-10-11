@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useCallback, useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, } from "react-router-dom";
 import { Chart, registerables } from "chart.js";
 import { Button } from "../../../../shared";
 
@@ -37,7 +37,17 @@ const PropertySummary = () => {
   const [propertySummary, setPropertySummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const propertyId = localStorage.getItem("propertyId");
+  const [searchParams] = useSearchParams();
+  const propertyIdUrl = searchParams.get("property_id");
+  const propertyIdLocal = localStorage.getItem("propertyId");
+
+  // Combine both: prioritize URL param, fallback to localStorage
+  const propertyId = propertyIdUrl || propertyIdLocal;
+
+  // Optionally: update localStorage when propertyIdUrl exists
+  if (propertyIdUrl) {
+    localStorage.setItem("propertyId", propertyIdUrl);
+  }
   const token = localStorage.getItem("token");
   const baseUrl = import.meta.env.VITE_BASE_URL;
 

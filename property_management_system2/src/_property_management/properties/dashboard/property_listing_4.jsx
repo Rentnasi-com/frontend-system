@@ -610,7 +610,15 @@ const PropertyListing = () => {
             color: 'from-green-500 to-emerald-500',
             link: totalPropertyUnits > 1 ? `/edit-property/multi-unit?property_id=${propertyId}` : `/edit-property/single-unit?property_id=${propertyId}`
 
-        }
+        },
+        {
+            id: 5,
+            title: 'Property Summary',
+            description: 'Property summary and description',
+            icon: Home,
+            color: 'from-red-500 to-orange-500',
+            link: `/add-property/property-summary?property_id=${propertyId}`
+        },
 
     ];
 

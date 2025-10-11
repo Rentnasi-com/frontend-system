@@ -168,7 +168,7 @@ const App = () => {
                             <Route
                                 path="/add-property/property-summary"
                                 element={
-                                    <ProtectedRoute requiredModule="properties" requiredAction="add">
+                                    <ProtectedRoute requiredModule="properties" requiredAction="view">
                                         <Property_summary />
                                     </ProtectedRoute>
                                 }
