@@ -478,9 +478,9 @@ const PropertyFloors = () => {
         <section className="mx-auto">
             <DashboardHeader
                 title="Add Property Floors"
-                description="Properties / Add Property / Floors"
+                description="Add Floors and Units to your property"
             />
-            <form className="mx-4" onSubmit={handleSubmit(handleFinalSubmit)}>
+            <form className="mx-4 mt-4 border rounded bg-white p-4" onSubmit={handleSubmit(handleFinalSubmit)}>
                 <div className="mb-4">
                     <label className="mb-2 text-sm block">Number of Floors</label>
                     <input

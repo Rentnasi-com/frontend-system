@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { DashboardHeader, PropertyCard } from "../../properties/dashboard/page_components";
+import { DashboardHeader } from "../../properties/dashboard/page_components";
 import { useAuth } from "../../../AuthContext";
-import { FaDownload } from "react-icons/fa";
+import { ChevronDown, Download, FileDown, FileSpreadsheet } from "lucide-react";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -618,92 +618,117 @@ const Tenants = () => {
                 )}
             </div> */}
 
-            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
-                <div className="flex justify-between items-center px-2 my-4">
-                    <h4 className="text-md text-gray-600">All tenant list</h4>
+            <div className="mx-4">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mt-5 w-full">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 w-full">
 
-                    <div className="md:flex justify-between items-center space-x-2 space-y-2">
-                        <div className="flex items-center gap-2 text-xs">
-                            <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
-                                Show Units:
-                            </label>
-                            <select
-                                id="unitSelect"
-                                value={selectedUnits}
-                                onChange={handleUnitChange}
-                                className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            >
-                                {options.map((num) => (
-                                    <option key={num} value={num}>
-                                        {num}
-                                    </option>
-                                ))}
-                                <option value={totalUnits}>{totalUnits} (All)</option>
-                            </select>
-                        </div>
-                        <div className="relative">
-
-                            <button
-                                onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
-                                disabled={loading || tenants.length === 0}
-                                className="w-full flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <FaDownload className="w-4 h-4" />
-                                Download
-                                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-
-                            {openDropdownId === 'download' && (
-                                <div className="absolute left-0 z-50 w-40 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                                    <div className="py-1">
-                                        <button
-                                            onClick={() => {
-                                                generatePDF();
-                                                setOpenDropdownId(null);
-                                            }}
-                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                        >
-                                            <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-                                            </svg>
-                                            PDF Format
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                generateExcel();
-                                                setOpenDropdownId(null);
-                                            }}
-                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                        >
-                                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-                                            </svg>
-                                            Excel Format
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <form onSubmit={handleSubmitSearch} className="">
+                        {/* Search */}
+                        <form onSubmit={handleSubmitSearch} className="w-full md:w-auto">
                             <label className="text-sm font-medium text-gray-900 sr-only">Search</label>
                             <div className="relative">
-                                <div className="w-full absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                                    <svg className="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <svg
+                                        className="w-4 h-4 text-gray-500"
+                                        aria-hidden="true"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path
+                                            stroke="currentColor"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+                                        />
                                     </svg>
                                 </div>
                                 <input
                                     type="search"
-                                    className="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-red-500 focus:border-red-500"
+                                    className="block w-full md:w-72 p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-red-500 focus:border-red-500"
                                     placeholder="Search Tenants..."
                                     value={searchQuery}
                                     onChange={handleSearch}
                                 />
                             </div>
                         </form>
+
+                        <div className="flex space-x-3">
+                            {/* Export Dropdown */}
+                            <div className="relative w-full md:w-auto">
+                                <button
+                                    onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
+                                    disabled={loading || tenants.length === 0}
+                                    className="flex items-center justify-center gap-2 w-full md:w-auto px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span className="text-sm font-medium">Export</span>
+                                    <ChevronDown className="w-4 h-4" />
+                                </button>
+
+                                {openDropdownId === 'download' && (
+                                    <div className="absolute left-0 z-50 w-48 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                        <div className="py-1">
+                                            <button
+                                                onClick={() => {
+                                                    generatePDF();
+                                                    setOpenDropdownId(null);
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                                            >
+                                                <FileDown className="w-4 h-4 text-red-600" />
+                                                <div>
+                                                    <div className="text-sm font-medium text-gray-900">Export as PDF</div>
+                                                    <div className="text-xs text-gray-500">Download PDF report</div>
+                                                </div>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    generateExcel();
+                                                    setOpenDropdownId(null);
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-t border-gray-100"
+                                            >
+                                                <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                                                <div>
+                                                    <div className="text-sm font-medium text-gray-900">Export as Excel</div>
+                                                    <div className="text-xs text-gray-500">Download CSV file</div>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Units Selector */}
+                            <div className="flex items-center gap-2 text-xs w-full md:w-auto">
+                                <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
+                                    Show Units
+                                </label>
+                                <select
+                                    id="unitSelect"
+                                    value={selectedUnits}
+                                    onChange={handleUnitChange}
+                                    className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                >
+                                    {options.map((num) => (
+                                        <option key={num} value={num}>
+                                            {num}
+                                        </option>
+                                    ))}
+                                    <option value={totalUnits}>{totalUnits} (All)</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+
+
+            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
+                <div className="flex justify-between items-center px-2 my-4">
+                    <h4 className="text-md text-gray-600">All tenant list</h4>
                 </div>
 
                 <div className="flex justify-between items-center px-4 text-xs">

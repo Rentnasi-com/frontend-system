@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Button, Input } from "../../../shared";
 import { useEffect, useState } from "react";
 import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
+import { DashboardHeader } from "../../dashboard/page_components";
 
 const libraries = ["places"]; // Google Maps API Places Library
 
@@ -138,12 +139,11 @@ const GeneralInformation = () => {
 
   return (
     <section>
-      <div className="p-4 flex justify-between mx-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-700">Add Property</h1>
-          <p className="text-sm text-gray-500">Properties / Add Property</p>
-        </div>
-      </div>
+
+      <DashboardHeader
+        title="Add Property"
+        description="Fill in the details below to add a new property."
+      />
       <div className="grid grid-cols-2">
         <div className="bg-white rounded-xl shadow col-span-2 p-4 mx-4 h-full">
           <h3 className="font-bold text-xl text-gray-800 mb-4">General Information</h3>

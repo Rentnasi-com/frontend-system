@@ -4,6 +4,7 @@ import axios from "axios";
 import { Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FaDownload } from "react-icons/fa";
+import { ChevronDown, Download, FileDown, FileSpreadsheet } from "lucide-react";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -160,48 +161,6 @@ const UnitListing = () => {
             iconSrc: "../../../assets/icons/png/vacate.png",
             label: "Vacant units",
             value: propertiesBreakdown.vacant_units?.count,
-        },
-        {
-            redirectUrl: "/property/revenue-breakdown",
-            iconSrc: propertiesRevenue.revenue?.amounts?.expected_income?.images || "",
-            label: "Total Payable",
-            value: `KES ${(propertiesRevenue.revenue?.amounts?.expected_income?.count || "0").toLocaleString()}`,
-        },
-        {
-            redirectUrl: "/property/revenue-breakdown",
-            iconSrc: propertiesRevenue.revenue?.amounts?.expected_income?.images || "",
-            label: "Total Rent",
-            value: `KES ${(propertiesRevenue.revenue?.amounts?.total_rent?.count || "0").toLocaleString()}`,
-        },
-        {
-            redirectUrl: "/property/revenue-breakdown",
-            iconSrc: propertiesRevenue.revenue?.amounts?.amount_paid?.images || "",
-            label: "Amount Paid",
-            value: `KES ${(propertiesRevenue.revenue?.amounts?.amount_paid?.count || "0").toLocaleString()}`,
-        },
-        {
-            redirectUrl: "/property/revenue-breakdown",
-            iconSrc: propertiesRevenue.revenue?.amounts?.outstanding_balance?.images || "",
-            label: "Total Arrears",
-            value: `KES ${Number(propertiesRevenue.revenue?.amounts?.total_arrears?.count ?? 0).toLocaleString()}`
-        },
-        {
-            redirectUrl: "/property/revenue-breakdown",
-            iconSrc: propertiesRevenue.revenue?.amounts?.total_fines?.images || "",
-            label: "Total Fines",
-            value: `KES ${(propertiesRevenue.revenue?.amounts?.total_fines?.count || "0").toLocaleString()}`,
-        },
-        {
-            redirectUrl: "/property/revenue-breakdown",
-            iconSrc: propertiesRevenue.revenue?.amounts?.total_fines?.images || "",
-            label: "Total Bills",
-            value: `KES ${(propertiesRevenue.revenue?.amounts?.total_bills?.count || "0").toLocaleString()}`,
-        },
-        {
-            redirectUrl: "/property/revenue-breakdown",
-            iconSrc: propertiesRevenue.revenue?.amounts?.total_fines?.images || "",
-            label: "Total Balance",
-            value: `KES ${(propertiesRevenue.revenue?.amounts?.total_balance?.count || "0").toLocaleString()}`,
         },
     ];
 
@@ -573,6 +532,51 @@ const UnitListing = () => {
                 <div className="flex justify-between items-center px-2">
                     <h4 className="text-md text-gray-600 my-4">All property List</h4>
                     <div className="md:flex justify-between space-x-2 space-y-2 my-2 md:my-0">
+                        <div className="relative">
+
+                            <button
+                                onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
+                                disabled={loading || propertiesUnits.length === 0}
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors mt-2"
+                            >
+                                <Download className="w-4 h-4" />
+                                <span className="text-sm font-medium">Export</span>
+                                <ChevronDown className="w-4 h-4" />
+                            </button>
+
+                            {openDropdownId === 'download' && (
+                                <div className="absolute left-0 z-50 w-48 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                    <div className="py-1">
+                                        <button
+                                            onClick={() => {
+                                                generatePDF();
+                                                setOpenDropdownId(null);
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                                        >
+                                            <FileDown className="w-4 h-4 text-red-600" />
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900">Export as PDF</div>
+                                                <div className="text-xs text-gray-500">Download PDF report</div>
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                generateExcel();
+                                                setOpenDropdownId(null);
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-t border-gray-100"
+                                        >
+                                            <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900">Export as Excel</div>
+                                                <div className="text-xs text-gray-500">Download CSV file</div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         <div className="flex items-center gap-2 text-xs">
                             <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
                                 Show Units:
@@ -591,51 +595,7 @@ const UnitListing = () => {
                                 <option value={totalUnits}>{totalUnits} (All)</option>
                             </select>
                         </div>
-                        <div className="relative">
 
-                            <button
-                                onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
-                                disabled={loading || propertiesUnits.length === 0}
-                                className="flex items-center gap-2 w-full px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <FaDownload className="w-4 h-4" />
-                                Download
-                                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-
-                            {openDropdownId === 'download' && (
-                                <div className="absolute left-0 z-50 w-40 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                                    <div className="py-1">
-                                        <button
-                                            onClick={() => {
-                                                generatePDF();
-                                                setOpenDropdownId(null);
-                                            }}
-                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                        >
-                                            <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-                                            </svg>
-                                            PDF Format
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                generateExcel();
-                                                setOpenDropdownId(null);
-                                            }}
-                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                        >
-                                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-                                            </svg>
-                                            Excel Format
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </div>
 

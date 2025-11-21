@@ -7,6 +7,7 @@ import { z } from "zod";
 import { useEffect } from "react";
 import RadioGroup from "../../../../shared/radioGroup";
 import { Button, Input } from "../../../../shared";
+import { DashboardHeader } from "../../dashboard/page_components";
 
 const Amenities = () => {
   const navigate = useNavigate();
@@ -183,15 +184,14 @@ const Amenities = () => {
   const garbageDeposit = watch("garbage_deposit");
 
   return (
-    <section className="mx-4 p-4">
-      <div className="flex justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-700">Add Property</h1>
-          <p className="text-sm text-gray-500">Properties / Add Property</p>
-        </div>
-      </div>
-      <div className="grid grid-cols-3 mt-4">
-        <div className="bg-white rounded-xl border col-span-3 p-4 h-full">
+    <section >
+      <DashboardHeader
+        title="Add Amenities"
+        description="Amenities are additional services or features provided by a property, such as water, electricity, or garbage disposal."
+
+      />
+      <div className="grid grid-cols-3 mt-4 p-4">
+        <div className="bg-white rounded border col-span-3 p-4 h-full">
           <h3 className="font-bold text-xl text-gray-800">Amenities</h3>
           <form onSubmit={handleSubmit(onSubmit)}>
             <h6 className="block my-2 text-sm font-medium text-gray-900">1. DEPOSIT</h6>

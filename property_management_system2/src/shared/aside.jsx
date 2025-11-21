@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Building2, Users, UserCheck, BarChart3, MessageCircle, Settings, HelpCircle, LogOut, Recycle, Crown, ChevronRight, Sparkles, ChevronDown, Wallet, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Home, Building2, Users, UserCheck, BarChart3, MessageCircle, Settings, HelpCircle, LogOut, Recycle, Crown, ChevronRight, Sparkles, ChevronDown, Wallet, PanelLeftClose, PanelLeftOpen, Banknote, } from "lucide-react";
 import { useAuth } from "../AuthContext";
 
 
@@ -66,7 +66,8 @@ const Aside = ({ collapsed, setCollapsed }) => {
                     to: "/add-landlord/personal-information",
                     label: "Add Landlord",
                     permission: { module: "landlords", action: "add" }
-                }
+                },
+
             ]
         },
         {
@@ -88,17 +89,51 @@ const Aside = ({ collapsed, setCollapsed }) => {
                     to: "/property/receive-payment",
                     label: "Receive Payment",
                     permission: { module: "payments", action: "add" }
+                }
+            ]
+        },
+        {
+            label: "Loans",
+            iconPath: "Banknote",
+            permission: { module: "payments", action: "view" },
+            submenu: [
+                {
+                    to: "/loans/view-loans",
+                    label: "Loans",
+                    permission: { module: "payments", action: "add" }
                 },
                 {
+                    to: "/loans/make-loan-application",
+                    label: "Loan Application",
+                    permission: { module: "payments", action: "add" }
+                },
+            ]
+        },
+        {
+            label: "Analytics",
+            iconPath: "BarChart3",
+            permission: { module: "payments", action: "view" },
+            submenu: [
+                {
                     to: "/payments/payments-received",
-                    label: "Payment Received",
+                    label: "Payments",
                     permission: { module: "payments", action: "view" }
                 },
                 {
                     to: "/payments/payments-arrears",
                     label: "Arrears",
                     permission: { module: "payments", action: "view" }
-                }
+                },
+                {
+                    to: "/dashboard/due-rent",
+                    label: "Due Rent",
+                    permission: { module: "payments", action: "view" }
+                },
+                {
+                    to: "/payments/expenses",
+                    label: "Expenses",
+                    permission: { module: "payments", action: "view" }
+                },
             ]
         },
         {
@@ -187,7 +222,7 @@ const Aside = ({ collapsed, setCollapsed }) => {
     const toggleDropdown = (label) =>
         setOpenDropdown(openDropdown === label ? null : label);
 
-    const iconMap = { Home, Building2, Users, UserCheck, BarChart3, MessageCircle, Settings, HelpCircle, LogOut, Recycle, Crown, ChevronRight, Sparkles, ChevronDown, Wallet };
+    const iconMap = { Home, Building2, Users, UserCheck, BarChart3, MessageCircle, Settings, HelpCircle, LogOut, Recycle, Crown, ChevronRight, Sparkles, ChevronDown, Wallet, Banknote };
 
     return (
         <aside

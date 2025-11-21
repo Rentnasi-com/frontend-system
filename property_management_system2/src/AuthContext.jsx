@@ -34,6 +34,10 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('packageInfo');
         localStorage.removeItem('packageExpiry');
         localStorage.removeItem('permissions');
+        // 👇 ADDED: Clear profile/organization/user data
+        localStorage.removeItem('profile');
+        localStorage.removeItem('organization');
+        localStorage.removeItem('userProfile');
 
         setToken(null);
         setUser(null);
@@ -123,10 +127,10 @@ export const AuthProvider = ({ children }) => {
             const response = await axios.post(`${baseUrl}/auth`, {
                 sessionId,
                 userId,
-                appUrl: "https://property.rentnasi.com"
+                appUrl: "https://pm.rentalpay.africa"
             });
 
-            const { data, package: packageData, permissions: userPermissions } = response.data;
+            const { data, package: packageData, permissions: userPermissions, profile } = response.data; // 👈 Destructure 'profile'
 
             // Store auth data
             localStorage.setItem('token', data.token);
@@ -136,6 +140,17 @@ export const AuthProvider = ({ children }) => {
 
             setToken(data.token);
             setIsAuthenticated(true);
+
+            // 👇 ADDED: Handle profile info
+            if (profile) {
+                // Save profile details to localStorage
+                localStorage.setItem('profile', JSON.stringify(profile));
+                localStorage.setItem('organization', JSON.stringify(profile.organization));
+                localStorage.setItem('userProfile', JSON.stringify(profile.user));
+
+                // Update state with user data
+                setUser(profile.user);
+            }
 
             // Handle package info
             if (packageData) {
@@ -268,6 +283,12 @@ export const AuthProvider = ({ children }) => {
             // Load existing data
             const storedPackage = localStorage.getItem('packageInfo');
             const storedPermissions = localStorage.getItem('permissions');
+            const storedUserProfile = localStorage.getItem('userProfile'); // 👈 Load user profile
+
+            // 👇 ADDED: Set user state from storage
+            if (storedUserProfile) {
+                setUser(JSON.parse(storedUserProfile));
+            }
 
             if (storedPackage) {
                 const packageData = JSON.parse(storedPackage);

@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { useEffect, useState } from "react";
 import { SelectField, Input, Button } from "../../../shared";
 import TextArea from "../../../shared/textArea";
@@ -9,9 +9,10 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { MdApartment, MdEmail } from "react-icons/md";
 import DatePicker from "react-datepicker"
-import { House, HousePlusIcon, LocateIcon, Pencil, Phone, PhoneCallIcon, Save, User, User2, X, } from "lucide-react";
+import { Building2, CreditCard, House, HousePlusIcon, LocateIcon, Pencil, Phone, PhoneCallIcon, Save, Search, User, User2, Wallet, X, } from "lucide-react";
 import { DashboardHeader, QuickLinksCard } from "./page_components";
 import { useAuth } from "../../../AuthContext";
+import { use } from "react";
 
 const Unit = () => {
     const [propertyDetails, setPropertyDetails] = useState({})
@@ -50,10 +51,12 @@ const Unit = () => {
 
     const [isVacateModalOpen, setIsVacateModalOpen] = useState(false);
     const [itemToVacate, setItemToVacate] = useState(null);
-
+    const navigate = useNavigate()
     const [isProcessing, setIsProcessing] = useState(false);
 
     const { hasPermission } = useAuth();
+
+    const [tenantPayments, setTenantPayments] = useState([])
 
     const handleClose = () => {
         setShowModal(false)
@@ -237,7 +240,7 @@ const Unit = () => {
                 },
             })
             setElectricityBills(response.data.results || [])
-            console.log(response.data.results)
+
 
         } catch (error) {
             console.error("Tenant payment details not found");
@@ -252,6 +255,7 @@ const Unit = () => {
                 },
             })
             setBillItems(response.data.result || [])
+            console.log("Bill Items:", billItems)
             setAddBillItems(response.data.bill_types || [])
         } catch (error) {
             console.error("Tenant payment details not found");
@@ -389,6 +393,7 @@ const Unit = () => {
         fetchTenantsPaymentHistory()
         fetchWaterBill()
         fetchElectricityBill()
+        fetchPayments()
         if (tenantId) {
             fetchBillItems();
         }
@@ -527,6 +532,7 @@ const Unit = () => {
 
             toast.success("Tenant vacated successfully!");
             setIsVacateModalOpen(false)
+            navigate(-1)
         } catch (error) {
             console.error("Vacate error:", error);
             toast.error("Failed to vacate tenant.");
@@ -607,6 +613,90 @@ const Unit = () => {
 
     const currentElectricityReading = watchElectricity("meter_reading");
 
+    const bill = billItems[0]; // assuming single bill
+
+    const summaryItems = [
+        { label: "Arrears", value: bill?.arrears, color: "bg-red-100 text-red-700 border-red-200" },
+        { label: "Fines", value: bill?.fines, color: "bg-orange-100 text-orange-700 border-orange-200" },
+        { label: "Paid", value: bill?.paid, color: "bg-green-100 text-green-700 border-green-200" },
+        { label: "Total", value: bill?.total_balance, color: "bg-blue-100 text-blue-700 border-blue-200" },
+    ];
+
+    const DetailItem = ({ icon, label, value }) => (
+        <div className="flex items-center space-x-3">
+            {icon}
+            <div>
+                {label && <p className="text-[11px] text-gray-500">{label}</p>}
+                <p className="text-xs text-gray-900">{value}</p>
+            </div>
+        </div>
+    );
+
+    const fetchPayments = async () => {
+        try {
+            const response = await axios.get(
+                `${baseUrl}/payment/received?tenant_id=${tenantId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        Accept: "application/json"
+                    }
+                }
+            )
+            if (response.data.success) {
+                setTenantPayments(response.data.results)
+            }
+        } catch (error) {
+            toast.error("An error occurred while fetching tenant payments!")
+        }
+    }
+
+    const getMethodIcon = (method) => {
+        const normalized = method?.toLowerCase() || '';
+
+        if (normalized.includes('bank')) {
+            return (
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-blue-600" />
+                </div>
+            );
+        }
+
+        switch (normalized) {
+            case 'mpesa':
+                return (
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <Wallet className="w-4 h-4 text-green-600" />
+                    </div>
+                );
+            case 'cash':
+                return (
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                        <CreditCard className="w-4 h-4 text-orange-600" />
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    const getMethodBadgeColor = (method) => {
+        const normalized = method?.toLowerCase() || '';
+
+        if (normalized.includes('bank')) {
+            return 'bg-blue-100 text-blue-800';
+        }
+
+        switch (normalized) {
+            case 'mpesa':
+                return 'bg-green-100 text-green-800';
+            case 'cash':
+                return 'bg-orange-100 text-orange-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
+
     return (
         <>
             <DashboardHeader
@@ -625,159 +715,119 @@ const Unit = () => {
                             <div className="text-center">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
                                 <p className="text-lg font-semibold">Processing payment...</p>
-                                <p className="text-sm text-gray-600">Please wait while we complete your transaction</p>
+                                <p className="text-sm text-gray-600">Please wait while we complete your transaction.</p>
                             </div>
                         </div>
                     </div>
                 )
             }
-            {/* Tenant Details */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4">
-                <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white border border-gray-200 rounded mb-8 p-3 ">
-                    <div className="space-y-3">
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mx-4 mt-4">
+
+                {/* UNIT & TENANT DETAILS  */}
+                <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                    {/* UNIT DETAILS */}
+                    <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="font-semibold text-gray-900 mb-3">Unit Details</h3>
+                            <h3 className="font-semibold text-gray-900 text-sm">Unit Details</h3>
+
                             <span
-                                className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                                    ${unitsDetails.availability_status === "Vacant"
-                                        ? "bg-red-100 text-red-800"
-                                        : "bg-green-100 text-green-800"
+                                className={`px-2 py-1 text-xs font-medium rounded-full
+                    ${unitsDetails.availability_status === "Vacant"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-green-100 text-green-700"
                                     }`}
                             >
                                 {unitsDetails.availability_status}
                             </span>
                         </div>
-                        <div className="flex items-center space-x-3">
-                            <House className="w-5 h-5 text-gray-400" />
+
+                        <DetailItem icon={<House className="w-5 h-5 text-gray-400" />} label="Name" value={unitsDetails.name} />
+                        <DetailItem icon={<LocateIcon className="w-5 h-5 text-gray-400" />} label="Location" value={unitsDetails.location} />
+                        <DetailItem icon={<MdApartment className="w-5 h-5 text-gray-400" />} label="Property Type" value={propertyDetails.property_type} />
+                        <DetailItem icon={<HousePlusIcon className="w-5 h-5 text-gray-400" />} label="Unit Type" value={unitsDetails.unit_type} />
+                    </div>
+                    {/* TENANT DETAILS */}
+                    <div className="space-y-4">
+                        <h3 className="font-semibold text-gray-900 text-sm">Tenant Details</h3>
+
+                        <DetailItem icon={<User2 className="w-5 h-5 text-gray-400" />} value={tenantsDetails.name} />
+                        <DetailItem icon={<PhoneCallIcon className="w-5 h-5 text-gray-400" />} value={tenantsDetails.phone} />
+                        <DetailItem icon={<MdEmail className="w-5 h-5 text-gray-400" />} value={tenantsDetails.email} />
+
+                        <h3 className="font-semibold text-gray-900 text-sm pt-2">Next of Kin</h3>
+
+                        {tenantsDetails.next_of_kin?.name ? (
+                            <>
+                                <DetailItem icon={<User className="w-5 h-5 text-gray-400" />} value={tenantsDetails.next_of_kin?.name} />
+                                <DetailItem icon={<Phone className="w-5 h-5 text-gray-400" />} value={tenantsDetails.next_of_kin?.phone} />
+                            </>
+                        ) : (
+                            <p className="italic text-xs text-red-600">None</p>
+                        )}
+                    </div>
+                    {/* Wallet */}
+                    <div className="space-y-4">
+                        <h3 className="font-semibold text-gray-900 text-sm">Wallet</h3>
+
+                        <div className="p-5 rounded-xl border border-green-200 bg-green-50 shadow-inner flex items-center gap-4">
+                            <Wallet className="w-6 h-6 text-green-600" />
                             <div>
-                                <p className="text-sm text-gray-600">Name</p>
-                                <p className="text-gray-900 text-xs">{unitsDetails.name}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <LocateIcon className="w-5 h-5 text-gray-400" />
-                            <div>
-                                <p className="text-sm text-gray-600">Location</p>
-                                <p className="text-gray-900 text-xs">{unitsDetails.location}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <MdApartment className="w-5 h-5 text-gray-400" />
-                            <div>
-                                <p className="text-sm text-gray-600">Property Type</p>
-                                <p className="text-gray-900 text-xs">{propertyDetails.property_type}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <HousePlusIcon className="w-5 h-5 text-gray-400" />
-                            <div>
-                                <p className="text-sm text-gray-600">Unit Type</p>
-                                <p className="text-gray-900 text-xs">{unitsDetails.unit_type}</p>
+                                <p className="text-sm text-gray-600">Wallet Balance</p>
+                                <p className="text-2xl font-semibold text-green-700">
+                                    {tenantsDetails.wallet_amount}
+                                </p>
                             </div>
                         </div>
                     </div>
-                    <div className="space-y-3">
-                        <h3 className="font-semibold text-gray-900 mb-6">Tenant Details</h3>
-                        <div className="flex items-center space-x-3">
-                            <User2 className="w-5 h-5 text-gray-400" />
-                            <div>
-                                <p className="text-gray-900 text-xs">{tenantsDetails.name}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <PhoneCallIcon className="w-5 h-5 text-gray-400" />
-                            <div>
-                                <p className="text-gray-900 text-xs">{tenantsDetails.phone}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <MdEmail className="w-5 h-5 text-gray-400" />
-                            <div>
-                                <p className="text-gray-900 text-xs">{tenantsDetails.email}</p>
-                            </div>
-                        </div>
-                        <h3 className="font-semibold text-gray-900 mb-6">Next of Kin Details</h3>
-                        {tenantsDetails.next_of_kin?.name == "" ? (
-                            <p className="italic text-xs text-red-600">None</p>
-                        ) : (
-                            <>
-                                <div className="flex items-center space-x-3">
-                                    <User className="w-5 h-5 text-gray-400" />
-                                    <div>
-                                        <p className="text-gray-900 text-xs">{tenantsDetails.next_of_kin?.name}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                    <Phone className="w-5 h-5 text-gray-400" />
-                                    <div>
-                                        <p className="text-gray-900 text-xs">{tenantsDetails.next_of_kin?.phone}</p>
-                                    </div>
-                                </div>
-                            </>
-                        )
+                    {/* ACTIONS */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 md:col-span-2">
+                        {hasPermission("tenants", "edit") &&
+                            <Link
+                                to={`/tenants/edit-personal-details?tenant_id=${tenantId}`}
+                                className="rounded-lg w-full px-4 py-2 text-xs text-center text-white bg-green-700 hover:bg-green-800"
+                            >
+                                Edit Profile
+                            </Link>
+                        }
+
+                        {hasPermission("tenants", "edit") &&
+                            <Link
+                                to={`/tenants/edit-tenant-unit?tenant_id=${tenantId}&unit_id=${unitsDetails.unit_id}`}
+                                className="rounded-lg text-white w-full px-4 py-2 text-xs text-center bg-purple-700 hover:bg-purple-800 whitespace-nowrap"
+                            >
+                                Edit Unit
+                            </Link>
+                        }
+
+                        {hasPermission("tenants", "delete") &&
+                            <button
+                                onClick={() =>
+                                    handleVacateModalOpen({
+                                        id: tenantId,
+                                        unit_id: unitsDetails.unit_id,
+                                        name: unitsDetails.unit_number
+                                    })
+                                }
+                                className="rounded-lg w-full px-4 py-2 text-xs text-center text-white bg-yellow-700 hover:bg-yellow-800"
+                            >
+                                Vacate tenant
+                            </button>
                         }
                     </div>
                 </div>
-                <div>
-                    <div className="space-y-3 bg-white border border-gray-200 rounded mb-2 p-3">
-                        <h3 className="text-red-500 font-semibold text-xs">Quick action</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 ">
-                            {quicks.map((quick, index) => (
-                                <QuickLinksCard
-                                    key={index}
-                                    url={quick.url}
-                                    icon={quick.icon}
-                                    title={quick.title}
-                                    // description={quick.description}
-                                    bgColor={quick.bgColor}
-                                />
-                            ))}
 
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 ">
-                            {hasPermission("tenants", "edit") &&
-                                <Link
-                                    to={`/tenants/edit-personal-details?tenant_id=${tenantId}`}
-                                    className="rounded w-full px-4 py-2 text-xs text-center text-white bg-green-700 hover:bg-green-800"
-                                >
-                                    Edit Profile
-                                </Link>
-                            }
+                {/* PAY NOW SECTION */}
+                <div className="sticky top-20">
+                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+                        <h4 className="text-xs font-semibold text-red-600 p-3 border-b">Pay Now</h4>
 
-                            {hasPermission("tenants", "edit") &&
-                                <Link
-                                    to={`/tenants/edit-tenant-unit?tenant_id=${tenantId}&unit_id=${unitsDetails.unit_id}`}
-                                    className="rounded text-white w-full px-4 py-2 text-xs text-center bg-purple-700 hover:bg-purple-800 whitespace-nowrap"
-                                >
-                                    Edit Unit
-                                </Link>
-                            }
-
-                            {hasPermission("tenants", "delete") &&
-                                <button
-                                    onClick={() =>
-                                        handleVacateModalOpen({
-                                            id: tenantId,
-                                            unit_id: unitsDetails.unit_id,
-                                            name: unitsDetails.unit_number
-                                        })
-                                    }
-                                    className="rounded w-full px-4 py-2 text-xs text-center text-white bg-yellow-700 hover:bg-yellow-800"
-                                >
-                                    Vacate tenant
-                                </button>
-                            }
-                        </div>
-                    </div>
-                    <div className="bg-white border border-gray-200 rounded mb-2">
-                        <h4 className="text-red-500 font-semibold text-xs p-2">Pay Now</h4>
-
-                        <table className="min-w-full divide-y divide-gray-200 text-sm mt-2">
-                            <thead className="bg-gray-100 text-left text-xs">
+                        <table className="min-w-full text-sm mt-1">
+                            <thead className="bg-gray-50 text-left text-xs">
                                 <tr>
-                                    <th className="px-4 py-2 text-left">Select</th>
-                                    <th className="px-4 py-2 text-left">Description</th>
-                                    <th className="px-4 py-2 text-left">Amount</th>
+                                    <th className="px-4 py-2">Select</th>
+                                    <th className="px-4 py-2">Description</th>
+                                    <th className="px-4 py-2">Amount</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-100">
@@ -798,8 +848,8 @@ const Unit = () => {
                                                     onChange={() => handleCheckboxChange(payment)}
                                                 />
                                             </td>
-                                            <td className="px-4 py-2 capitalize">{payment.description}</td>
-                                            <td className="px-4 py-2 font-semibold text-gray-800 font-mono">
+                                            <td className="px-4 py-2 capitalize text-xs">{payment.description}</td>
+                                            <td className="px-4 py-2 font-semibold text-gray-800 font-mono text-xs">
                                                 {(payment.amount || payment.monthly_rent_amount).toLocaleString()}
                                             </td>
                                         </tr>
@@ -807,256 +857,503 @@ const Unit = () => {
                             </tbody>
                         </table>
 
-                        <div className="w-36 m-2">
-                            {hasPermission("payments", "add") &&
-                                <button onClick={handleOpen}>
-                                    <div className="flex space-x-3 focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-xl text-xs px-2 py-1">
+                        {hasPermission("payments", "add") && (
+                            <div className="p-2">
+                                <button onClick={handleOpen} className="w-full">
+                                    <div className="flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white text-xs py-1.5 rounded-lg shadow-sm">
                                         <p>Receive Payment</p>
-                                        <img width={15} height={15} src="../../../assets/icons/png/plus.png" alt="" />
+                                        <img width={14} height={14} src="../../../assets/icons/png/plus.png" />
                                     </div>
                                 </button>
-                            }
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
-            </div>
-            {/* Active Bills */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4 mt-5 ">
-                <div className="col-span-3 rounded-lg border border-gray-200 bg-white">
-                    <div className="flex justify-between my-2 px-2">
-                        <h4 className="text-md text-gray-600 ">Active Bills</h4>
-                        <div className="space-x-2">
-                            <Link to={`/property/payment-history?unit_id=${extractedUnitId}`} className="text-xs bg-green-700 text-white py-1.5 px-2 rounded">View all</Link>
 
-                            {hasPermission("payments", "add") &&
-                                <button onClick={openAddBillModal} className="text-xs bg-red-700 text-white py-1.5 px-2 rounded">Add bill item</button>
-                            }
-                        </div>
+                {/* SUMMARY CARDS */}
+                <div className="col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        {summaryItems.map((item, index) => (
+                            <div
+                                key={index}
+                                className={`rounded-xl p-4 shadow-sm border ${item.color} bg-white hover:shadow-md transition`}
+                            >
+                                <p className="text-xs font-medium text-gray-600">{item.label}</p>
+                                <h3 className="text-xl font-mono mt-1 font-semibold">
+                                    KES {item.value?.toLocaleString()}
+                                </h3>
+                            </div>
+                        ))}
                     </div>
-                    <div className="w-full">
-                        <div className="">
-                            <table className="min-w-full table-auto">
-                                <thead className="bg-gray-100 text-left text-xs">
-                                    <tr>
-                                        <th className="px-4 py-2">Date</th>
-                                        <th className="px-4 py-2">Tenant</th>
-                                        <th className="px-4 py-2">Amounts</th>
-                                        <th className="px-4 py-2">Bill Items</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {billItems.length === 0 ? (
+                </div>
+
+                {/* ACTIVE */}
+                <div className="col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
+                    <div className="col-span-3 rounded-lg border border-gray-200 bg-white">
+                        <div className="flex justify-between my-2 px-2">
+                            <h4 className="text-md text-gray-600 ">Active Bills</h4>
+                            <div className="space-x-2">
+                                <Link to={`/property/payment-history?unit_id=${extractedUnitId}`} className="text-xs bg-green-700 text-white py-1.5 px-2 rounded-lg">View all</Link>
+
+                                {hasPermission("payments", "add") &&
+                                    <button onClick={openAddBillModal} className="text-xs bg-red-700 text-white py-1.5 px-2 rounded-lg">Add bill item</button>
+                                }
+                            </div>
+                        </div>
+                        <div className="w-full">
+                            <div className="">
+                                <table className="min-w-full table-auto">
+                                    <thead className="bg-gray-100 text-left text-xs">
                                         <tr>
-                                            <td colSpan="7" className="text-center text-sm my-3">No data found.</td>
+
+                                            <th className="px-4 py-2">Bill Items</th>
                                         </tr>
-                                    ) : (
-                                        billItems.map((item, index) => (
-                                            <tr key={index} className="border-b text-xs odd:bg-gray-50">
-                                                <td className="px-4 py-2">{item.date}</td>
-                                                <td className="px-4 py-2">{(item.tenant_name)}</td>
-                                                <td className="px-4 py-2 text-sm text-gray-700 space-y-1 font-mono">
-                                                    <div>Arrears - {Number(item.arrears).toLocaleString()}</div>
-                                                    <div>Rent - {Number(item.rent).toLocaleString()}</div>
-                                                    <div>Paid - {Number(item.paid).toLocaleString()}</div>
-                                                    <div>Fines - {Number(item.fines).toLocaleString()}</div>
-                                                    <div className="font-semibold text-blue-800">
-                                                        Total - {Number(item.total_balance).toLocaleString()}
-                                                    </div>
-                                                </td>
-
-                                                {item.bill_items.length > 0 ? (
-                                                    <td className="px-4 py-2 ">
-                                                        <table className="w-full text-xs border border-gray-300">
-                                                            <thead>
-                                                                <tr className="bg-gray-100">
-                                                                    <th className="px-2 py-1 text-left">Type</th>
-                                                                    <th className="px-2 py-1 text-left">Expected</th>
-                                                                    <th className="px-2 py-1 text-left">Paid</th>
-                                                                    <th className="px-2 py-1 text-left">Balance</th>
-                                                                    <th className="px-2 py-1 text-left">Status</th>
-                                                                    <th className="px-2 py-1 text-left">Action</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {item.bill_items.map((billItem, index) => (
-                                                                    <tr key={index} className="border-t border-gray-200 odd:bg-gray-50">
-                                                                        <td className="px-2 py-1 capitalize">{billItem.bill_type}</td>
-                                                                        <td className="px-2 py-1 font-mono">
-                                                                            {editItemId === billItem.bill_item_id ? (
-                                                                                <input
-                                                                                    type="number"
-                                                                                    value={editedAmount}
-                                                                                    onChange={(e) => setEditedAmount(e.target.value)}
-                                                                                    className="border px-1 py-0.5 rounded w-24 text-xs"
-                                                                                />
-                                                                            ) : (
-                                                                                (billItem.amount_expected).toLocaleString()
-                                                                            )}
-                                                                        </td>
-                                                                        <td className="px-2 py-1 font-mono">{(billItem.amount_paid).toLocaleString()}</td>
-                                                                        <td className="px-2 py-1 font-mono">{(billItem.amount_due).toLocaleString()}</td>
-                                                                        <td className="px-2 py-1">
-                                                                            <span
-                                                                                className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                                                                                ${billItem.status === "Unpaid"
-                                                                                        ? "bg-red-100 text-red-800"
-                                                                                        : billItem.status === "Partial"
-                                                                                            ? "bg-blue-100 text-blue-800"
-                                                                                            : "bg-green-100 text-green-800"
-                                                                                    }`}
-                                                                            >
-                                                                                {billItem.status}
-                                                                            </span>
-                                                                        </td>
-                                                                        <td className="relative px-2 py-1 text-xs">
-                                                                            <button
-                                                                                onClick={() => toggleDropdown(billItem.bill_item_id)}
-                                                                                className="inline-flex justify-center w-full px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 focus:outline-none"
-                                                                            >
-                                                                                Actions
-                                                                                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                                                                    <path
-                                                                                        fillRule="evenodd"
-                                                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                                                        clipRule="evenodd"
+                                    </thead>
+                                    <tbody>
+                                        {billItems.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="7" className="text-center text-sm my-3">No data found.</td>
+                                            </tr>
+                                        ) : (
+                                            billItems.map((item, index) => (
+                                                <tr key={index} className="border-b text-xs odd:bg-gray-50">
+                                                    {item.bill_items.length > 0 ? (
+                                                        <td className="px-4 py-2 ">
+                                                            <table className="w-full text-xs border border-gray-300">
+                                                                <thead>
+                                                                    <tr className="bg-gray-100">
+                                                                        <th className="px-2 py-1 text-left">Type</th>
+                                                                        <th className="px-2 py-1 text-left">Expected</th>
+                                                                        <th className="px-2 py-1 text-left">Paid</th>
+                                                                        <th className="px-2 py-1 text-left">Balance</th>
+                                                                        <th className="px-2 py-1 text-left">Status</th>
+                                                                        <th className="px-2 py-1 text-left">Action</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {item.bill_items.map((billItem, index) => (
+                                                                        <tr key={index} className="border-t border-gray-200 odd:bg-gray-50">
+                                                                            <td className="px-2 py-1 capitalize">{billItem.bill_type}</td>
+                                                                            <td className="px-2 py-1 font-mono">
+                                                                                {editItemId === billItem.bill_item_id ? (
+                                                                                    <input
+                                                                                        type="number"
+                                                                                        value={editedAmount}
+                                                                                        onChange={(e) => setEditedAmount(e.target.value)}
+                                                                                        className="border px-1 py-0.5 rounded w-24 text-xs"
                                                                                     />
-                                                                                </svg>
-                                                                            </button>
+                                                                                ) : (
+                                                                                    (billItem.amount_expected).toLocaleString()
+                                                                                )}
+                                                                            </td>
+                                                                            <td className="px-2 py-1 font-mono">{(billItem.amount_paid).toLocaleString()}</td>
+                                                                            <td className="px-2 py-1 font-mono">{(billItem.amount_due).toLocaleString()}</td>
+                                                                            <td className="px-2 py-1">
+                                                                                <span
+                                                                                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                                                ${billItem.status === "Unpaid"
+                                                                                            ? "bg-red-100 text-red-800"
+                                                                                            : billItem.status === "Partial"
+                                                                                                ? "bg-blue-100 text-blue-800"
+                                                                                                : "bg-green-100 text-green-800"
+                                                                                        }`}
+                                                                                >
+                                                                                    {billItem.status}
+                                                                                </span>
+                                                                            </td>
+                                                                            <td className="relative px-2 py-1 text-xs">
+                                                                                <button
+                                                                                    onClick={() => toggleDropdown(billItem.bill_item_id)}
+                                                                                    className="inline-flex justify-center w-full px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 focus:outline-none"
+                                                                                >
+                                                                                    Actions
+                                                                                    <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                                        <path
+                                                                                            fillRule="evenodd"
+                                                                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                                                            clipRule="evenodd"
+                                                                                        />
+                                                                                    </svg>
+                                                                                </button>
 
-                                                                            {openDropdownId === billItem.bill_item_id && (
-                                                                                <div className="absolute right-0 z-50 w-36 mt-1 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                                                                                    <div className="py-1">
-                                                                                        {hasPermission("payments", "edit") && (
-                                                                                            editItemId === billItem.bill_item_id ? (
-                                                                                                <>
+                                                                                {openDropdownId === billItem.bill_item_id && (
+                                                                                    <div className="absolute right-0 z-50 w-36 mt-1 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                                                        <div className="py-1">
+                                                                                            {hasPermission("payments", "edit") && (
+                                                                                                editItemId === billItem.bill_item_id ? (
+                                                                                                    <>
+                                                                                                        <button
+                                                                                                            onClick={() => handleBillItemPatch(billItem)}
+                                                                                                            className="flex items-center w-full px-3 py-1 text-xs text-green-600 hover:bg-green-100"
+                                                                                                        >
+                                                                                                            <Save className="w-4 h-4 mr-1" /> Save
+                                                                                                        </button>
+                                                                                                        <button
+                                                                                                            onClick={() => setEditItemId(null)}
+                                                                                                            className="flex items-center w-full px-3 py-1 text-xs text-gray-600 hover:bg-gray-100"
+                                                                                                        >
+                                                                                                            <X className="w-4 h-4 mr-1" /> Cancel
+                                                                                                        </button>
+                                                                                                    </>
+                                                                                                ) : (
                                                                                                     <button
-                                                                                                        onClick={() => handleBillItemPatch(billItem)}
-                                                                                                        className="flex items-center w-full px-3 py-1 text-xs text-green-600 hover:bg-green-100"
+                                                                                                        onClick={() => {
+                                                                                                            setEditItemId(billItem.bill_item_id);
+                                                                                                            setEditedAmount(billItem.amount_expected);
+                                                                                                        }}
+                                                                                                        className="flex items-center w-full px-3 py-1 text-xs text-gray-700 hover:bg-gray-100"
                                                                                                     >
-                                                                                                        <Save className="w-4 h-4 mr-1" /> Save
+                                                                                                        <Pencil className="w-4 h-4 mr-1" /> Edit
                                                                                                     </button>
-                                                                                                    <button
-                                                                                                        onClick={() => setEditItemId(null)}
-                                                                                                        className="flex items-center w-full px-3 py-1 text-xs text-gray-600 hover:bg-gray-100"
-                                                                                                    >
-                                                                                                        <X className="w-4 h-4 mr-1" /> Cancel
-                                                                                                    </button>
-                                                                                                </>
-                                                                                            ) : (
+                                                                                                )
+                                                                                            )}
+
+                                                                                            {hasPermission("payments", "delete") &&
                                                                                                 <button
                                                                                                     onClick={() => {
-                                                                                                        setEditItemId(billItem.bill_item_id);
-                                                                                                        setEditedAmount(billItem.amount_expected);
+                                                                                                        setBillItemToDelete({
+                                                                                                            unit_id: extractedUnitId,
+                                                                                                            tenant_id: tenantId,
+                                                                                                            bill_item_id: billItem.bill_item_id
+                                                                                                        });
+                                                                                                        setShowBillItemDeleteModal(true);
                                                                                                     }}
-                                                                                                    className="flex items-center w-full px-3 py-1 text-xs text-gray-700 hover:bg-gray-100"
+                                                                                                    className="block w-full px-3 py-1 text-xs text-left text-red-600 hover:bg-red-100"
                                                                                                 >
-                                                                                                    <Pencil className="w-4 h-4 mr-1" /> Edit
+                                                                                                    Delete
                                                                                                 </button>
-                                                                                            )
-                                                                                        )}
-
-                                                                                        {hasPermission("payments", "delete") &&
-                                                                                            <button
-                                                                                                onClick={() => {
-                                                                                                    setBillItemToDelete({
-                                                                                                        unit_id: extractedUnitId,
-                                                                                                        tenant_id: tenantId,
-                                                                                                        bill_item_id: billItem.bill_item_id
-                                                                                                    });
-                                                                                                    setShowBillItemDeleteModal(true);
-                                                                                                }}
-                                                                                                className="block w-full px-3 py-1 text-xs text-left text-red-600 hover:bg-red-100"
-                                                                                            >
-                                                                                                Delete
-                                                                                            </button>
-                                                                                        }
+                                                                                            }
+                                                                                        </div>
                                                                                     </div>
-                                                                                </div>
-                                                                            )}
-                                                                        </td>
+                                                                                )}
+                                                                            </td>
 
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </td>
-                                                ) : (
-                                                    <td className="px-4 py-2">No data found.</td>
-                                                )}
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    ) : (
+                                                        <td className="px-4 py-2">No data found.</td>
+                                                    )}
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-4 mt-5">
-                <div className="col-span-2 rounded-lg border border-gray-200 bg-white">
+                {/* BILL OVERVIEW */}
+                <div className="col-span-2 rounded-xl border border-gray-200 bg-white mt-5">
                     <div className="flex justify-between my-2 px-2">
                         <h4 className="text-md text-gray-600 ">Bill Overview</h4>
-
                     </div>
                     <div className="w-full overflow-auto">
-                        <div className="">
-                            <table className="min-w-full ">
-                                <thead className="bg-gray-100 text-left text-xs">
+                        <table className="min-w-full">
+                            <thead className="bg-gray-100 text-left text-xs">
+                                <tr>
+                                    <th className="px-4 py-2">Date</th>
+                                    <th className="px-4 py-2">Name</th>
+                                    <th className="px-4 py-2">Arrears</th>
+                                    <th className="px-4 py-2">Expected </th>
+                                    <th className="px-4 py-2">Paid</th>
+                                    <th className="px-4 py-2">Balance</th>
+
+                                    <th className="px-4 py-2">Fines</th>
+                                    <th className="px-4 py-2">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="p-2">
+                                {tenantsPaymentHistory.length === 0 ? (
                                     <tr>
-                                        <th className="px-4 py-2">Date</th>
-                                        <th className="px-4 py-2">Name</th>
-                                        <th className="px-4 py-2">Arrears</th>
-                                        <th className="px-4 py-2">Expected </th>
-                                        <th className="px-4 py-2">Paid</th>
-                                        <th className="px-4 py-2">Balance</th>
-
-                                        <th className="px-4 py-2">Fines</th>
-
-
-                                        <th className="px-4 py-2">Status</th>
+                                        <td colSpan="8" className="text-center text-sm my-3">No data found.</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {tenantsPaymentHistory.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="8" className="text-center text-sm my-3">No data found.</td>
-                                        </tr>
-                                    ) : (
-                                        tenantsPaymentHistory.map((paymentHistory, index) => (
-                                            <tr key={index} className="border-b text-xs odd:bg-gray-50 ">
-                                                <td className="px-4 py-2">{paymentHistory.date}</td>
-                                                <td className="px-4 py-2">{paymentHistory.tenant_name}</td>
-                                                <td className="px-4 py-2 font-mono">{(paymentHistory.arrears).toLocaleString()}</td>
-                                                <td className="px-4 py-2 font-mono">{(paymentHistory.rent).toLocaleString()}</td>
-                                                <td className="px-4 py-2 font-mono">{(paymentHistory.paid).toLocaleString()}</td>
+                                ) : (
+                                    tenantsPaymentHistory.map((paymentHistory, index) => (
+                                        <tr key={index} className="border-b text-xs odd:bg-gray-50 ">
+                                            <td className="px-4 py-2">{paymentHistory.date}</td>
+                                            <td className="px-4 py-2">{paymentHistory.tenant_name}</td>
+                                            <td className="px-4 py-2 font-mono">{(paymentHistory.arrears).toLocaleString()}</td>
+                                            <td className="px-4 py-2 font-mono">{(paymentHistory.rent).toLocaleString()}</td>
+                                            <td className="px-4 py-2 font-mono">{(paymentHistory.paid).toLocaleString()}</td>
 
-                                                <td className="px-4 py-2 font-mono">{(paymentHistory.total_balance).toLocaleString()}</td>
-                                                <td className="px-4 py-2 font-mono">{(paymentHistory.fines).toLocaleString()}</td>
-                                                <td>
-                                                    <span
-                                                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                                            <td className="px-4 py-2 font-mono">{(paymentHistory.total_balance).toLocaleString()}</td>
+                                            <td className="px-4 py-2 font-mono">{(paymentHistory.fines).toLocaleString()}</td>
+                                            <td>
+                                                <span
+                                                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
                                                         ${paymentHistory.status === "Unpaid"
-                                                                ? "bg-red-100 text-red-800"
-                                                                : paymentHistory.status === "Partial"
-                                                                    ? "bg-blue-100 text-blue-800"
-                                                                    : "bg-green-100 text-green-800"
-                                                            }`}
-                                                    >
-                                                        {paymentHistory.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
+                                                            ? "bg-red-100 text-red-800"
+                                                            : paymentHistory.status === "Partial"
+                                                                ? "bg-blue-100 text-blue-800"
+                                                                : "bg-green-100 text-green-800"
+                                                        }`}
+                                                >
+                                                    {paymentHistory.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
 
-                                </tbody>
-                            </table>
-                        </div>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div>
+                {/* WATER & Electricity Bills */}
+                <div className="col-span-2 grid grid-cols-1 gap-3 mt-5 bg-white rounded-lg border border-gray-200">
+                    {waterBills.length === 0 ? (
+                        <></>
+                    ) : (
+                        <div className="w-full">
+                            <div className="flex justify-between my-2 px-2">
+                                <h4 className="text-md text-gray-600 ">Water Meter History</h4>
+                                <button onClick={openWaterBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Record water bill</button>
+                            </div>
+                            <div className="w-full">
+                                <div className="">
+                                    <table className="min-w-full overflow-auto">
+                                        <thead className="bg-gray-100 text-left text-xs">
+                                            <tr>
+                                                <th className="px-4 py-2">Date</th>
+                                                <th className="px-4 py-2">Tenant</th>
+                                                <th className="px-4 py-2">Previous Reading</th>
+                                                <th className="px-4 py-2">Units Consumed</th>
+                                                <th className="px-4 py-2">Bill</th>
+                                                {/* <th className="px-4 py-2">Actions</th> */}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {waterBills.map((item, index) => (
+                                                <tr key={index} className="border-b text-xs">
+                                                    <td className="px-4 py-2">
+                                                        {new Date(item.date_recorded).toLocaleString('en-US', {
+                                                            dateStyle: 'medium',
+                                                            timeStyle: 'short',
+                                                        })}
+                                                    </td>
+                                                    <td className="px-4 py-2">{(item.tenant_name)}</td>
+                                                    <td className="px-4 py-2">{(item.meter_reading)}</td>
+                                                    <td className="px-4 py-2">{(item.meter_units)}</td>
+                                                    <td className="px-4 py-2">{(item.amount_due).toLocaleString()}</td>
+
+                                                    {/* <td className="relative px-4 py-2 text-sm">
+                                                        <button
+                                                            onClick={() => toggleDropdown(index)}
+                                                            className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                                                        >
+                                                            Actions
+                                                            <svg className="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path
+                                                                    fillRule="evenodd"
+                                                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                                    clipRule="evenodd"
+                                                                />
+                                                            </svg>
+                                                        </button>
+
+                                                        {openDropdownId === index && (
+                                                            <div className="absolute right-0 z-50 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                                <div className="py-1">
+                                                                    <Link
+                                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                                    >
+                                                                        View Tenant
+                                                                    </Link>
+                                                                    <button
+
+                                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                                    >
+                                                                        Vacate Tenant
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </td> */}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {electricityBills.length === 0 ? (
+                        <></>
+                    ) : (
+                        <div className="w-full">
+                            <div className="flex justify-between my-2 px-2">
+                                <h4 className="text-md text-gray-600 ">Electricity Meter History</h4>
+                                <button onClick={openElectricityBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Record electricity bill</button>
+                            </div>
+                            <div className="w-full">
+                                <div className="">
+                                    <table className="min-w-full table-auto">
+                                        <thead className="bg-gray-100 text-left text-xs">
+                                            <tr>
+                                                <th className="px-4 py-2">Date</th>
+                                                <th className="px-4 py-2">Tenant</th>
+                                                <th className="px-4 py-2">Previous Reading</th>
+                                                <th className="px-4 py-2">Units Consumed</th>
+                                                <th className="px-4 py-2">Bill</th>
+                                                <th className="px-4 py-2">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                            {electricityBills.map((item, index) => (
+                                                <tr key={index} className="border-b text-xs">
+                                                    <td className="px-4 py-2">
+                                                        {new Date(item.date_recorded).toLocaleString('en-US', {
+                                                            dateStyle: 'medium',
+                                                            timeStyle: 'short',
+                                                        })}
+                                                    </td>
+                                                    <td className="px-4 py-2">{(item.tenant_name)}</td>
+                                                    <td className="px-4 py-2">{(item.meter_reading)}</td>
+                                                    <td className="px-4 py-2">{(item.meter_units)}</td>
+                                                    <td className="px-4 py-2">{(item.amount_due).toLocaleString()}</td>
+
+                                                    <td className="relative px-4 py-2 text-sm">
+                                                        <button
+                                                            onClick={() => toggleDropdown(index)}
+                                                            className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
+                                                        >
+                                                            Actions
+                                                            <svg className="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path
+                                                                    fillRule="evenodd"
+                                                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                                    clipRule="evenodd"
+                                                                />
+                                                            </svg>
+                                                        </button>
+
+                                                        {openDropdownId === index && (
+                                                            <div className="absolute right-0 z-50 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                                                <div className="py-1">
+                                                                    <Link
+                                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                                    >
+                                                                        View Tenant
+                                                                    </Link>
+                                                                    <button
+
+                                                                        className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                                                    >
+                                                                        Vacate Tenant
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* PAYMENTS */}
+                <div className="col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-5">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Tenant
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Property & Unit
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Method
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Reference
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Date
+                                    </th>
+                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Amount
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {tenantPayments.map((payment) => (
+                                    <tr key={payment.id} className="hover:bg-gray-50 transition-colors odd:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center">
+                                                <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                                    {payment.name?.split(' ').map(n => n[0]).join('') || '?'}
+                                                </div>
+                                                <div className="ml-3">
+                                                    <p className="text-sm font-medium text-gray-900">{payment.name}</p>
+                                                    <p className="text-xs font-medium text-gray-900">{payment.phone}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-xs text-gray-900 font-medium">{payment.unit_details?.property_name}</div>
+                                            <div className="text-xs text-gray-500">Unit {payment.unit_details?.unit_number}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-2">
+                                                {getMethodIcon(payment.method)}
+                                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getMethodBadgeColor(payment.method)}`}>
+                                                    {payment.method?.toUpperCase() || 'N/A'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="text-xs text-gray-600 font-mono">{payment.reference}</span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-xs text-gray-900">
+                                                {new Date(payment.date_received?.replace('Z', '')).toLocaleDateString()}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {new Date(payment.date_received?.replace('Z', '')).toLocaleTimeString([], {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: false,
+                                                })}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                                            <span className="text-xs font-mono text-gray-900">
+                                                KES {parseFloat(payment.amount || 0).toLocaleString()}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* No results */}
+                    {tenantPayments.length === 0 && (
+                        <div className="text-center py-12">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Search className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No payments found</h3>
+                            <p className="text-gray-600">Try adjusting your search or filters</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* TENANT HISTORY */}
+                <div className="col-span-2 mt-5">
                     <div className="rounded-lg border border-gray-200 bg-white">
                         <div className="flex justify-between my-2 px-2">
                             <h4 className="text-md text-gray-600 ">Tenant History</h4>
@@ -1082,163 +1379,6 @@ const Unit = () => {
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mx-4 mt-5">
-                {waterBills.length === 0 ? (
-                    <></>
-                ) : (
-                    <div className="rounded-lg border border-gray-200 bg-white">
-                        <div className="flex justify-between my-2 px-2">
-                            <h4 className="text-md text-gray-600 ">Water Meter History</h4>
-                            <button onClick={openWaterBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Record water bill</button>
-                        </div>
-                        <div className="w-full">
-                            <div className="">
-                                <table className="min-w-full overflow-auto">
-                                    <thead className="bg-gray-100 text-left text-xs">
-                                        <tr>
-                                            <th className="px-4 py-2">Date</th>
-                                            <th className="px-4 py-2">Tenant</th>
-                                            <th className="px-4 py-2">Previous Reading</th>
-                                            <th className="px-4 py-2">Units Consumed</th>
-                                            <th className="px-4 py-2">Bill</th>
-                                            <th className="px-4 py-2">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {waterBills.map((item, index) => (
-                                            <tr key={index} className="border-b text-xs">
-                                                <td className="px-4 py-2">
-                                                    {new Date(item.date_recorded).toLocaleString('en-US', {
-                                                        dateStyle: 'medium',
-                                                        timeStyle: 'short',
-                                                    })}
-                                                </td>
-                                                <td className="px-4 py-2">{(item.tenant_name)}</td>
-                                                <td className="px-4 py-2">{(item.meter_reading)}</td>
-                                                <td className="px-4 py-2">{(item.meter_units)}</td>
-                                                <td className="px-4 py-2">{(item.amount_due).toLocaleString()}</td>
-
-                                                <td className="relative px-4 py-2 text-sm">
-                                                    <button
-                                                        onClick={() => toggleDropdown(index)}
-                                                        className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
-                                                    >
-                                                        Actions
-                                                        <svg className="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path
-                                                                fillRule="evenodd"
-                                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                                clipRule="evenodd"
-                                                            />
-                                                        </svg>
-                                                    </button>
-
-                                                    {openDropdownId === index && (
-                                                        <div className="absolute right-0 z-50 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                                                            <div className="py-1">
-                                                                <Link
-                                                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                                >
-                                                                    View Tenant
-                                                                </Link>
-                                                                <button
-
-                                                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                                >
-                                                                    Vacate Tenant
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {electricityBills.length === 0 ? (
-                    <></>
-                ) : (
-                    <div className="rounded-lg border border-gray-200 bg-white">
-                        <div className="flex justify-between my-2 px-2">
-                            <h4 className="text-md text-gray-600 ">Electricity Meter History</h4>
-                            <button onClick={openElectricityBillModal} className="text-xs bg-red-700 text-white py-.5 px-2 rounded-xl">Record electricity bill</button>
-                        </div>
-                        <div className="w-full">
-                            <div className="">
-                                <table className="min-w-full table-auto">
-                                    <thead className="bg-gray-100 text-left text-xs">
-                                        <tr>
-                                            <th className="px-4 py-2">Date</th>
-                                            <th className="px-4 py-2">Tenant</th>
-                                            <th className="px-4 py-2">Previous Reading</th>
-                                            <th className="px-4 py-2">Units Consumed</th>
-                                            <th className="px-4 py-2">Bill</th>
-                                            <th className="px-4 py-2">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-
-                                        {electricityBills.map((item, index) => (
-                                            <tr key={index} className="border-b text-xs">
-                                                <td className="px-4 py-2">
-                                                    {new Date(item.date_recorded).toLocaleString('en-US', {
-                                                        dateStyle: 'medium',
-                                                        timeStyle: 'short',
-                                                    })}
-                                                </td>
-                                                <td className="px-4 py-2">{(item.tenant_name)}</td>
-                                                <td className="px-4 py-2">{(item.meter_reading)}</td>
-                                                <td className="px-4 py-2">{(item.meter_units)}</td>
-                                                <td className="px-4 py-2">{(item.amount_due).toLocaleString()}</td>
-
-                                                <td className="relative px-4 py-2 text-sm">
-                                                    <button
-                                                        onClick={() => toggleDropdown(index)}
-                                                        className="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none"
-                                                    >
-                                                        Actions
-                                                        <svg className="w-5 h-5 ml-2 -mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path
-                                                                fillRule="evenodd"
-                                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                                clipRule="evenodd"
-                                                            />
-                                                        </svg>
-                                                    </button>
-
-                                                    {openDropdownId === index && (
-                                                        <div className="absolute right-0 z-50 w-40 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                                                            <div className="py-1">
-                                                                <Link
-                                                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                                >
-                                                                    View Tenant
-                                                                </Link>
-                                                                <button
-
-                                                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                                                >
-                                                                    Vacate Tenant
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
 
             {showModal && (
@@ -1621,7 +1761,6 @@ const Unit = () => {
                     </div>
                 </div>
             )}
-
         </>
     )
 }

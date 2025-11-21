@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import ReactImageUploading from "react-images-uploading";
 import imageCompression from "browser-image-compression";
 import { Button } from "../../../../shared";
+import { DashboardHeader } from "../../dashboard/page_components";
 
 const ManageImages = () => {
     const [coverImage, setCoverImage] = useState([]);
@@ -196,10 +197,10 @@ const ManageImages = () => {
 
     return (
         <section>
-            <div className="p-4">
-                <h1 className="text-xl font-bold">Add Property Images</h1>
-                <p className="text-sm text-gray-500">Properties / Add Property / Images</p>
-            </div>
+            <DashboardHeader
+                title="Property Images"
+                description="Upload images for your cover image and unit images for your property."
+            />
             <div className="grid grid-cols-2 gap-4 p-4">
                 <ImageUploadSection
                     title="Cover Image"

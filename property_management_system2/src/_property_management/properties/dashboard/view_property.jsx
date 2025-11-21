@@ -5,6 +5,8 @@ import axios from "axios";
 import { FaDownload, FaEdit, FaEye, FaTrash } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../AuthContext";
+import { Building2, Camera, ChevronDown, Download, FileDown, FileSpreadsheet, Home, Layers, MapPin, Plus, Sparkles, X } from "lucide-react";
+import { MdHomeWork } from "react-icons/md";
 const Property = () => {
     const { property_id } = useParams();
     const [property, setProperty] = useState([]);
@@ -59,6 +61,7 @@ const Property = () => {
         );
         setProperty(response.data.result);
         setLoading(false);
+        setTotalPropertyUnits(response.data.result.units_breakdown.all_units.count);
     };
 
     useEffect(() => {
@@ -89,51 +92,52 @@ const Property = () => {
             value: property?.units_breakdown?.vacant?.count || 0,
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "",
             iconSrc: property?.revenue?.amounts?.expected_income?.images || "",
             label: "Rent Payable",
             value: `KES ${(property?.revenue?.amounts?.total_rent?.count || "0").toLocaleString()}`,
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "/payments/payments-arrears",
             iconSrc: property?.revenue?.amounts?.outstanding_balance?.images || "",
             label: "Previous Arrears",
             value: `KES ${Number(property?.revenue?.amounts?.total_arrears?.count ?? 0).toLocaleString()}`
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "/payments/payments-arrears",
             iconSrc: property?.revenue?.amounts?.total_fines?.images || "",
             label: "Total Bills",
             value: `KES ${(property?.revenue?.amounts?.total_bills?.count || "0").toLocaleString()}`,
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "/payments/payments-arrears",
             iconSrc: property?.revenue?.amounts?.total_fines?.images || "",
             label: "Total Fines",
             value: `KES ${(property?.revenue?.amounts?.total_fines?.count || "0").toLocaleString()}`,
         },
 
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "",
             iconSrc: property?.revenue?.amounts?.expected_income?.images || "",
             label: "Total Payable",
             value: `KES ${(property?.revenue?.amounts?.expected_income?.count || "0").toLocaleString()}`,
         },
 
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "/payments/payments-received",
             iconSrc: property?.revenue?.amounts?.amount_paid?.images || "",
             label: "Amount Paid",
             value: `KES ${(property?.revenue?.amounts?.amount_paid?.count || "0").toLocaleString()}`,
         },
 
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "/dashboard/due-rent",
             iconSrc: property?.revenue?.amounts?.total_fines?.images || "",
             label: "Total Balance",
             value: `KES ${(property?.revenue?.amounts?.total_balance?.count || "0").toLocaleString()}`,
         },
     ];
+    
     const quicks = [
         {
             url: "/reports",
@@ -513,6 +517,86 @@ const Property = () => {
         }
     };
 
+
+
+    const [isOpen, setIsOpen] = useState(false);
+    const [totalPropertyUnits, setTotalPropertyUnits] = useState(null);
+
+    const steps = [
+        {
+            id: 1,
+            title: 'Property Name & Location',
+            description: 'Edit basic property details and address',
+            icon: MapPin,
+            color: 'from-blue-500 to-cyan-500',
+            link: `/edit-property/general-information?property_id=${property_id}`
+        },
+        {
+            id: 2,
+            title: 'Amenities',
+            description: 'Manage property amenities and features',
+            icon: Sparkles,
+            color: 'from-purple-500 to-pink-500',
+            link: `edit-property/amenities?property_id=${property_id}`
+        },
+        {
+            id: 3,
+            title: 'Property Type',
+            description: 'Configure property type and category',
+            icon: Home,
+            color: 'from-amber-500 to-orange-500',
+            link: `/edit-property/property-type?property_id=${property_id}`
+        },
+
+        {
+            id: 4,
+            title: totalPropertyUnits > 1 ? 'Edit Multiple Units' : 'Edit Single Unit',
+            description: totalPropertyUnits > 1
+                ? 'Manage floors and unit configurations'
+                : 'Edit single unit details and configuration',
+            icon: Layers,
+            color: 'from-green-500 to-emerald-500',
+            link: totalPropertyUnits > 1 ? `/edit-property/multi-unit?property_id=${property_id}` : `/edit-property/single-unit?property_id=${property_id}`
+
+        },
+        {
+            id: 6,
+            title: 'Property Images',
+            description: 'Property images for each unit',
+            icon: Camera,
+            color: 'from-lime-500 to-teal-500',
+            link: `/edit-property/manage-images?property_id=${property_id}`
+        },
+        {
+            id: 5,
+            title: 'Property Summary',
+            description: 'Property summary and description',
+            icon: MdHomeWork,
+            color: 'from-red-500 to-orange-500',
+            link: `/add-property/property-summary?property_id=${property_id}`
+        },
+
+    ];
+
+    const additionalActions = [
+        {
+            id: 'add-floor',
+            title: 'Add Floor',
+            description: 'Add a new floor to the property',
+            icon: Plus,
+            color: 'from-indigo-500 to-blue-500',
+            link: `/add-property/add-floors?property_id=${property_id}`
+        },
+        {
+            id: 'add-unit',
+            title: 'Add Unit',
+            description: 'Add a new unit to existing floors',
+            icon: Plus,
+            color: 'from-rose-500 to-red-500',
+            link: '/add-property/multi-single-unit'
+        }
+    ];
+
     return (
         <>
             <DashboardHeader
@@ -548,20 +632,13 @@ const Property = () => {
                                 }
                                 {hasPermission("properties", "edit") &&
                                     <Link
-                                        to={`/edit-property/general-information?property_id=${property_id}`}
+                                        onClick={() => { setIsOpen(true) }}
                                         className="flex space-x-3 focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded text-xs px-2 py-2.5"
                                     >
                                         Edit Property
                                     </Link>
                                 }
-                                {hasPermission("properties", "add") &&
-                                    <Link
-                                        to="/add-property/multi-single-unit"
-                                        className="flex space-x-3 focus:outline-none text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:ring-yellow-300 font-medium rounded text-xs px-2 py-2.5"
-                                    >
-                                        Add Unit
-                                    </Link>
-                                }
+
                             </div>
                         </div>
                         <div className="mt-2">
@@ -625,6 +702,50 @@ const Property = () => {
                 <div className="flex justify-between item-center my-4 px-2">
                     <h4 className="text-md text-gray-600 ">All property List</h4>
                     <div className="grid md:grid-cols-2 gap-2 grid-cols-1">
+                        <div className="relative">
+                            <button
+                                onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
+                                disabled={loading || propertyUnits.length === 0}
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                            >
+                                <Download className="w-4 h-4" />
+                                <span className="text-sm font-medium">Export</span>
+                                <ChevronDown className="w-4 h-4" />
+                            </button>
+
+                            {openDropdownId === 'download' && (
+                                <div className="absolute left-0 z-50 w-48 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                    <div className="py-1">
+                                        <button
+                                            onClick={() => {
+                                                generatePDF();
+                                                setOpenDropdownId(null);
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                                        >
+                                            <FileDown className="w-4 h-4 text-red-600" />
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900">Export as PDF</div>
+                                                <div className="text-xs text-gray-500">Download PDF report</div>
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                generateExcel();
+                                                setOpenDropdownId(null);
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-t border-gray-100"
+                                        >
+                                            <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900">Export as Excel</div>
+                                                <div className="text-xs text-gray-500">Download CSV file</div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         <div className="flex items-center gap-2 text-xs">
                             <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
                                 Show Units:
@@ -643,50 +764,7 @@ const Property = () => {
                                 <option value={totalUnits}>{totalUnits} (All)</option>
                             </select>
                         </div>
-                        <div className="relative">
-                            <button
-                                onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
-                                disabled={loading || propertyUnits.length === 0}
-                                className="w-full flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <FaDownload className="w-4 h-4" />
-                                Download
-                                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
 
-                            {openDropdownId === 'download' && (
-                                <div className="absolute left-0 z-50 w-40 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                                    <div className="py-1">
-                                        <button
-                                            onClick={() => {
-                                                generatePDF();
-                                                setOpenDropdownId(null);
-                                            }}
-                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                        >
-                                            <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-                                            </svg>
-                                            PDF Format
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                generateExcel();
-                                                setOpenDropdownId(null);
-                                            }}
-                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                                        >
-                                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-                                            </svg>
-                                            Excel Format
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </div>
 
@@ -892,6 +970,117 @@ const Property = () => {
                     </div>
                 </div>
             </div >
+
+            {
+                isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
+                        {/* Modal Content */}
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+                            {/* Header */}
+                            <div className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 p-6 rounded-t-2xl">
+                                <button
+                                    onClick={() => setIsOpen(false)}
+                                    className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full text-white transition-all duration-200"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                                        <Building2 className="w-6 h-6 text-white" />
+                                    </div>
+                                    <h2 className="text-2xl font-bold text-white">Edit Property</h2>
+                                </div>
+                                <p className="text-blue-100">Choose which aspect of the property you'd like to edit</p>
+                            </div>
+
+                            {/* Steps Grid */}
+                            <div className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Property Configuration</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    {steps.map((step) => {
+                                        const Icon = step.icon;
+                                        return (
+                                            <Link
+                                                key={step.id}
+                                                to={step.link}
+
+                                                className="group relative bg-white border-2 border-gray-200 rounded-xl p-5 text-left hover:border-transparent hover:shadow-xl transition-all duration-300 overflow-hidden"
+                                            >
+                                                {/* Gradient Background on Hover */}
+                                                <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+
+                                                <div className="relative z-10">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className={`p-3 bg-gradient-to-br ${step.color} rounded-lg transform group-hover:scale-110 transition-transform duration-300`}>
+                                                            <Icon className="w-6 h-6 text-white" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className={`text-xs font-bold px-2 py-1 bg-gradient-to-r ${step.color} text-white rounded-full`}>
+                                                                    Step {step.id}
+                                                                </span>
+                                                            </div>
+                                                            <h4 className="text-base font-semibold text-gray-800 mb-1 group-hover:text-gray-900">
+                                                                {step.title}
+                                                            </h4>
+                                                            <p className="text-sm text-gray-600 group-hover:text-gray-700">
+                                                                {step.description}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Arrow indicator */}
+                                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300">
+                                                    <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Additional Actions */}
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4 mt-8">Quick Actions</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {additionalActions.map((action) => {
+                                        const Icon = action.icon;
+                                        return (
+                                            <Link
+                                                key={action.id}
+                                                to={action.link}
+                                                className="group relative bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-xl p-5 text-left hover:border-solid hover:from-white hover:to-white hover:shadow-lg transition-all duration-300"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`p-3 bg-gradient-to-br ${action.color} rounded-lg transform group-hover:scale-110 transition-transform duration-300`}>
+                                                        <Icon className="w-5 h-5 text-white" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="text-base font-semibold text-gray-800 mb-1">
+                                                            {action.title}
+                                                        </h4>
+                                                        <p className="text-sm text-gray-600">
+                                                            {action.description}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="border-t border-gray-200 p-4 bg-gray-50 rounded-b-2xl">
+                                <p className="text-xs text-gray-500 text-center">
+                                    Select an option above to edit your property details
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
             {
                 pagination && pagination.last_page > 1 && (
                     <div className="flex flex-col sm:flex-row justify-between items-center mt-4 px-4 gap-4">

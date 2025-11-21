@@ -15,7 +15,6 @@ import EditSingleUnit from "./_edit_property/edit_single_unit"
 import EditMultiUnit from "./_edit_property/edit_multi_unit"
 import EditManageImages from "./_edit_property/edit_property_images"
 import EditMultiUnitSingleUnit from "./_edit_property/edit_multi_unit_single_unit"
-import DueRent from './dashboard/due_rent'
 import Home2 from './dashboard/home-1'
 import MarketUnit from './dashboard/market_unit'
 import PaymentHistory from './dashboard/payment_history'
@@ -43,7 +42,6 @@ export {
     EditManageImages,
     EditMultiUnitSingleUnit,
 
-    DueRent,
     Home2,
     MarketUnit,
     PaymentHistory,

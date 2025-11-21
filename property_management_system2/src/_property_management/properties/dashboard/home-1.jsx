@@ -373,49 +373,49 @@ const Home2 = () => {
             value: details.vacant_units?.count,
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "",
             iconSrc: "../../../assets/icons/png/expected_income.png",
             progress: 20,
             label: "Rent Payable",
             value: `KES ${(revenue.total_rent?.count || 0).toLocaleString()}`,
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "/payments/payments-arrears",
             iconSrc: "../../../assets/icons/png/expected_income.png",
             progress: 80,
             label: "Previous Arrears",
             value: `KES ${(revenue.arrears?.count || 0).toLocaleString()}`,
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "/payments/payments-arrears",
             iconSrc: "../../../assets/icons/png/outstanding_balance.png",
             progress: 3.4,
             label: "Total Bills",
             value: `KES ${(revenue.total_bills?.count || 0).toLocaleString()}`,
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "/payments/payments-arrears",
             iconSrc: "../../../assets/icons/png/total_fines.png",
             progress: 5,
             label: "Total fines",
             value: `KES ${(revenue.fines?.count || 0).toLocaleString()}`,
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "",
             iconSrc: "../../../assets/icons/png/total_fines.png",
             progress: 5,
             label: "Total Payable",
             value: `KES ${(revenue.expected_amount?.count || 0).toLocaleString()}`,
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "/payments/payments-received",
             iconSrc: "../../../assets/icons/png/total_fines.png",
             progress: 5,
             label: "Amount Paid",
             value: `KES ${(revenue.amount_paid?.count || 0).toLocaleString()}`,
         },
         {
-            redirectUrl: "/property/revenue-breakdown",
+            redirectUrl: "/dashboard/due-rent",
             iconSrc: "../../../assets/icons/png/total_fines.png",
             progress: 5,
             label: "Total Balance",
@@ -438,7 +438,7 @@ const Home2 = () => {
                     link2="/property/receive-payment"
                 />
 
-                <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 py-1 px-4 mt-2">
+                <div className="w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 py-1 px-4 mt-2">
                     {loading ? (
                         Array(8).fill(0).map((_, index) => (
                             <StatCardSkeleton key={index} />

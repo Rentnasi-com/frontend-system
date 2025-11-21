@@ -8,6 +8,7 @@ import { z } from "zod";
 import FormField from "./single_unit/FormField";
 import UnitTypeSelect from "./single_unit/UnitTypeSelect";
 import { Button } from "../../../../shared";
+import { DashboardHeader } from "../../dashboard/page_components";
 
 const schema = z.object({
     unit_type_id: z.string().nonempty("Unit type is required"),
@@ -136,94 +137,95 @@ const Single_Unit = () => {
     };
 
     return (
-        <section className="bg-white">
-            <div className="p-4 flex justify-between">
-                <div>
-                    <h1 className="text-xl font-bold text-gray-700">Add Property</h1>
-                    <p className="text-sm text-gray-500">Properties / Add property</p>
-                </div>
-            </div>
-            <div className="my-1 px-4">
-                <div className="border rounded p-2">
-                    <p className="mt-1 text-sm font-normal text-gray-500">
-                        You can now manage each unit on this floor! 🏢 Just enter the unit
-                        number 📋, type 🏠, rent 💰, deposits for water 🚰, electricity ⚡,
-                        and garbage 🗑️.
-                    </p>
-                </div>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                    <table id="unitTable" className="w-full text-sm text-left text-gray-500">
-                        <thead className="text-xs text-white uppercase bg-red-700 py-4">
-                            <tr>
-                                <th scope="col" className="px-5 py-3">Unit Type</th>
-                                <th scope="col" className="px-5 py-3">Rent Amount</th>
-                                <th scope="col" className="px-5 py-3">Deposit</th>
-                                <th scope="col" className="px-5 py-3">Water</th>
-                                <th scope="col" className="px-5 py-3">Electricity</th>
-                                <th scope="col" className="px-5 py-3">Garbage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <UnitTypeSelect unitTypes={unitTypes} register={register} errors={errors} />
-                                <FormField
-                                    name="rent_amount"
-                                    label="Rent Amount"
-                                    register={register}
-                                    errors={errors}
-                                    type="number"
-                                    placeholder="Rent Amount"
-                                    defaultValue={0}
-                                    onChange={handleRentAmountChange}
-                                    value={rentAmount}
-                                />
-                                <FormField
-                                    name="rent_deposit"
-                                    label="Rent Deposit"
-                                    register={register}
-                                    errors={errors}
-                                    type="number"
-                                    placeholder="Rent Deposit"
-                                    defaultValue={0}
-                                    onChange={handleRentDepositChange}
-                                    value={rentDeposit}
-                                />
-                                <FormField
-                                    name="water_amount"
-                                    label="Water Amount"
-                                    register={register}
-                                    errors={errors}
-                                    type="number"
-                                    placeholder="Water Deposit"
-                                    defaultValue={0}
-                                />
-                                <FormField
-                                    name="electricity_amount"
-                                    label="Electricity Amount"
-                                    register={register}
-                                    errors={errors}
-                                    type="number"
-                                    placeholder="Electricity Deposit"
-                                    defaultValue={0}
-                                />
-                                <FormField
-                                    name="garbage_amount"
-                                    label="Garbage Amount"
-                                    register={register}
-                                    errors={errors}
-                                    type="number"
-                                    placeholder="Garbage Deposit"
-                                    defaultValue={0}
-                                />
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div className="flex justify-between mt-4">
-                        <Button type="button" onClick={goToPrevious}>Previous</Button>
-                        <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>Next</Button>
+        <section>
+            <DashboardHeader
+                title="Add Single Unit"
+                description="Add a single unit to the property"
+            />
+            <div className="px-4">
+                <div className="mt-4 border rounded bg-white px-2 py-4">
+                    <div className=" p-2">
+                        <p className="mt-1 text-sm font-normal text-gray-500">
+                            You can now manage each unit on this floor! 🏢 Just enter the unit
+                            number 📋, type 🏠, rent 💰, deposits for water 🚰, electricity ⚡,
+                            and garbage 🗑️.
+                        </p>
                     </div>
-                </form>
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                        <table id="unitTable" className="w-full text-sm text-left text-gray-500">
+                            <thead className="text-xs text-white uppercase bg-red-700 py-4">
+                                <tr>
+                                    <th scope="col" className="px-5 py-3">Unit Type</th>
+                                    <th scope="col" className="px-5 py-3">Rent Amount</th>
+                                    <th scope="col" className="px-5 py-3">Deposit</th>
+                                    <th scope="col" className="px-5 py-3">Water</th>
+                                    <th scope="col" className="px-5 py-3">Electricity</th>
+                                    <th scope="col" className="px-5 py-3">Garbage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <UnitTypeSelect unitTypes={unitTypes} register={register} errors={errors} />
+                                    <FormField
+                                        name="rent_amount"
+                                        label="Rent Amount"
+                                        register={register}
+                                        errors={errors}
+                                        type="number"
+                                        placeholder="Rent Amount"
+                                        defaultValue={0}
+                                        onChange={handleRentAmountChange}
+                                        value={rentAmount}
+                                    />
+                                    <FormField
+                                        name="rent_deposit"
+                                        label="Rent Deposit"
+                                        register={register}
+                                        errors={errors}
+                                        type="number"
+                                        placeholder="Rent Deposit"
+                                        defaultValue={0}
+                                        onChange={handleRentDepositChange}
+                                        value={rentDeposit}
+                                    />
+                                    <FormField
+                                        name="water_amount"
+                                        label="Water Amount"
+                                        register={register}
+                                        errors={errors}
+                                        type="number"
+                                        placeholder="Water Deposit"
+                                        defaultValue={0}
+                                    />
+                                    <FormField
+                                        name="electricity_amount"
+                                        label="Electricity Amount"
+                                        register={register}
+                                        errors={errors}
+                                        type="number"
+                                        placeholder="Electricity Deposit"
+                                        defaultValue={0}
+                                    />
+                                    <FormField
+                                        name="garbage_amount"
+                                        label="Garbage Amount"
+                                        register={register}
+                                        errors={errors}
+                                        type="number"
+                                        placeholder="Garbage Deposit"
+                                        defaultValue={0}
+                                    />
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div className="flex justify-between mt-4">
+                            <Button type="button" onClick={goToPrevious}>Previous</Button>
+                            <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>Next</Button>
+                        </div>
+                    </form>
+                </div>
             </div>
+
         </section>
     );
 };

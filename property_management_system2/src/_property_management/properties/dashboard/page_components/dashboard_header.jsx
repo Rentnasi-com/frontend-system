@@ -17,16 +17,46 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
+    // 👇 UPDATED: Get user and organization data from localStorage
+    const storedUser = localStorage.getItem('userProfile');
+    const storedOrganization = localStorage.getItem('organization');
+
+    let userName = 'User';
+    let organizationName = 'Organization';
+
+    try {
+        if (storedUser) {
+            const userProfile = JSON.parse(storedUser);
+            // Assuming 'firstname' and 'lastname' exist in userProfile
+            userName = `${userProfile.firstname || ''} ${userProfile.lastname || ''}`.trim() || 'User';
+        }
+        if (storedOrganization) {
+            const organization = JSON.parse(storedOrganization);
+            // Assuming 'name' exists in organization
+            organizationName = organization.name || 'Organization';
+        }
+    } catch (e) {
+        console.error("Failed to parse user/organization data from localStorage", e);
+    }
+    // 👆 END UPDATED SECTION
 
     const dataToSend = {
         sessionId: localStorage.getItem("sessionId"),
         userId: localStorage.getItem("userId"),
     }
 
+    // Use logout function from useAuth for proper cleanup (if available)
+    const { logout } = useAuth();
+
     const handleLogout = () => {
-        toast.success("Redirecting to auth")
-        localStorage.clear()
-        window.location.href = `${AUTH_URL}`
+        if (logout) {
+            logout(); // Use the context logout function
+        } else {
+            // Fallback if context is not fully initialized
+            toast.success("Redirecting to auth")
+            localStorage.clear()
+            window.location.href = `${AUTH_URL}`
+        }
     }
 
     const menuItems = [
@@ -49,44 +79,7 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [token, baseUrl]);
 
-    // const PackageDetails = async () => {
-    //   try {
-    //     const response = await axios.post(`${baseUrl}/auth/package-manager`, {},
-    //       {
-    //         headers: {
-    //           Authorization: `Bearer ${token}`,
-    //         },
-    //       }
-    //     )
-    //     setPackageDetails(response.data.package)
-
-    //     if (response.data.package?.expiry_date) {
-    //       const expiryDate = new Date(response.data.package.expiry_date)
-    //       const now = new Date()
-    //       setIsExpired(now > expiryDate)
-    //     }
-    //   } catch (error) {
-    //     console.error(error)
-    //   }
-    // }
-
-    // const getUserDetails = async () => {
-    //   try {
-    //     const response = await axios.post(`${baseUrl}/v2/get-user`, dataToSend,
-    //       {
-    //         headers: {
-    //           Authorization: `Bearer ${token}`,
-    //         },
-    //       }
-    //     )
-    //     console.log(response)
-    //     if (response.data.success) {
-    //       localStorage.setItem("userDetails", JSON.stringify(response.data.result))
-    //     }
-    //   } catch (error) {
-    //     console.error(error)
-    //   }
-    // }
+    // Omitted PackageDetails and getUserDetails as they were commented out.
 
     const { hasPermission } = useAuth();
 
@@ -98,14 +91,9 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
                     <div className="relative p-4 w-full max-w-md max-h-full">
 
                         <div className="relative bg-white rounded-lg border border-gray-200">
-                            {/* <button type="button" onClick={handleClose} className="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center">
-                <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-                </svg>
-                <span className="sr-only">Close modal</span>
-              </button> */}
+
                             <div className="p-4 md:p-5">
-                                <svg className="w-10 h-10 text-gray-400  mb-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 20">
+                                <svg className="w-10 h-10 text-gray-400  mb-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 20">
                                     <path d="M8 5.625c4.418 0 8-1.063 8-2.375S12.418.875 8 .875 0 1.938 0 3.25s3.582 2.375 8 2.375Zm0 13.5c4.963 0 8-1.538 8-2.375v-4.019c-.052.029-.112.054-.165.082a8.08 8.08 0 0 1-.745.353c-.193.081-.394.158-.6.231l-.189.067c-2.04.628-4.165.936-6.3.911a20.601 20.601 0 0 1-6.3-.911l-.189-.067a10.719 10.719 0 0 1-.852-.34 8.08 8.08 0 0 1-.493-.244c-.053-.028-.113-.053-.165-.082v4.019C0 17.587 3.037 19.125 8 19.125Zm7.09-12.709c-.193.081-.394.158-.6.231l-.189.067a20.6 20.6 0 0 1-6.3.911 20.6 20.6 0 0 1-6.3-.911l-.189-.067a10.719 10.719 0 0 1-.852-.34 8.08 8.08 0 0 1-.493-.244C.112 6.035.052 6.01 0 5.981V10c0 .837 3.037 2.375 8 2.375s8-1.538 8-2.375V5.981c-.052.029-.112.054-.165.082a8.08 8.08 0 0 1-.745.353Z" />
                                 </svg>
                                 <h3 className="mb-1 text-xl font-bold text-yellow-700">Your {packageDetails.package_name} Package Has Expired</h3>
@@ -121,7 +109,6 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
                                 </div>
                                 <div className="flex items-center mt-6 space-x-4 rtl:space-x-reverse">
                                     <a target="_blank" href={`https://billing.rentnasi.com?sessionId=${sessionId}&userId=${userId}`} className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Upgrade to PRO</a>
-                                    {/* <button onClick={handleClose} type="button" className="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100">Cancel</button> */}
                                 </div>
                             </div>
                         </div>
@@ -138,6 +125,13 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
 
                 <div className="">
                     <div className="flex justify-end space-x-3 mb-2">
+                        {/* 👇 UPDATED: Display organization/user names */}
+                        <div className="flex flex-col justify-center items-end text-right pr-2">
+                            <p className="text-xs font-medium text-gray-800">{userName}</p>
+                            <p className="text-xs text-gray-500">{organizationName}</p>
+                        </div>
+                        {/* 👆 END UPDATED SECTION */}
+
                         <div className="bg-gray-200 px-2 py-1 flex justify-center items-center rounded-xl">
                             <FaBell />
                         </div>

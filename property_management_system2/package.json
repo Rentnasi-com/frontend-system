@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
+    "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.9.0",
     "@react-google-maps/api": "^2.19.3",
     "@reduxjs/toolkit": "^2.2.6",
@@ -21,6 +22,8 @@
     "dotenv": "^16.4.5",
     "flowbite-react": "^0.10.1",
     "framer-motion": "^12.23.3",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.408.0",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
@@ -37,6 +40,7 @@
     "react-toaster": "^0.0.3",
     "redux": "^5.0.1",
     "redux-thunk": "^3.1.0",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {

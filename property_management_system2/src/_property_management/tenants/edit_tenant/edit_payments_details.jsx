@@ -99,23 +99,7 @@ const EditTenantProperty = () => {
                         path: ["initial_electricity_reading"],
                     });
                 }
-            } else if (data.is_electricity_meter_read === "0") {
-                if (data.electricity_unit_price && data.electricity_unit_price.trim() !== "") {
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        message: "Electricity unit price should be empty when electricity meter read is disabled",
-                        path: ["electricity_unit_price"],
-                    });
-                }
-                if (data.initial_electricity_reading && data.initial_electricity_reading.trim() !== "") {
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        message: "Initial electricity reading should be empty when electricity meter read is disabled",
-                        path: ["initial_electricity_reading"],
-                    });
-                }
             }
-
 
             if (data.mode_for_late_payment === "percentage") {
                 if (!data.amount_criteria) {
@@ -176,6 +160,7 @@ const EditTenantProperty = () => {
     const is_meter_read = watch("is_meter_read");
     const is_rent_agreed = watch("is_rent_agreed");
     const is_electricity_meter_read = watch("is_electricity_meter_read");
+    const is_fines_required = watch("is_fines_required");
 
 
     useEffect(() => {
@@ -894,132 +879,166 @@ const EditTenantProperty = () => {
                             </div>
                         </div>
 
-                        <div className="flex justify-between space-x-4">
-                            <div className="w-full">
-                                <label
-                                    htmlFor="property-name"
-                                    className="block my-2 text-sm font-medium text-gray-900">
-                                    Set date to start fines for late payment
+                        <div className="col-span-3">
+                            <div className="flex space-x-6">
+                                <h6 className="text-sm font-medium text-gray-900">Is the tenant required to pay fines</h6>
+                                <label>
+                                    <input
+                                        className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                                        type="radio"
+                                        value="1"
+                                        {...register("is_fines_required")}
+                                    />
+                                    Yes
                                 </label>
-
-                                <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                                    {...register("due_rent_fine_start_date")}
-                                >
-                                    <option value={"Select due rent reminder date"}>Select due rent reminder date</option>
-                                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                                        <option key={day} value={day.toString()}>
-                                            {day}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.due_rent_fine_start_date && (
+                                <label>
+                                    <input
+                                        className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                                        type="radio"
+                                        value="0"
+                                        {...register("is_fines_required")}
+                                    />
+                                    No
+                                </label>
+                                {errors.is_fines_required && (
                                     <p className="text-xs text-red-500">
-                                        {errors.due_rent_fine_start_date.message}
+                                        {errors.is_fines_required.message}
                                     </p>
                                 )}
                             </div>
-                            <div className="w-full">
-                                <label
-                                    htmlFor="property-name"
-                                    className="block my-2 text-sm font-medium text-gray-900"
-                                >
-                                    Select mode for late payment fine
-                                </label>
-                                <select {...register("mode_for_late_payment")} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
-                                    <option selected>Select mode for late payment</option>
-                                    <option value="fixed_amount">Fixed amount</option>
-                                    <option value="percentage">Percentage</option>
-                                </select>
-                            </div>
+
                         </div>
 
-                        {mode_for_late_payment === "percentage" && (
-                            <div className="grid grid-cols-2 gap-4">
+                        {is_fines_required === "1" && (
+                            <>
+                                <div className="flex justify-between space-x-4">
+                                    <div className="w-full">
+                                        <label
+                                            htmlFor="property-name"
+                                            className="block my-2 text-sm font-medium text-gray-900">
+                                            Set date to start fines for late payment
+                                        </label>
 
-                                <div className="space-y-3">
-                                    <label
-                                        htmlFor="property-name"
-                                        className="block my-2 text-sm font-medium text-gray-900">
-                                        Select percentage of?
-                                    </label>
-                                    <label className="flex">
-                                        <div className="flex items-center h-5">
-                                            <input {...register("amount_criteria")} aria-label="current_full_month_rent" type="radio" value="current_full_month_rent" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
+                                        <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+                                            {...register("due_rent_fine_start_date")}
+                                        >
+                                            <option value={"Select due rent reminder date"}>Select due rent reminder date</option>
+                                            {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                                <option key={day} value={day.toString()}>
+                                                    {day}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.due_rent_fine_start_date && (
+                                            <p className="text-xs text-red-500">
+                                                {errors.due_rent_fine_start_date.message}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="w-full">
+                                        <label
+                                            htmlFor="property-name"
+                                            className="block my-2 text-sm font-medium text-gray-900"
+                                        >
+                                            Select mode for late payment fine
+                                        </label>
+                                        <select {...register("mode_for_late_payment")} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
+                                            <option selected>Select mode for late payment</option>
+                                            <option value="fixed_amount">Fixed amount</option>
+                                            <option value="percentage">Percentage</option>
+                                        </select>
+                                    </div>
+                                </div>
 
-                                        </div>
-                                        <div className="ms-2 text-sm">
-                                            <label className="font-medium text-gray-900">Current full month rent</label>
-                                        </div>
-                                    </label>
-                                    <label className="flex">
-                                        <div className="flex items-center h-5">
-                                            <input {...register("amount_criteria")} type="radio" value="current_full_month_rent_balance" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
+                                {mode_for_late_payment === "percentage" && (
+                                    <div className="grid grid-cols-2 gap-4">
 
-                                        </div>
-                                        <div className="ms-2 text-sm">
-                                            <label className="font-medium text-gray-900">Current full month rent balance</label>
-                                        </div>
-                                    </label>
-                                    <div className="flex">
-                                        <div className="flex items-center h-5">
-                                            <input {...register("amount_criteria")} type="radio" value="total_cumulative_balances_inclusive_of_previous_month" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
+                                        <div className="space-y-3">
+                                            <label
+                                                htmlFor="property-name"
+                                                className="block my-2 text-sm font-medium text-gray-900">
+                                                Select percentage of?
+                                            </label>
+                                            <label className="flex">
+                                                <div className="flex items-center h-5">
+                                                    <input {...register("amount_criteria")} aria-label="current_full_month_rent" type="radio" value="current_full_month_rent" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
 
+                                                </div>
+                                                <div className="ms-2 text-sm">
+                                                    <label className="font-medium text-gray-900">Current full month rent</label>
+                                                </div>
+                                            </label>
+                                            <label className="flex">
+                                                <div className="flex items-center h-5">
+                                                    <input {...register("amount_criteria")} type="radio" value="current_full_month_rent_balance" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
+
+                                                </div>
+                                                <div className="ms-2 text-sm">
+                                                    <label className="font-medium text-gray-900">Current full month rent balance</label>
+                                                </div>
+                                            </label>
+                                            <div className="flex">
+                                                <div className="flex items-center h-5">
+                                                    <input {...register("amount_criteria")} type="radio" value="total_cumulative_balances_inclusive_of_previous_month" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
+
+                                                </div>
+                                                <div className="ms-2 text-sm">
+                                                    <label className="font-medium text-gray-900">Total cumulative balances inclusive of previous month </label>
+                                                </div>
+                                            </div>
+                                            {errors.amount_criteria && (
+                                                <p className="text-xs text-red-500">
+                                                    {errors.amount_criteria.message}
+                                                </p>
+                                            )}
                                         </div>
-                                        <div className="ms-2 text-sm">
-                                            <label className="font-medium text-gray-900">Total cumulative balances inclusive of previous month </label>
+                                        <div className="w-full">
+                                            <label
+                                                htmlFor="property-name"
+                                                className="block my-2 text-sm font-medium text-gray-900">
+                                                Enter percentage
+                                            </label>
+                                            <input
+                                                aria-label="criteria_percentage"
+                                                {...register("criteria_percentage")}
+                                                type="text"
+                                                placeholder="eg. 10"
+                                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+                                            />
+                                            {errors.criteria_percentage && (
+                                                <p className="text-xs text-red-500">
+                                                    {errors.criteria_percentage.message}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                    </div>
+                                )}
+
+                                {mode_for_late_payment === "fixed_amount" && (
+                                    <div className="flex justify-between space-x-4">
+                                        <div className="w-1/2">
+                                            <label
+                                                htmlFor="property-name"
+                                                className="block my-2 text-sm font-medium text-gray-900">
+                                                Enter fixed amount
+                                            </label>
+                                            <input
+                                                {...register('late_payment_fixed_amount')}
+                                                aria-label="late_payment_fixed_amount"
+                                                type="number"
+                                                placeholder="e.g 1000"
+                                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+                                            />
+                                            {errors.late_payment_fixed_amount && (
+                                                <p className="text-xs text-red-500">
+                                                    {errors.late_payment_fixed_amount.message}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
-                                    {errors.amount_criteria && (
-                                        <p className="text-xs text-red-500">
-                                            {errors.amount_criteria.message}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="w-full">
-                                    <label
-                                        htmlFor="property-name"
-                                        className="block my-2 text-sm font-medium text-gray-900">
-                                        Enter percentage
-                                    </label>
-                                    <input
-                                        aria-label="criteria_percentage"
-                                        {...register("criteria_percentage")}
-                                        type="text"
-                                        placeholder="eg. 10"
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                                    />
-                                    {errors.criteria_percentage && (
-                                        <p className="text-xs text-red-500">
-                                            {errors.criteria_percentage.message}
-                                        </p>
-                                    )}
-                                </div>
-
-                            </div>
-                        )}
-
-                        {mode_for_late_payment === "fixed_amount" && (
-                            <div className="flex justify-between space-x-4">
-                                <div className="w-1/2">
-                                    <label
-                                        htmlFor="property-name"
-                                        className="block my-2 text-sm font-medium text-gray-900">
-                                        Enter fixed amount
-                                    </label>
-                                    <input
-                                        {...register('late_payment_fixed_amount')}
-                                        aria-label="late_payment_fixed_amount"
-                                        type="number"
-                                        placeholder="e.g 1000"
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                                    />
-                                    {errors.late_payment_fixed_amount && (
-                                        <p className="text-xs text-red-500">
-                                            {errors.late_payment_fixed_amount.message}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
+                                )}
+                            </>
                         )}
 
                         <div className="flex flex-row-reverse mt-4">

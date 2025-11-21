@@ -59,13 +59,18 @@ const AddTenantProperty = () => {
 
         arrears_total: z.coerce.string().optional(),
 
-        rent_due_date: z.string().min(1, "Select a valid date"),
-        due_rent_reminder_date: z.string().min(1, "Select a valid date"),
-        due_rent_fine_start_date: z.string().min(1, "Select a valid date"),
+        // Add is_fines_required for form control (won't be sent to API)
+        is_fines_required: z.enum(["1", "0"], {
+            errorMap: () => ({ message: "You must select either 'Yes' or 'No'" })
+        }).optional(),
+
+        rent_due_date: z.string().optional(),
+        due_rent_reminder_date: z.string().optional(),
+        due_rent_fine_start_date: z.string().optional(),
 
         mode_for_late_payment: z.enum(["percentage", "fixed_amount", ""], {
             errorMap: () => ({ message: "Please select a valid mode" })
-        }),
+        }).optional(),
 
         is_electricity_meter_read: z.enum(['1', '0'], {
             errorMap: () => ({ message: "You must select either 'Yes' or 'No'" })
@@ -104,7 +109,6 @@ const AddTenantProperty = () => {
 
             // Electricity meter reading validation
             if (data.is_electricity_meter_read === "1") {
-                // Validate electricity_unit_price is required
                 if (!data.electricity_unit_price || data.electricity_unit_price.trim() === "") {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
@@ -112,7 +116,6 @@ const AddTenantProperty = () => {
                         path: ["electricity_unit_price"],
                     });
                 } else {
-                    // Validate electricity_unit_price is a positive number
                     const unitPrice = parseFloat(data.electricity_unit_price);
                     if (isNaN(unitPrice) || unitPrice <= 0) {
                         ctx.addIssue({
@@ -123,7 +126,6 @@ const AddTenantProperty = () => {
                     }
                 }
 
-                // Validate initial_electricity_reading is required
                 if (!data.initial_electricity_reading || data.initial_electricity_reading.trim() === "") {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
@@ -131,7 +133,6 @@ const AddTenantProperty = () => {
                         path: ["initial_electricity_reading"],
                     });
                 } else {
-                    // Validate initial_electricity_reading is a non-negative number
                     const reading = parseFloat(data.initial_electricity_reading);
                     if (isNaN(reading) || reading < 0) {
                         ctx.addIssue({
@@ -145,8 +146,6 @@ const AddTenantProperty = () => {
 
             // Clear electricity fields if meter read is disabled
             if (data.is_electricity_meter_read === "0") {
-                // Optional: Clear the fields when electricity meter is disabled
-                // You can remove this validation if you want to allow values to persist
                 if (data.electricity_unit_price && data.electricity_unit_price.trim() !== "") {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
@@ -163,56 +162,108 @@ const AddTenantProperty = () => {
                 }
             }
 
-            // Late payment mode validation
-            if (data.mode_for_late_payment === "percentage") {
-                if (!data.amount_criteria) {
+            // Fines validation - only validate fine fields if fines are required
+            if (data.is_fines_required === "1") {
+                // Validate rent_due_date
+                if (!data.rent_due_date || data.rent_due_date === "Select rent due date") {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
-                        message: "Amount criteria is required",
-                        path: ["amount_criteria"],
+                        message: "Rent due date is required when fines are enabled",
+                        path: ["rent_due_date"],
                     });
                 }
-                if (!data.criteria_percentage) {
+
+                // Validate due_rent_reminder_date
+                if (!data.due_rent_reminder_date || data.due_rent_reminder_date === "Select due rent reminder date") {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
-                        message: "Percentage value is required",
-                        path: ["criteria_percentage"],
+                        message: "Reminder date is required when fines are enabled",
+                        path: ["due_rent_reminder_date"],
                     });
                 }
-                // Ensure fixed amount is cleared
-                if (data.late_payment_fixed_amount) {
+
+                // Validate due_rent_fine_start_date
+                if (!data.due_rent_fine_start_date || data.due_rent_fine_start_date === "Select due rent reminder date") {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
-                        message: "Fixed amount should be empty in percentage mode",
-                        path: ["late_payment_fixed_amount"],
+                        message: "Fine start date is required when fines are enabled",
+                        path: ["due_rent_fine_start_date"],
                     });
                 }
-            } else if (data.mode_for_late_payment === "fixed_amount") {
-                if (!data.late_payment_fixed_amount) {
+
+                // Validate mode_for_late_payment
+                if (!data.mode_for_late_payment || data.mode_for_late_payment === "") {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
-                        message: "Fixed amount is required",
-                        path: ["late_payment_fixed_amount"],
+                        message: "Late payment mode is required when fines are enabled",
+                        path: ["mode_for_late_payment"],
                     });
                 }
-                // Ensure percentage fields are cleared
-                if (data.amount_criteria || data.criteria_percentage) {
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        message: "Percentage fields should be empty in fixed amount mode",
-                        path: ["amount_criteria"],
-                    });
+
+                // Late payment mode validation
+                if (data.mode_for_late_payment === "percentage") {
+                    if (!data.amount_criteria) {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Amount criteria is required",
+                            path: ["amount_criteria"],
+                        });
+                    }
+                    if (!data.criteria_percentage) {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Percentage value is required",
+                            path: ["criteria_percentage"],
+                        });
+                    }
+                    if (data.late_payment_fixed_amount) {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Fixed amount should be empty in percentage mode",
+                            path: ["late_payment_fixed_amount"],
+                        });
+                    }
+                } else if (data.mode_for_late_payment === "fixed_amount") {
+                    if (!data.late_payment_fixed_amount) {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Fixed amount is required",
+                            path: ["late_payment_fixed_amount"],
+                        });
+                    }
+                    if (data.amount_criteria || data.criteria_percentage) {
+                        ctx.addIssue({
+                            code: z.ZodIssueCode.custom,
+                            message: "Percentage fields should be empty in fixed amount mode",
+                            path: ["amount_criteria"],
+                        });
+                    }
                 }
+            } else if (data.is_fines_required === "0") {
+                // Clear fine-related fields when fines are not required
+                const fineFieldsToCheck = [
+                    { field: data.rent_due_date, name: "rent_due_date" },
+                    { field: data.due_rent_reminder_date, name: "due_rent_reminder_date" },
+                    { field: data.due_rent_fine_start_date, name: "due_rent_fine_start_date" },
+                    { field: data.mode_for_late_payment, name: "mode_for_late_payment" },
+                    { field: data.amount_criteria, name: "amount_criteria" },
+                    { field: data.criteria_percentage, name: "criteria_percentage" },
+                    { field: data.late_payment_fixed_amount, name: "late_payment_fixed_amount" }
+                ];
+
+                fineFieldsToCheck.forEach(({ field, name }) => {
+                    if (field && field !== "" && !["Select rent due date", "Select due rent reminder date"].includes(field)) {
+                        data[name] = undefined;
+                    }
+                });
             }
 
             // Arrears validation logic
             if (data.is_the_tenant_have_previous_arrears === "0") {
-                // If tenant has no previous arrears, clear is_arrears_cumulative and all arrears fields
                 if (data.is_arrears_cumulative) {
                     data.is_arrears_cumulative = undefined;
                 }
 
-                // Clear all arrears-related fields when tenant has no previous arrears
                 const arrearsFieldsToCheck = [
                     { field: data.arrears_total, name: "arrears_total" },
                     { field: data.arrears_rent_amount, name: "arrears_rent_amount" },
@@ -233,7 +284,6 @@ const AddTenantProperty = () => {
                 });
 
             } else if (data.is_the_tenant_have_previous_arrears === "1") {
-                // Tenant has previous arrears - require is_arrears_cumulative
                 if (!data.is_arrears_cumulative) {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
@@ -241,7 +291,6 @@ const AddTenantProperty = () => {
                         path: ["is_arrears_cumulative"],
                     });
                 } else if (data.is_arrears_cumulative === "1") {
-                    // If arrears are cumulative, require arrears_total
                     if (!data.arrears_total || data.arrears_total.trim() === "") {
                         ctx.addIssue({
                             code: z.ZodIssueCode.custom,
@@ -249,7 +298,6 @@ const AddTenantProperty = () => {
                             path: ["arrears_total"],
                         });
                     }
-                    // Validate arrears_total is a positive number
                     if (data.arrears_total && data.arrears_total.trim() !== "") {
                         const arrearsTotal = parseFloat(data.arrears_total);
                         if (isNaN(arrearsTotal) || arrearsTotal <= 0) {
@@ -261,7 +309,6 @@ const AddTenantProperty = () => {
                         }
                     }
 
-                    // Clear individual arrears fields when cumulative
                     const individualArrearsFields = [
                         { field: data.arrears_rent_amount, name: "arrears_rent_amount" },
                         { field: data.arrears_rent_deposit, name: "arrears_rent_deposit" },
@@ -277,7 +324,6 @@ const AddTenantProperty = () => {
                     });
 
                 } else if (data.is_arrears_cumulative === "0") {
-                    // If arrears are not cumulative, validate individual arrears fields and calculate total
                     const arrearsFields = [
                         { field: data.arrears_rent_amount, name: "arrears_rent_amount", label: "rent amount" },
                         { field: data.arrears_rent_deposit, name: "arrears_rent_deposit", label: "rent deposit" },
@@ -298,7 +344,6 @@ const AddTenantProperty = () => {
                         });
                     }
 
-                    // Validate each provided arrears field is a positive number
                     arrearsFields.forEach(({ field, name, label }) => {
                         if (field && field.trim() !== "") {
                             const value = parseFloat(field);
@@ -312,7 +357,6 @@ const AddTenantProperty = () => {
                         }
                     });
 
-                    // Calculate and set arrears_total automatically
                     const calculatedTotal = arrearsFields.reduce((total, { field }) => {
                         if (field && field.trim() !== "") {
                             const value = parseFloat(field);
@@ -323,7 +367,6 @@ const AddTenantProperty = () => {
                         return total;
                     }, 0);
 
-                    // Update arrears_total in the data object
                     if (calculatedTotal > 0) {
                         data.arrears_total = calculatedTotal.toString();
                     }
@@ -331,8 +374,12 @@ const AddTenantProperty = () => {
             }
         })
         .transform((data) => {
-            // Remove is_the_tenant_have_previous_arrears from final data since you don't want to send it
-            const { is_the_tenant_have_previous_arrears, ...finalData } = data;
+            // Remove fields that shouldn't be sent to API
+            const {
+                is_the_tenant_have_previous_arrears,
+                is_fines_required,
+                ...finalData
+            } = data;
 
             // Additional transformation to ensure arrears_total calculation for non-cumulative arrears
             if (finalData.is_arrears_cumulative === "0") {
@@ -367,6 +414,7 @@ const AddTenantProperty = () => {
         is_meter_read: "0",
         is_taxable: "0",
         is_the_tenant_have_previous_arrears: "0",
+        is_fines_required: "0", // Add this line
         first_time_billing: "0",
         amount_criteria: "current_full_month_rent",
         due_rent_reminder_date: "1",
@@ -395,6 +443,7 @@ const AddTenantProperty = () => {
     const is_the_tenant_have_previous_arrears = watch("is_the_tenant_have_previous_arrears");
     const is_rent_agreed = watch("is_rent_agreed");
     const is_electricity_meter_read = watch("is_electricity_meter_read");
+    const is_fines_required = watch("is_fines_required");
 
     useEffect(() => {
         const fetchProperties = async () => {
@@ -480,7 +529,7 @@ const AddTenantProperty = () => {
             )
             if (response.data.success) {
                 toast.success(response.data.message)
-                navigate('/tenants')
+                navigate(-1)
                 console.log(response)
             }
         } catch (error) {
@@ -1165,133 +1214,173 @@ const AddTenantProperty = () => {
                             </div>
                         </div>
 
-                        <div className="flex justify-between space-x-4">
-                            <div className="w-full">
-                                <label
-                                    htmlFor="property-name"
-                                    className="block my-2 text-sm font-medium text-gray-900">
-                                    Set date to start fines for late payment
+                        <div className="col-span-3">
+                            <div className="flex space-x-6">
+                                <h6 className="text-sm font-medium text-gray-900">Is the tenant required to pay fines</h6>
+                                <label>
+                                    <input
+                                        className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                                        type="radio"
+                                        value="1"
+                                        {...register("is_fines_required")}
+                                    />
+                                    Yes
                                 </label>
-
-                                <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                                    {...register("due_rent_fine_start_date")}
-                                >
-                                    <option value={"Select due rent reminder date"}>Select due rent reminder date</option>
-                                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                                        <option key={day} value={day.toString()}>
-                                            {day}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.due_rent_fine_start_date && (
+                                <label>
+                                    <input
+                                        className="w-4 h-4 mx-1 text-red-600 bg-gray-100 border-gray-300 focus:ring-2"
+                                        type="radio"
+                                        value="0"
+                                        {...register("is_fines_required")}
+                                    />
+                                    No
+                                </label>
+                                {errors.is_fines_required && (
                                     <p className="text-xs text-red-500">
-                                        {errors.due_rent_fine_start_date.message}
+                                        {errors.is_fines_required.message}
                                     </p>
                                 )}
                             </div>
-                            <div className="w-full">
-                                <label
-                                    htmlFor="property-name"
-                                    className="block my-2 text-sm font-medium text-gray-900"
-                                >
-                                    Select mode for late payment fine
-                                </label>
-                                <select {...register("mode_for_late_payment")} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
-                                    <option selected>Select mode for late payment</option>
-                                    <option value="fixed_amount">Fixed amount</option>
-                                    <option value="percentage">Percentage</option>
-                                </select>
-                            </div>
+
                         </div>
 
-                        {mode_for_late_payment === "percentage" && (
-                            <div className="grid grid-cols-2 gap-4">
 
-                                <div className="space-y-3">
-                                    <label
-                                        htmlFor="property-name"
-                                        className="block my-2 text-sm font-medium text-gray-900">
-                                        Select percentage of?
-                                    </label>
-                                    <label className="flex">
-                                        <div className="flex items-center h-5">
-                                            <input {...register("amount_criteria")} aria-label="current_full_month_rent" type="radio" value="current_full_month_rent" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
 
-                                        </div>
-                                        <div className="ms-2 text-sm">
-                                            <label className="font-medium text-gray-900">Current full month rent</label>
-                                        </div>
-                                    </label>
-                                    <label className="flex">
-                                        <div className="flex items-center h-5">
-                                            <input {...register("amount_criteria")} type="radio" value="current_full_month_rent_balance" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
+                        {is_fines_required === "1" && (
+                            <>
 
-                                        </div>
-                                        <div className="ms-2 text-sm">
-                                            <label className="font-medium text-gray-900">Current full month rent balance</label>
-                                        </div>
-                                    </label>
-                                    <div className="flex">
-                                        <div className="flex items-center h-5">
-                                            <input {...register("amount_criteria")} type="radio" value="total_cumulative_balances_inclusive_of_previous_month" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
 
+                                <div className="flex justify-between space-x-4">
+                                    <div className="w-full">
+                                        <label
+                                            htmlFor="property-name"
+                                            className="block my-2 text-sm font-medium text-gray-900">
+                                            Set date to start fines for late payment
+                                        </label>
+
+                                        <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+                                            {...register("due_rent_fine_start_date")}
+                                        >
+                                            <option value={"Select due rent reminder date"}>Select due rent reminder date</option>
+                                            {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                                <option key={day} value={day.toString()}>
+                                                    {day}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.due_rent_fine_start_date && (
+                                            <p className="text-xs text-red-500">
+                                                {errors.due_rent_fine_start_date.message}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="w-full">
+                                        <label
+                                            htmlFor="property-name"
+                                            className="block my-2 text-sm font-medium text-gray-900"
+                                        >
+                                            Select mode for late payment fine
+                                        </label>
+                                        <select {...register("mode_for_late_payment")} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
+                                            <option selected>Select mode for late payment</option>
+                                            <option value="fixed_amount">Fixed amount</option>
+                                            <option value="percentage">Percentage</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {mode_for_late_payment === "percentage" && (
+                                    <div className="grid grid-cols-2 gap-4">
+
+                                        <div className="space-y-3">
+                                            <label
+                                                htmlFor="property-name"
+                                                className="block my-2 text-sm font-medium text-gray-900">
+                                                Select percentage of?
+                                            </label>
+                                            <label className="flex">
+                                                <div className="flex items-center h-5">
+                                                    <input {...register("amount_criteria")} aria-label="current_full_month_rent" type="radio" value="current_full_month_rent" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
+
+                                                </div>
+                                                <div className="ms-2 text-sm">
+                                                    <label className="font-medium text-gray-900">Current full month rent</label>
+                                                </div>
+                                            </label>
+                                            <label className="flex">
+                                                <div className="flex items-center h-5">
+                                                    <input {...register("amount_criteria")} type="radio" value="current_full_month_rent_balance" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
+
+                                                </div>
+                                                <div className="ms-2 text-sm">
+                                                    <label className="font-medium text-gray-900">Current full month rent balance</label>
+                                                </div>
+                                            </label>
+                                            <div className="flex">
+                                                <div className="flex items-center h-5">
+                                                    <input {...register("amount_criteria")} type="radio" value="total_cumulative_balances_inclusive_of_previous_month" className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2" />
+
+                                                </div>
+                                                <div className="ms-2 text-sm">
+                                                    <label className="font-medium text-gray-900">Total cumulative balances inclusive of previous month </label>
+                                                </div>
+                                            </div>
+                                            {errors.amount_criteria && (
+                                                <p className="text-xs text-red-500">
+                                                    {errors.amount_criteria.message}
+                                                </p>
+                                            )}
                                         </div>
-                                        <div className="ms-2 text-sm">
-                                            <label className="font-medium text-gray-900">Total cumulative balances inclusive of previous month </label>
+                                        <div className="w-full">
+                                            <label
+                                                htmlFor="property-name"
+                                                className="block my-2 text-sm font-medium text-gray-900">
+                                                Enter percentage
+                                            </label>
+                                            <input
+                                                aria-label="criteria_percentage"
+                                                {...register("criteria_percentage")}
+                                                type="text"
+                                                placeholder="eg. 10"
+                                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+                                            />
+                                            {errors.criteria_percentage && (
+                                                <p className="text-xs text-red-500">
+                                                    {errors.criteria_percentage.message}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                    </div>
+                                )}
+
+                                {mode_for_late_payment === "fixed_amount" && (
+                                    <div className="flex justify-between space-x-4">
+                                        <div className="w-1/2">
+                                            <label
+                                                htmlFor="property-name"
+                                                className="block my-2 text-sm font-medium text-gray-900">
+                                                Enter fixed amount
+                                            </label>
+                                            <input
+                                                {...register('late_payment_fixed_amount')}
+                                                aria-label="late_payment_fixed_amount"
+                                                type="number"
+                                                placeholder="e.g 1000"
+                                                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
+                                            />
+                                            {errors.late_payment_fixed_amount && (
+                                                <p className="text-xs text-red-500">
+                                                    {errors.late_payment_fixed_amount.message}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
-                                    {errors.amount_criteria && (
-                                        <p className="text-xs text-red-500">
-                                            {errors.amount_criteria.message}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="w-full">
-                                    <label
-                                        htmlFor="property-name"
-                                        className="block my-2 text-sm font-medium text-gray-900">
-                                        Enter percentage
-                                    </label>
-                                    <input
-                                        aria-label="criteria_percentage"
-                                        {...register("criteria_percentage")}
-                                        type="text"
-                                        placeholder="eg. 10"
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                                    />
-                                    {errors.criteria_percentage && (
-                                        <p className="text-xs text-red-500">
-                                            {errors.criteria_percentage.message}
-                                        </p>
-                                    )}
-                                </div>
-
-                            </div>
+                                )}
+                            </>
                         )}
 
-                        {mode_for_late_payment === "fixed_amount" && (
-                            <div className="flex justify-between space-x-4">
-                                <div className="w-1/2">
-                                    <label
-                                        htmlFor="property-name"
-                                        className="block my-2 text-sm font-medium text-gray-900">
-                                        Enter fixed amount
-                                    </label>
-                                    <input
-                                        {...register('late_payment_fixed_amount')}
-                                        aria-label="late_payment_fixed_amount"
-                                        type="number"
-                                        placeholder="e.g 1000"
-                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-red-500 focus:border-red-500 block w-full p-2.5"
-                                    />
-                                    {errors.late_payment_fixed_amount && (
-                                        <p className="text-xs text-red-500">
-                                            {errors.late_payment_fixed_amount.message}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+
 
                         <div className="flex flex-row-reverse mt-4">
                             <button

@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { Link, useNavigate, useSearchParams, } from "react-router-dom";
 import { Chart, registerables } from "chart.js";
 import { Button } from "../../../../shared";
+import { DashboardHeader } from "../../dashboard/page_components";
 
 Chart.register(...registerables);
 
@@ -213,13 +214,11 @@ const PropertySummary = () => {
   if (!propertySummary) {
     return (
       <section className="mx-auto">
-        <div className="p-4 flex justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-700">Property Summary</h1>
-            <p className="text-sm text-gray-500">Properties / Add Property / </p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow p-4 mx-4 h-full">
+        <DashboardHeader
+          title="Property Summary"
+          description="View your property financial summary."
+        />
+        <div className="bg-white rounded border p-4 mx-4 h-full mt-4">
           <p className="text-sm mt-2 mb-1 font-semibold">Loading ...</p>
         </div>
       </section>
@@ -228,19 +227,11 @@ const PropertySummary = () => {
 
   return (
     <section className="mx-auto">
-      <div className="p-4 flex justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-700">Property Summary</h1>
-          <p className="text-sm text-gray-500">Properties / Add Property / </p>
-        </div>
-        <div>
-          <Button onClick={() => navigate(`/property/view-property/${propertyId}`)}
-          >
-            View Property
-          </Button>
-        </div>
-      </div>
-      <div className=" mx-4 h-full">
+      <DashboardHeader
+        title="Property Summary"
+        description="View your property financial summary."
+      />
+      <div className=" mx-4 h-full mt-4">
         <div className="p-4 shadow bg-white grid grid-cols-1 md:grid-cols-2 gap-4 rounded">
           <div>
             <h1 className="font-bold text-lg">{propertySummary?.summary?.property_name}</h1>

@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <>
       <p className="text-center text-sm text-gray-500 my-10">
-        © <span id="date"></span> <Link to="https://gbt.co.ke" className="hover:underline"
+        © {new Date().getFullYear()} <Link to="https://gbt.co.ke" className="hover:underline"
           target="_blank">Created by Greenbear Technologies</Link>. Rental Pay Africa. All
         rights reserved.
       </p>

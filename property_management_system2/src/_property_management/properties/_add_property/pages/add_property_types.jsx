@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "../../../../shared";
+import { DashboardHeader } from "../../dashboard/page_components";
 
 const Property_types = () => {
   const navigate = useNavigate();
@@ -112,16 +113,14 @@ const Property_types = () => {
 
   if (loading) {
     return (
-      <section className="p-4 mx-4">
-        <div className="flex justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-700">Add Property</h1>
-            <p className="text-sm text-gray-500">Properties / Add property</p>
-          </div>
-        </div>
+      <section className="">
+        <DashboardHeader
+          title="Add Property Types"
+          description="Choose your property type and continue to the next step"
+        />
 
-        <div className="grid grid-cols-3 mt-4">
-          <div className="bg-white rounded-xl border border-gray-200 col-span-3 p-4 h-full">
+        <div className="grid grid-cols-3 mt-4 mx-4">
+          <div className="bg-white rounded border border-gray-200 col-span-3 p-4 h-full">
             <h3 className="font-bold text-xl text-gray-800">Property type</h3>
             <div className="gap-4 mt-4">
               <div className="text-gray-500 flex justify-center items-center gap-2 mt-6">
@@ -135,16 +134,14 @@ const Property_types = () => {
   }
 
   return (
-    <section className="p-4 mx-4">
-      <div className="flex justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-700">Add Property</h1>
-          <p className="text-sm text-gray-500">Properties / Add property</p>
-        </div>
-      </div>
+    <section >
+      <DashboardHeader
+        title="Add Property Types"
+        description="Choose your property type and continue to the next step"
+      />
 
-      <div className="grid grid-cols-3 mt-4">
-        <form className="bg-white rounded-xl border border-gray-200 col-span-3 p-4 h-full"
+      <div className="grid grid-cols-3 mt-4 px-4">
+        <form className="bg-white rounded border col-span-3 p-4 h-full"
           onSubmit={handleSubmit(onSubmit)}
         >
           <h3 className="font-bold text-xl text-gray-800">Property type</h3>

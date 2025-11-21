@@ -262,18 +262,17 @@ const BulkWaterBill = () => {
     return (
         <>
             <DashboardHeader
-                title="Water Billing"
-                description="Receive Water Billings"
+                title="Receive Water Billings"
+                description="Manage water billings for different properties and tenants in the system."
                 name="New property"
                 link="/add-property/general-information"
                 hideSelect={false}
                 hideLink={false}
             />
-            <div className="grid grid-cols-2">
-                <div className="bg-white rounded-xl shadow col-span-2 p-4 mx-4 h-full">
-                    <h3 className="font-bold text-lg text-gray-800">Receive Bulk Water Billing</h3>
+            <div className="grid grid-cols-2 mt-4">
+                <div className="col-span-2  h-full">
+                    <div className="bg-white p-4 mx-4 rounded border  space-y-4">
 
-                    <div className="space-y-4">
                         <div className="md:flex justify-between md:space-x-4">
                             <div className="w-full">
                                 <label
@@ -320,8 +319,8 @@ const BulkWaterBill = () => {
                         </div>
 
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
-                        <div className="col-span-3 rounded-lg border border-gray-200 bg-white">
+                    <div className=" mx-4 grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
+                        <div className="col-span-3 rounded border border-gray-200 bg-white">
                             <div className="flex justify-between my-2 px-2 items-center">
                                 <h4 className="text-md text-gray-600">Water Meter History</h4>
                             </div>

@@ -326,13 +326,10 @@ const ReceivePayment = () => {
                 )
             }
 
-            <div className="grid grid-cols-1 md:grid-cols-2">
-                <div className="bg-white rounded-xl shadow col-span-2 p-4 mx-4 h-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 mt-4">
+                <div className=" col-span-2  h-full">
 
-                    <h3 className="font-bold text-lg text-gray-800">Tenant Payment</h3>
-                    <h3 className="font-bold text-gray-600 mt-2">Select property and unit</h3>
-
-                    <div className="space-y-4">
+                    <div className="bg-white rounded border space-y-4 p-4 mx-4">
                         <div className="md:flex justify-between md:space-x-4">
                             <div className="w-full ">
                                 <label
@@ -398,8 +395,8 @@ const ReceivePayment = () => {
                         </div>
 
                     </div>
-                    <h3 className="font-bold text-gray-600 mt-2">Tenant Summary</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-3">
+                    <h3 className="font-bold text-gray-600 mt-4 mx-4">Tenant Summary</h3>
+                    <div className="bg-white mx-4 rounded border grid grid-cols-1 md:grid-cols-4 gap-4 py-3">
                         <div className="flex justify-center items-center">
                             <img
                                 className="h-40 object-cover rounded border border-gray-200"
@@ -475,8 +472,8 @@ const ReceivePayment = () => {
                             </div>
                         </div>
                     </div>
-                    <h3 className="font-bold text-gray-600 mt-2">Select Payments Descriptions</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 py-3">
+                    <h3 className="font-bold text-gray-600 mt-4 mx-4">Select Payments Descriptions</h3>
+                    <div className="bg-white mx-4 rounded border grid grid-cols-1 md:grid-cols-6 gap-4 py-3 px-4">
                         {Object?.values(payment_details)
                             .flatMap(payment => Array.isArray(payment) ? payment : [payment])
                             .filter((payment, index, self) =>

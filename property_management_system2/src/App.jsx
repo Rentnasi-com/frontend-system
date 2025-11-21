@@ -4,10 +4,10 @@ import { AuthProvider } from './AuthContext';
 import DashboardLayout from './_dashboardLayout';
 import ProtectedRoute from './ProtectedRoute';
 
-import { ArrearsDashboard, BulkWaterBill, PaymentsReceived, ReceiveElectricityBilling, ReceivePayment } from './_property_management/billings'
+import { BulkWaterBill, ReceiveElectricityBilling, ReceivePayment } from './_property_management/billings'
 import { MakePaybillPdf, PaymentsDetails, Settings } from './_property_management/settings'
 import { AddLandlordPaymentsDetails, AddLandlordPersonalInfo, EditLandlordPaymentsDetails, EditLandlordPersonalInfo, LandlordSingleView, ViewLandlord } from './_property_management/landlords'
-import { AddFloors, AddMultiSingleUnit, Amenities, DueRent, EditAmenities, EditGeneralInformation, EditManageImages, EditMultiUnit, EditMultiUnitSingleUnit, EditPropertyTypes, EditSingleUnit, General_information, Home2, ManageImages, MarketUnit, PaymentHistory, Property, Property_floors, Property_summary, Property_types, PropertyListing, Single_Unit, Unit, UnitListing } from './_property_management/properties'
+import { AddFloors, AddMultiSingleUnit, Amenities, EditAmenities, EditGeneralInformation, EditManageImages, EditMultiUnit, EditMultiUnitSingleUnit, EditPropertyTypes, EditSingleUnit, General_information, Home2, ManageImages, MarketUnit, PaymentHistory, Property, Property_floors, Property_summary, Property_types, PropertyListing, Single_Unit, Unit, UnitListing } from './_property_management/properties'
 import { Add_Personal_Info, AddTenantProperty, EditPersonalInfo, EditTenantProperty, TenantHistory, Tenants, TenantUnits } from './_property_management/tenants'
 import { ChatRoom, Inquiries } from './_property_management/inquiries'
 import { Recycle } from './_property_management/recycleBin'
@@ -16,6 +16,10 @@ import { MonthlyRevenueBreakdown, Reports, RevenueBreakdown } from './_property_
 import { SingleStaffPage, Users } from './_property_management/users';
 import { AddPersonalInfo, AddPropertiesAssignPermissions } from './_property_management/users/add_staff';
 import { EditStaffPermissions, EditStaffProperties, EditStaffInfo } from './_property_management/users/edit_staff';
+import { ArrearsDashboard, DueRent, PaymentsReceived, TransferPayment } from './_property_management/analytics';
+import { AddEvent, EventsListing } from './_property_management/deductions';
+import { LoanDetails, LoanPayment, LoansDashboard, NewLoanApplication } from './_property_management/loans';
+
 
 const App = () => {
     return (
@@ -416,6 +420,22 @@ const App = () => {
                                 }
                             />
                             <Route
+                                path="/payments/expenses"
+                                element={
+                                    <ProtectedRoute requiredModule="payments" requiredAction="view">
+                                        <EventsListing />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/payments/add-event"
+                                element={
+                                    <ProtectedRoute requiredModule="payments" requiredAction="view">
+                                        <AddEvent />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
                                 path="/property/market-unit"
                                 element={
                                     <ProtectedRoute>
@@ -508,6 +528,47 @@ const App = () => {
                                 element={
                                     <ProtectedRoute>
                                         <ChatRoom />
+                                    </ProtectedRoute>
+                                }
+                            />
+
+                            <Route
+                                path="/loans/view-loans"
+                                element={
+                                    <ProtectedRoute requiredModule="landlords" requiredAction="edit">
+                                        <LoansDashboard />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/loans/loans-payments"
+                                element={
+                                    <ProtectedRoute requiredModule="landlords" requiredAction="edit">
+                                        <LoanPayment />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/loans/view-loan-details"
+                                element={
+                                    <ProtectedRoute requiredModule="landlords" requiredAction="edit">
+                                        <LoanDetails />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/loans/make-loan-application"
+                                element={
+                                    <ProtectedRoute requiredModule="landlords" requiredAction="edit">
+                                        <NewLoanApplication />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/payments/transfer"
+                                element={
+                                    <ProtectedRoute requiredModule="payments" requiredAction="edit">
+                                        <TransferPayment />
                                     </ProtectedRoute>
                                 }
                             />

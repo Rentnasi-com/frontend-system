@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
 import { DashboardHeader } from "../../properties/dashboard/page_components";
 import { FaDownload } from "react-icons/fa";
+import { ChevronDown, Download, FileDown, FileSpreadsheet } from "lucide-react";
 
 const SkeletonLoader = ({ className, rounded = false }) => (
     <div
@@ -523,64 +524,47 @@ const ViewLandlord = () => {
                     <h4 className="text-md text-gray-600">All landlord list</h4>
 
                     <div className="md:flex justify-between items-center space-x-4 space-y-2">
-                        <div className="flex items-center space-x-2 text-xs">
-                            <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
-                                Show Units:
-                            </label>
-                            <select
-                                id="unitSelect"
-                                value={selectedUnits}
-                                onChange={handleUnitChange}
-                                className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            >
-                                {options.map((num) => (
-                                    <option key={num} value={num}>
-                                        {num}
-                                    </option>
-                                ))}
-                                <option value={totalUnits}>{totalUnits} (All)</option>
-                            </select>
-                        </div>
-                        <div className="relative">
+
+                        <div className="relative mt-2">
 
                             <button
                                 onClick={() => setOpenDropdownId(openDropdownId === 'download' ? null : 'download')}
                                 disabled={loading || landlords.length === 0}
-                                className="w-full flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
                             >
-                                <FaDownload className="w-4 h-4" />
-                                Download
-                                <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
+                                <Download className="w-4 h-4" />
+                                <span className="text-sm font-medium">Export</span>
+                                <ChevronDown className="w-4 h-4" />
                             </button>
 
                             {openDropdownId === 'download' && (
-                                <div className="absolute left-0 z-50 w-40 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                                <div className="absolute left-0 z-50 w-48 mt-2 origin-top-left bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
                                     <div className="py-1">
                                         <button
                                             onClick={() => {
                                                 generatePDF();
                                                 setOpenDropdownId(null);
                                             }}
-                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                                         >
-                                            <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-                                            </svg>
-                                            PDF Format
+                                            <FileDown className="w-4 h-4 text-red-600" />
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900">Export as PDF</div>
+                                                <div className="text-xs text-gray-500">Download PDF report</div>
+                                            </div>
                                         </button>
                                         <button
                                             onClick={() => {
                                                 generateExcel();
                                                 setOpenDropdownId(null);
                                             }}
-                                            className="flex items-center gap-2 w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-t border-gray-100"
                                         >
-                                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-                                            </svg>
-                                            Excel Format
+                                            <FileSpreadsheet className="w-4 h-4 text-green-600" />
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900">Export as Excel</div>
+                                                <div className="text-xs text-gray-500">Download CSV file</div>
+                                            </div>
                                         </button>
                                     </div>
                                 </div>
@@ -603,6 +587,24 @@ const ViewLandlord = () => {
                                 />
                             </div>
                         </form>
+                        <div className="flex items-center space-x-2 text-xs mt-2">
+                            <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
+                                Show Units:
+                            </label>
+                            <select
+                                id="unitSelect"
+                                value={selectedUnits}
+                                onChange={handleUnitChange}
+                                className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            >
+                                {options.map((num) => (
+                                    <option key={num} value={num}>
+                                        {num}
+                                    </option>
+                                ))}
+                                <option value={totalUnits}>{totalUnits} (All)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -679,6 +681,7 @@ const ViewLandlord = () => {
                                             )}
                                             <td className="text-xs px-4 py-4">
                                                 <div className="font-semibold text-black">
+
                                                     {landlord.landlord_info.name}
                                                 </div>
                                                 <div className="text-xs text-gray-500">

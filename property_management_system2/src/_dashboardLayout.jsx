@@ -16,7 +16,7 @@ const DashboardLayout = () => {
 
                 {/* Main content */}
                 <main
-                    className={`flex-1 h-full overflow-y-auto transition-all duration-300 
+                    className={`flex-1 h-full overflow-y-auto transition-all duration-300 bg-gray-100
                 ${collapsed ? "ml-0 md:ml-16" : "ml-0 md:ml-64"}`}
                 >
                     <Outlet />
