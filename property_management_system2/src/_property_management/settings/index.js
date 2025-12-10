@@ -1,9 +1,11 @@
-import Settings from './settings'
+import SettingsLayout from './settingsLayout'
 import PaymentsDetails from './payments_details'
 import MakePaybillPdf from './make_paybill_pdf'
+import SettingsDashboard from './settings_dashboard'
 
 export {
-    Settings,
+    SettingsLayout,
     PaymentsDetails,
-    MakePaybillPdf
+    MakePaybillPdf,
+    SettingsDashboard
 }

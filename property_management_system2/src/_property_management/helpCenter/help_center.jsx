@@ -199,99 +199,93 @@ export default function HelpCenter() {
 
     return (
         <>
-            <DashboardHeader
-                title="Help Center"
-                description="Find answers to common questions and learn how to use RentalPay."
-            // name="New property"
-            // link="/add-property/general-information"
-            // hideSelect={false}
-            // hideLink={true}
-            />
-            {/* Main Content */}
-            <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5 p-4">
-                {/* Quick Links Grid */}
-                {searchQuery === '' && (
-                    <div className="grid md:grid-cols-4 gap-6 mb-12">
-                        {helpSections.map((section) => {
-                            const Icon = section.icon;
-                            return (
-                                <div
-                                    key={section.id}
-                                    onClick={() => toggleSection(section.id)}
-                                    className="bg-white rounded p-6 shadow-md hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-yellow-200"
-                                >
-                                    <div className={`${section.bgColor} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
-                                        <Icon className={section.color} size={24} />
-                                    </div>
-                                    <h3 className="font-semibold text-gray-900 mb-2">{section.title}</h3>
-                                    <p className="text-sm text-gray-600">{section.topics.length} articles</p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* Help Sections */}
-                <div className="max-w-4xl mx-auto space-y-4">
-                    {filteredSections.length === 0 && searchQuery !== '' ? (
-                        <div className="bg-white rounded-xl p-12 text-center shadow-md">
-                            <HelpCircle className="mx-auto text-gray-400 mb-4" size={48} />
-                            <h3 className="text-xl font-semibold text-gray-900 mb-2">No results found</h3>
-                            <p className="text-gray-600">Try searching with different keywords or browse the categories above.</p>
-                        </div>
-                    ) : (
-                        filteredSections.map((section) => {
-                            const Icon = section.icon;
-                            const isExpanded = expandedSections[section.id];
-
-                            return (
-                                <div key={section.id} className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-                                    <button
+            <div>
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
+                    {/* Quick Links Grid */}
+                    {searchQuery === '' && (
+                        <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
+                            {helpSections.map((section) => {
+                                const Icon = section.icon;
+                                return (
+                                    <div
+                                        key={section.id}
                                         onClick={() => toggleSection(section.id)}
-                                        className="w-full px-6 py-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                                        className="bg-white rounded-xl p-2 transition-shadow cursor-pointer border border-gray-200"
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <div className={`${section.bgColor} p-3 rounded-lg`}>
+                                        <div className="flex space-x-4 items-center">
+                                            <div className={`${section.bgColor} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
                                                 <Icon className={section.color} size={24} />
                                             </div>
-                                            <div className="text-left">
-                                                <h2 className="text-xl font-semibold text-gray-900">{section.title}</h2>
-                                                <p className="text-sm text-gray-500">{section.topics.length} articles</p>
-                                            </div>
+                                            <h3 className="font-semibold text-sm text-gray-900 mb-2">{section.title}</h3>
                                         </div>
-                                        {isExpanded ? <ChevronUp size={24} className="text-gray-400" /> : <ChevronDown size={24} className="text-gray-400" />}
-                                    </button>
-
-                                    {isExpanded && (
-                                        <div className="px-6 pb-6 space-y-6 border-t border-gray-100 pt-6">
-                                            {section.topics.map((topic, idx) => (
-                                                <div key={idx} className="pl-4 border-l-4 border-yellow-200">
-                                                    <h3 className="font-semibold text-gray-900 mb-2 text-lg">{topic.question}</h3>
-                                                    <p className="text-gray-700 leading-relaxed">{topic.answer}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
-                </div>
 
-                {/* Contact Support */}
-                <div className="max-w-4xl mx-auto mt-12">
-                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-white text-center shadow-xl">
-                        <h2 className="text-2xl font-bold mb-3">Still need help?</h2>
-                        <p className="text-yellow-100 mb-6">Our support team is ready to assist you</p>
-                        <div className="flex flex-wrap justify-center gap-4">
-                            <a href="mailto:support@rentalpay.africa" className="flex items-center gap-2 bg-white text-yellow-600 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-50 transition-colors">
-                                <Mail size={20} />
-                                Email Support
-                            </a>
-                            <a href="tel:+254700000000" className="flex items-center gap-2 bg-white text-yellow-600 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-50 transition-colors">
-                                <Phone size={20} />
-                                Call Us
-                            </a>
+                    {/* Help Sections */}
+                    <div className="mx-auto space-y-4">
+                        {filteredSections.length === 0 && searchQuery !== '' ? (
+                            <div className="bg-white rounded-xl p-12 text-center shadow-md">
+                                <HelpCircle className="mx-auto text-gray-400 mb-4" size={48} />
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">No results found</h3>
+                                <p className="text-gray-600">Try searching with different keywords or browse the categories above.</p>
+                            </div>
+                        ) : (
+                            filteredSections.map((section) => {
+                                const Icon = section.icon;
+                                const isExpanded = expandedSections[section.id];
+
+                                return (
+                                    <div key={section.id} className="bg-white rounded-xl border border-gray-200">
+                                        <button
+                                            onClick={() => toggleSection(section.id)}
+                                            className="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`${section.bgColor} p-3 rounded-lg`}>
+                                                    <Icon className={section.color} size={24} />
+                                                </div>
+                                                <div className="text-left">
+                                                    <h2 className="text-lg font-semibold text-gray-900">{section.title}</h2>
+                                                    <p className="text-sm text-gray-500">{section.topics.length} articles</p>
+                                                </div>
+                                            </div>
+                                            {isExpanded ? <ChevronUp size={24} className="text-gray-400" /> : <ChevronDown size={24} className="text-gray-400" />}
+                                        </button>
+
+                                        {isExpanded && (
+                                            <div className="px-6 pb-6 space-y-6 border-t border-gray-100 pt-6">
+                                                {section.topics.map((topic, idx) => (
+                                                    <div key={idx} className="pl-4 border-l-4 border-yellow-200">
+                                                        <h3 className="font-semibold text-gray-900 mb-2 text-lg">{topic.question}</h3>
+                                                        <p className="text-gray-700 leading-relaxed">{topic.answer}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    {/* Contact Support */}
+                    <div className="max-w-4xl mx-auto mt-12">
+                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-white text-center shadow-xl">
+                            <h2 className="text-2xl font-bold mb-3">Still need help?</h2>
+                            <p className="text-yellow-100 mb-6">Our support team is ready to assist you</p>
+                            <div className="flex flex-wrap justify-center gap-4">
+                                <a href="mailto:support@rentalpay.africa" className="flex items-center gap-2 bg-white text-yellow-600 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-50 transition-colors">
+                                    <Mail size={20} />
+                                    Email Support
+                                </a>
+                                <a href="tel:+254700000000" className="flex items-center gap-2 bg-white text-yellow-600 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-50 transition-colors">
+                                    <Phone size={20} />
+                                    Call Us
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

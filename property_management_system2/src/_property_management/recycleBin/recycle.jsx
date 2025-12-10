@@ -440,19 +440,13 @@ function Recycle() {
 
     return (
         <>
-            <DashboardHeader
-                title="Recycle bin"
-                description="Your deleted properties, tenants and landlords"
-                hideSelect={false}
-            />
-
-            <div className="w-full space-y-4 py-1 px-4">
+            <div className="w-full space-y-4 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {recycleStats.slice(0, 3).map((stat, index) => (
                         <div
                             onClick={() => setSelectedType(stat.type)}
                             key={index}
-                            className={`bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-4 transition-all hover:shadow-md cursor-pointer ${selectedType === stat.type ? 'ring-2 ring-blue-500' : ''
+                            className={`bg-white transition-all cursor-pointer ${selectedType === stat.type ? 'ring-1 ring-blue-500 rounded-xl' : ''
                                 }`}
                         >
                             <PropertyCard
@@ -468,7 +462,7 @@ function Recycle() {
                         <div
                             onClick={() => setSelectedType(stat.type)}
                             key={index + 3}
-                            className={`bg-white border border-gray-200 hover:bg-gray-100 rounded-lg p-4 transition-all hover:shadow-md cursor-pointer ${selectedType === stat.type ? 'ring-2 ring-blue-500' : ''
+                            className={`bg-white rounded-xl transition-all cursor-pointer ${selectedType === stat.type ? 'ring-1 ring-blue-500' : ''
                                 }`}
                         >
                             <PropertyCard
@@ -481,7 +475,7 @@ function Recycle() {
             </div>
 
             {selectedType && (
-                <div className="rounded-lg border border-gray-200 bg-white mx-4 mt-5">
+                <div className="rounded-lg border border-gray-200 bg-white mt-2">
                     <h4 className="text-md text-gray-600 my-4 px-4">
                         {selectedType === 'trash' ? 'Deleted Properties' :
                             selectedType === 'tenant' ? 'Deleted Tenants' :

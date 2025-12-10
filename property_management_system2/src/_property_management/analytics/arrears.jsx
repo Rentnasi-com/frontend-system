@@ -28,6 +28,10 @@ const ArrearsDashboard = () => {
     const [totalUnits, setTotalUnits] = useState("");
     const [selectedUnits, setSelectedUnits] = useState(15);
 
+    const currentDate = new Date();
+    const [billYear, setBillYear] = useState(currentDate.getFullYear());
+    const [billMonth, setBillMonth] = useState(currentDate.getMonth() + 1);
+
     const handleUnitChange = (e) => {
         const value = parseInt(e.target.value);
         setSelectedUnits(value);
@@ -39,7 +43,7 @@ const ArrearsDashboard = () => {
         fetchProperties();
         fetchArrears(currentPage)
         fetchBillItems()
-    }, [token, baseUrl, selectedProperty, selectedUnits, currentPage, billType])
+    }, [token, baseUrl, selectedProperty, selectedUnits, currentPage, billType, billYear, billMonth]);
 
     const handleSelectChange = (event) => {
         setSelectedProperty(event.target.value);
@@ -65,24 +69,33 @@ const ArrearsDashboard = () => {
     const fetchArrears = async (page = 1) => {
         setLoading(true);
         try {
-            const response = await axios.get(`${baseUrl}/arrears?property_id=${selectedProperty}&pagination=${page}&per_page=${selectedUnits}&bill_type=${billType}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+            const response = await axios.get(`${baseUrl}/arrears`, {
+                params: {
+                    property_id: selectedProperty,
+                    pagination: page,
+                    per_page: selectedUnits,
+                    bill_type: billType,
+                    bill_year: billYear,
+                    bill_month: billMonth,
+                },
+                headers: {
+                    Authorization: `Bearer ${token}`
                 }
-            )
-            setArrears(response.data.result)
-            setStatistics(response.data.totals)
+            });
+
+            setArrears(response.data.result);
+            setStatistics(response.data.totals);
             setCurrentPage(response.data.pagination.current_page);
-            setPagination(response.data.pagination)
-            setTotalUnits(response.data.pagination.total)
+            setPagination(response.data.pagination);
+            setTotalUnits(response.data.pagination.total);
+
         } catch (error) {
-            console.error(error.message)
+            console.error(error.message);
         } finally {
             setLoading(false);
         }
-    }
+    };
+
 
     const fetchBillItems = async () => {
         try {
@@ -279,6 +292,12 @@ const ArrearsDashboard = () => {
         return pages;
     };
 
+    const monthNames = [
+        "", // placeholder so index 1 = Jan
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+
     return (
         <div className="min-h-screen bg-gray-100">
             <DashboardHeader
@@ -319,30 +338,67 @@ const ArrearsDashboard = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
                     <div className="flex justify-between gap-4">
                         <div className=""></div>
+
                         <div className="flex gap-2">
+                            {/* BILL TYPE SELECT */}
                             <div className="">
                                 {billItems?.length > 0 && (
-                                    <>
-                                        <select
-                                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
-                                            value={billType}
-                                            onChange={(e) => setBillType(e.target.value)}
-                                        >
-                                            <option value="">Select a bill type</option>
-                                            {billItems?.map((item) => (
-                                                <option key={item} value={item}>
-                                                    {item
-                                                        .split("_")
-                                                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                                        .join(" ")}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </>
+                                    <select
+                                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2"
+                                        value={billType}
+                                        onChange={(e) => setBillType(e.target.value)}
+                                    >
+                                        <option value="">Select a bill type</option>
+                                        {billItems?.map((item) => (
+                                            <option key={item} value={item}>
+                                                {item
+                                                    .split("_")
+                                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                                    .join(" ")}
+                                            </option>
+                                        ))}
+                                    </select>
                                 )}
                             </div>
 
-                            {/* Export Button with Dropdown */}
+                            <select
+                                value={billYear}
+                                onChange={(e) => setBillYear(e.target.value)}
+                                className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                            >
+                                <option value="">Year</option>
+                                {Array.from({ length: 10 }).map((_, i) => {
+                                    const year = 2020 + i;
+                                    return (
+                                        <option key={year} value={year}>
+                                            {year}
+                                        </option>
+                                    );
+                                })}
+                            </select>
+
+                            <select
+                                value={billMonth}
+                                onChange={(e) => setBillMonth(e.target.value)}
+                                className="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                            >
+                                <option value="">Month</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+
+
+                            {/* EXPORT DROPDOWN */}
                             <div className="relative">
                                 <button
                                     onClick={() => setShowExportMenu(!showExportMenu)}
@@ -379,6 +435,7 @@ const ArrearsDashboard = () => {
                                 )}
                             </div>
 
+                            {/* SHOW UNITS */}
                             <div className="flex items-center text-xs mt-1">
                                 <label htmlFor="unitSelect" className="text-xs font-medium text-gray-700">
                                     Show Units:
@@ -401,6 +458,7 @@ const ArrearsDashboard = () => {
                     </div>
                 </div>
 
+
                 {/* Arrears Table */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="overflow-x-auto">
@@ -421,6 +479,9 @@ const ArrearsDashboard = () => {
                                     </th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Amount Owed
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Period
                                     </th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Paid
@@ -470,6 +531,10 @@ const ArrearsDashboard = () => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm font-mono text-gray-900">KES {arrear.arrears_due.toLocaleString()}</span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-mono text-gray-900"> {arrear.bill_year}</div>
+                                            <div className="text-xs text-gray-500"> {monthNames[arrear.bill_month]}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm font-mono  text-green-600">

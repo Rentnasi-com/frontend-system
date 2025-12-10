@@ -392,7 +392,7 @@ const TenantUnits = () => {
                 ))}
             </div>
 
-            <div className="relative mx-4 rounded-xl border border-gray-200 overflow-auto">
+            <div className="relative mx-4 rounded-xl border border-gray-200 overflow-x-auto">
                 <table className="min-w-full table-auto">
                     <thead className="bg-gray-100 text-left text-xs border-b sticky top-0 z-20">
                         <tr className="px-4 py-2">

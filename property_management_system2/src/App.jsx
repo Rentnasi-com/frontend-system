@@ -5,7 +5,7 @@ import DashboardLayout from './_dashboardLayout';
 import ProtectedRoute from './ProtectedRoute';
 
 import { BulkWaterBill, ReceiveElectricityBilling, ReceivePayment } from './_property_management/billings'
-import { MakePaybillPdf, PaymentsDetails, Settings } from './_property_management/settings'
+import { MakePaybillPdf, PaymentsDetails, SettingsDashboard, SettingsLayout } from './_property_management/settings'
 import { AddLandlordPaymentsDetails, AddLandlordPersonalInfo, EditLandlordPaymentsDetails, EditLandlordPersonalInfo, LandlordSingleView, ViewLandlord } from './_property_management/landlords'
 import { AddFloors, AddMultiSingleUnit, Amenities, EditAmenities, EditGeneralInformation, EditManageImages, EditMultiUnit, EditMultiUnitSingleUnit, EditPropertyTypes, EditSingleUnit, General_information, Home2, ManageImages, MarketUnit, PaymentHistory, Property, Property_floors, Property_summary, Property_types, PropertyListing, Single_Unit, Unit, UnitListing } from './_property_management/properties'
 import { Add_Personal_Info, AddTenantProperty, EditPersonalInfo, EditTenantProperty, TenantHistory, Tenants, TenantUnits } from './_property_management/tenants'
@@ -235,14 +235,7 @@ const App = () => {
                                     </ProtectedRoute>
                                 }
                             />
-                            <Route
-                                path="/help-center"
-                                element={
-                                    <ProtectedRoute>
-                                        <HelpCenter />
-                                    </ProtectedRoute>
-                                }
-                            />
+
                             <Route
                                 path="/dashboard/reports"
                                 element={
@@ -267,22 +260,7 @@ const App = () => {
                                     </ProtectedRoute>
                                 }
                             />
-                            <Route
-                                path="/settings"
-                                element={
-                                    <ProtectedRoute requiredModule="settings" requiredAction="view">
-                                        <Settings />
-                                    </ProtectedRoute>
-                                }
-                            />
-                            <Route
-                                path="/recycle"
-                                element={
-                                    <ProtectedRoute requiredModule="trash" requiredAction="view">
-                                        <Recycle />
-                                    </ProtectedRoute>
-                                }
-                            />
+
                             <Route
                                 path="/landlords"
                                 element={
@@ -443,22 +421,7 @@ const App = () => {
                                     </ProtectedRoute>
                                 }
                             />
-                            <Route
-                                path="/settings/payment_details"
-                                element={
-                                    <ProtectedRoute requiredModule="settings" requiredAction="add">
-                                        <PaymentsDetails />
-                                    </ProtectedRoute>
-                                }
-                            />
-                            <Route
-                                path="/settings/make-paybill-pdf"
-                                element={
-                                    <ProtectedRoute>
-                                        <MakePaybillPdf />
-                                    </ProtectedRoute>
-                                }
-                            />
+
                             <Route
                                 path="/staffs/staff-listings"
                                 element={
@@ -572,6 +535,34 @@ const App = () => {
                                     </ProtectedRoute>
                                 }
                             />
+
+                            <Route path="/settings" element={<SettingsLayout />}>
+                                <Route index element={
+                                    <ProtectedRoute requiredModule="settings" requiredAction="view">
+                                        <SettingsDashboard />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="help-center" element={
+                                    <ProtectedRoute>
+                                        <HelpCenter />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="recycle" element={
+                                    <ProtectedRoute requiredModule="trash" requiredAction="view">
+                                        <Recycle />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="payment_details" element={
+                                    <ProtectedRoute requiredModule="settings" requiredAction="add">
+                                        <PaymentsDetails />
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="make-paybill-pdf" element={
+                                    <ProtectedRoute>
+                                        <MakePaybillPdf />
+                                    </ProtectedRoute>
+                                } />
+                            </Route>
                         </Route>
                     </Routes>
                 </main>

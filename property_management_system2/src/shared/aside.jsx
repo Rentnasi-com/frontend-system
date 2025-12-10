@@ -71,6 +71,33 @@ const Aside = ({ collapsed, setCollapsed }) => {
             ]
         },
         {
+            label: "Analytics",
+            iconPath: "BarChart3",
+            permission: { module: "payments", action: "view" },
+            submenu: [
+                {
+                    to: "/payments/payments-received",
+                    label: "Payments",
+                    permission: { module: "payments", action: "view" }
+                },
+                {
+                    to: "/payments/payments-arrears",
+                    label: "Arrears",
+                    permission: { module: "payments", action: "view" }
+                },
+                {
+                    to: "/dashboard/due-rent",
+                    label: "Due Rent",
+                    permission: { module: "payments", action: "view" }
+                },
+                // {
+                //     to: "/payments/expenses",
+                //     label: "Expenses",
+                //     permission: { module: "payments", action: "view" }
+                // },
+            ]
+        },
+        {
             label: "Billings",
             iconPath: "Wallet",
             permission: { module: "payments", action: "view" },
@@ -92,50 +119,25 @@ const Aside = ({ collapsed, setCollapsed }) => {
                 }
             ]
         },
-        {
-            label: "Loans",
-            iconPath: "Banknote",
-            permission: { module: "payments", action: "view" },
-            submenu: [
-                {
-                    to: "/loans/view-loans",
-                    label: "Loans",
-                    permission: { module: "payments", action: "add" }
-                },
-                {
-                    to: "/loans/make-loan-application",
-                    label: "Loan Application",
-                    permission: { module: "payments", action: "add" }
-                },
-            ]
-        },
-        {
-            label: "Analytics",
-            iconPath: "BarChart3",
-            permission: { module: "payments", action: "view" },
-            submenu: [
-                {
-                    to: "/payments/payments-received",
-                    label: "Payments",
-                    permission: { module: "payments", action: "view" }
-                },
-                {
-                    to: "/payments/payments-arrears",
-                    label: "Arrears",
-                    permission: { module: "payments", action: "view" }
-                },
-                {
-                    to: "/dashboard/due-rent",
-                    label: "Due Rent",
-                    permission: { module: "payments", action: "view" }
-                },
-                {
-                    to: "/payments/expenses",
-                    label: "Expenses",
-                    permission: { module: "payments", action: "view" }
-                },
-            ]
-        },
+        
+        // {
+        //     label: "Loans",
+        //     iconPath: "Banknote",
+        //     permission: { module: "payments", action: "view" },
+        //     submenu: [
+        //         {
+        //             to: "/loans/view-loans",
+        //             label: "Loans",
+        //             permission: { module: "payments", action: "add" }
+        //         },
+        //         {
+        //             to: "/loans/make-loan-application",
+        //             label: "Loan Application",
+        //             permission: { module: "payments", action: "add" }
+        //         },
+        //     ]
+        // },
+        
         {
             label: "Staff",
             iconPath: "Users",
@@ -171,13 +173,8 @@ const Aside = ({ collapsed, setCollapsed }) => {
             iconPath: "Settings",
             permission: { module: "settings", action: "view" }
         },
-        { to: "/help-center", label: "Help Center", iconPath: "HelpCircle" },
-        {
-            to: "/recycle",
-            label: "Recycle",
-            iconPath: "Recycle",
-            permission: { module: "trash", action: "view" }
-        },
+        // { to: "/help-center", label: "Help Center", iconPath: "HelpCircle" },
+        
         { to: "/logout", label: "Logout", iconPath: "LogOut" }
     ];
 

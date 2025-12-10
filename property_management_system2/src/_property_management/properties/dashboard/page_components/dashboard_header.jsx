@@ -3,7 +3,7 @@ import QRCode from "react-qr-code"
 import { useEffect, useRef, useState } from "react"
 import axios from "axios"
 import toast from "react-hot-toast"
-import { FaBell } from "react-icons/fa"
+import { FaBell, FaChevronDown, FaCog, FaSignOutAlt, FaStore, FaUser } from "react-icons/fa"
 import { useAuth } from "../../../../AuthContext"
 
 const DashboardHeader = ({ title, description, link, name, hideSelect, selectUnit, hideLink, properties, units, onSelectChange, onUnitSelectChange, showLink2, link2Name, link2 }) => {
@@ -17,28 +17,8 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    // 👇 UPDATED: Get user and organization data from localStorage
-    const storedUser = localStorage.getItem('userProfile');
-    const storedOrganization = localStorage.getItem('organization');
-
-    let userName = 'User';
-    let organizationName = 'Organization';
-
-    try {
-        if (storedUser) {
-            const userProfile = JSON.parse(storedUser);
-            // Assuming 'firstname' and 'lastname' exist in userProfile
-            userName = `${userProfile.firstname || ''} ${userProfile.lastname || ''}`.trim() || 'User';
-        }
-        if (storedOrganization) {
-            const organization = JSON.parse(storedOrganization);
-            // Assuming 'name' exists in organization
-            organizationName = organization.name || 'Organization';
-        }
-    } catch (e) {
-        console.error("Failed to parse user/organization data from localStorage", e);
-    }
-    // 👆 END UPDATED SECTION
+    const organization = JSON.parse(localStorage.getItem("organization"));
+    const user = JSON.parse(localStorage.getItem("userProfile"));
 
     const dataToSend = {
         sessionId: localStorage.getItem("sessionId"),
@@ -59,12 +39,6 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
         }
     }
 
-    const menuItems = [
-        { label: 'Dashboard', action: () => console.log('Dashboard clicked') },
-        { label: 'Settings', action: () => console.log('Settings clicked') },
-        { label: 'Earnings', action: () => console.log('Earnings clicked') },
-        { label: 'Logout', action: handleLogout }
-    ];
 
     useEffect(() => {
         // PackageDetails()
@@ -116,81 +90,91 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
                 </div>
             )}
 
-            <div className="p-4 md:flex justify-between sticky top-0 z-30 bg-white rounded-b-xl">
+            <div className="p-4 md:flex justify-between sticky top-0 z-30 bg-white border-b border-gray-200 rounded-b-xl">
                 <div>
                     <h1 className="text-lg font-semibold text-gray-600">{title}</h1>
                     <p className="text-sm text-gray-500">{description}</p>
                 </div>
-
-
-                <div className="">
+                <div>
                     <div className="flex justify-end space-x-3 mb-2">
-                        {/* 👇 UPDATED: Display organization/user names */}
-                        <div className="flex flex-col justify-center items-end text-right pr-2">
-                            <p className="text-xs font-medium text-gray-800">{userName}</p>
-                            <p className="text-xs text-gray-500">{organizationName}</p>
-                        </div>
-                        {/* 👆 END UPDATED SECTION */}
-
-                        <div className="bg-gray-200 px-2 py-1 flex justify-center items-center rounded-xl">
-                            <FaBell />
-                        </div>
-
-                        <div className="relative inline-block" ref={dropdownRef}>
-
-                            <button
-                                onClick={() => setIsOpen(!isOpen)}
-                                className="flex items-center justify-center rounded-xl bg-gray-200 p-2 hover:bg-gray-200 transition-colors"
-                                aria-expanded={isOpen}
-                                aria-haspopup="true"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-5 w-5 text-yellow-700"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                >
-                                    <path
-                                        fillRule="evenodd"
-                                        d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                                        clipRule="evenodd"
-                                    />
-                                </svg>
-                            </button>
-
-                            {isOpen && (
-                                <div
-                                    className="absolute right-0 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
-                                    role="menu"
-                                >
-                                    <div className="py-1">
-                                        {menuItems.map((item, index) => (
-                                            <button
-                                                key={index}
-                                                onClick={() => {
-                                                    item.action();
-                                                    setIsOpen(false);
-                                                }}
-                                                className={`block w-full px-4 py-2 text-left text-sm ${item.label === 'Logout'
-                                                    ? 'text-yellow-600 hover:bg-yellow-50'
-                                                    : 'text-gray-700 hover:bg-gray-100'
-                                                    } transition-colors`}
-                                                role="menuitem"
-                                            >
-                                                {item.label}
-                                            </button>
-                                        ))}
-                                    </div>
+                        <div className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+                            <div className="flex items-center space-x-2">
+                                <div className="text-left">
+                                    <p className="text-sm font-medium text-gray-700"><span className="text-base font-semibold">Organization</span> - {organization.name}</p>
                                 </div>
-                            )}
+                            </div>
                         </div>
+                        
 
+                        <div className="flex items-center space-x-5 mt-2 md:mt-0 justify-end">
+
+                            {/* Notification Bell */}
+                            <div className="relative cursor-pointer text-gray-600 hover:text-gray-800">
+                                <FaBell className="text-xl" />
+                                <span className="absolute -top-1 -right-0.5 h-2.5 w-2.5 bg-yellow-500 rounded-full border-2 border-white"></span>
+                            </div>
+
+                            {/* User Profile Dropdown Trigger */}
+                            <div className="relative" ref={dropdownRef}>
+                                <button
+                                    onClick={() => setIsOpen(!isOpen)}
+                                    className="flex items-center space-x-2 border border-gray-300 rounded-full md:rounded-xl px-2 py-1 hover:bg-gray-50 transition focus:outline-none"
+                                >
+                                    <div className="w-8 h-8 rounded-full bg-yellow-600 flex items-center justify-center text-white font-bold text-sm">
+                                        {user.firstname.charAt(0).toUpperCase()}{user.lastname.charAt(0).toUpperCase()}
+                                    </div>
+                                    <FaChevronDown className={`hidden md:block text-gray-400 text-xs transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {/* --- DROPDOWN MENU START --- */}
+                                {isOpen && (
+                                    <div className="absolute right-0 mt-3 w-72 origin-top-right rounded-lg bg-white shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-50 overflow-hidden">
+
+                                        {/* 1. Header (User Info) */}
+                                        <div className="p-5 border-b border-gray-100 flex items-start space-x-3">
+                                            <div className="w-10 h-10 rounded-full bg-yellow-600 flex-shrink-0 flex items-center justify-center text-white font-bold text-lg">
+                                                {user.firstname.charAt(0).toUpperCase()}{user.lastname.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <p className="text-sm font-bold text-gray-900 truncate">{user.firstname} {user.lastname}</p>
+                                                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                                <p className="text-xs text-gray-500 truncate">{user.phone}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* 3. Settings Links */}
+                                        <div className="py-2">
+                                            <Link to="/profile" className="flex items-center px-5 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                                                <FaUser className="mr-3 text-gray-400" />
+                                                Profile Settings
+                                            </Link>
+                                            <Link to="/settings" className="flex items-center px-5 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                                                <FaCog className="mr-3 text-gray-400" />
+                                                Account Settings
+                                            </Link>
+                                        </div>
+
+                                        {/* 4. Logout Footer */}
+                                        <div className="border-t border-gray-100 p-2">
+                                            <button
+                                                onClick={handleLogout}
+                                                className="flex w-full items-center px-5 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                            >
+                                                <FaSignOutAlt className="mr-3" />
+                                                Logout
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                                {/* --- DROPDOWN MENU END --- */}
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex space-x-3">
 
+                    <div className="flex space-x-3">
                         {hasPermission("properties", "add") && hideLink && (
-                            <Link to={link}>
-                                <div className="flex space-x-3 focus:outline-none text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-xs px-2 py-2.5">
+                            <Link className="w-full" to={link}>
+                                <div className="flex justify-center items-center space-x-3 focus:outline-none text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-xs px-2 py-2.5">
                                     <p>{name}</p>
                                     <img width={15} height={15} src="../../../assets/icons/png/plus.png" alt="" />
                                 </div>
@@ -198,8 +182,8 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
                         )}
 
                         {hasPermission("payments", "add") && showLink2 && (
-                            <Link to={link2}>
-                                <div className="flex space-x-3 focus:outline-none text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-xs px-2 py-2.5">
+                            <Link className="w-full" to={link2}>
+                                <div className="flex justify-center items-center space-x-3 focus:outline-none text-white bg-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:ring-yellow-300 font-medium rounded-lg text-xs px-2 py-2.5">
                                     <p>{link2Name}</p>
                                     <img width={15} height={15} src="../../../assets/icons/png/plus.png" alt="" />
                                 </div>
@@ -207,8 +191,8 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
                         )}
 
                         {hideSelect && (
-                            <div className="">
-                                <select onChange={onSelectChange} className="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block px-2 py-2.5">
+                            <div className="w-full">
+                                <select onChange={onSelectChange} className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block px-2 py-2.5">
                                     <option value="">All properties</option>
                                     {(properties || []).map((property) => (
                                         <option key={property.id} value={property.id}>{property.name}</option>
@@ -218,7 +202,7 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
                         )}
 
                         {selectUnit && (
-                            <div>
+                            <div className="w-full">
                                 <select onChange={onUnitSelectChange} className="ml-3 bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block px-2 py-2.5">
                                     <option selected>Select unit</option>
                                     {(units || []).map((unit) => (
@@ -228,7 +212,6 @@ const DashboardHeader = ({ title, description, link, name, hideSelect, selectUni
                             </div>
                         )}
                     </div>
-
                 </div>
             </div>
         </>

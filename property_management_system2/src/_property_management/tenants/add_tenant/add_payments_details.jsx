@@ -416,10 +416,7 @@ const AddTenantProperty = () => {
         is_the_tenant_have_previous_arrears: "0",
         is_fines_required: "0", // Add this line
         first_time_billing: "0",
-        amount_criteria: "current_full_month_rent",
         due_rent_reminder_date: "1",
-        mode_for_late_payment: "percentage",
-        criteria_percentage: "10",
         rent_due_date: "10",
         due_rent_fine_start_date: "11",
         is_electricity_meter_read: "0"
@@ -546,6 +543,17 @@ const AddTenantProperty = () => {
         }
     }, [errors]);
 
+    useEffect(() => {
+        if (mode_for_late_payment === "fixed_amount") {
+            // Clear percentage-related fields when fixed_amount is selected
+            setValue("amount_criteria", undefined);
+            setValue("criteria_percentage", undefined);
+        } else if (mode_for_late_payment === "percentage") {
+            // Clear fixed amount field when percentage is selected
+            setValue("late_payment_fixed_amount", undefined);
+        }
+    }, [mode_for_late_payment, setValue]);
+
     return (
         <>
             <div className="p-4 flex justify-between mx-4">
@@ -600,59 +608,61 @@ const AddTenantProperty = () => {
                                 </select>
                             </div>
                         </div>
-                        <table className="w-full text-sm text-left text-gray-500">
-                            <thead className="text-xs text-white uppercase bg-red-700 py-4">
-                                <tr>
-                                    <th scope="col" className="px-5 py-3">property name</th>
-                                    <th scope="col" className="px-5 py-3">Unit number</th>
-                                    <th scope="col" className="px-5 py-3">Floor</th>
-                                    <th scope="col" className="px-5 py-3">Unit type</th>
-                                    <th scope="col" className="px-5 py-3">Rent amount</th>
-                                    <th scope="col" className="px-5 py-3">Rent deposit</th>
-                                    <th scope="col" className="px-5 py-3">Water</th>
-                                    <th scope="col" className="px-5 py-3">Electricity</th>
-                                    <th scope="col" className="px-5 py-3">Garbage</th>
-                                    <th scope="col" className="px-5 py-3">Total</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {unitDetails && (
-                                    <tr className="border border-gray-200 py-3">
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                                            {unitDetails.property_name}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                            {unitDetails.unit_number}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                                            {unitDetails.floor}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                            {unitDetails.unit_type}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                                            {unitDetails.rent_amount}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                            {unitDetails.rent_deposit}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                                            {unitDetails.water}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                                            {unitDetails.electricity}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                                            {unitDetails.garbage}
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50">
-                                            {unitDetails.total}
-                                        </td>
+                        <div className="w-full overflow-x-auto">
+                            <table className="min-w-max text-sm text-left text-gray-500">
+                                <thead className="text-xs text-white uppercase bg-red-700 py-4">
+                                    <tr>
+                                        <th scope="col" className="px-5 py-3">property name</th>
+                                        <th scope="col" className="px-5 py-3">Unit number</th>
+                                        <th scope="col" className="px-5 py-3">Floor</th>
+                                        <th scope="col" className="px-5 py-3">Unit type</th>
+                                        <th scope="col" className="px-5 py-3">Rent amount</th>
+                                        <th scope="col" className="px-5 py-3">Rent deposit</th>
+                                        <th scope="col" className="px-5 py-3">Water</th>
+                                        <th scope="col" className="px-5 py-3">Electricity</th>
+                                        <th scope="col" className="px-5 py-3">Garbage</th>
+                                        <th scope="col" className="px-5 py-3">Total</th>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                </thead>
+
+                                <tbody>
+                                    {unitDetails && (
+                                        <tr className="border border-gray-200 hover:bg-gray-100 transition font-mono text-sm">
+                                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap bg-gray-50">
+                                                {unitDetails.property_name}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap">
+                                                {unitDetails.unit_number}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap bg-gray-50">
+                                                {unitDetails.floor}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap">
+                                                {unitDetails.unit_type}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap bg-gray-50">
+                                                {unitDetails.rent_amount}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap">
+                                                {unitDetails.rent_deposit}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap bg-gray-50">
+                                                {unitDetails.water}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap">
+                                                {unitDetails.electricity}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap bg-gray-50">
+                                                {unitDetails.garbage}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-900 whitespace-nowrap bg-gray-50">
+                                                {unitDetails.total}
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
 
                         <div className="flex space-x-6">
                             <h6 className="text-sm font-medium text-gray-900">Is the rent and deposit agreed as above</h6>
